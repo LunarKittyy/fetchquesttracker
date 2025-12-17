@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FETCH QUEST // Loot Tracker</title>
+    <meta name="description" content="Track your quest items and loot with this retro-futuristic fetch quest tracker">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Scan line overlay -->
+    <div class="scanlines" aria-hidden="true"></div>
+    <div class="noise" aria-hidden="true"></div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-brand">
+                <div class="logo-container">
+                    <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        aria-hidden="true">
+                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                        <line x1="10" y1="9" x2="8" y2="9" />
+                    </svg>
+                </div>
+                <div class="title-block">
+                    <h1 class="title">FETCH QUEST</h1>
+                    <span class="subtitle">// LOOT TRACKER v1.0</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button id="btn-export" class="btn btn-secondary" title="Export data to JSON" disabled>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    <span>EXPORT</span>
+                </button>
+                <button id="btn-import" class="btn btn-secondary" title="Import data from JSON">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                    <span>IMPORT</span>
+                </button>
+                <input type="file" id="file-import" accept=".json" class="hidden" aria-label="Import JSON file">
+            </div>
+        </header>
+
+        <!-- Add Quest Form -->
+        <form id="add-quest-form" class="add-form">
+            <div class="form-header">
+                <span class="form-label">+ NEW ACQUISITION TARGET</span>
+            </div>
+            <div class="form-body">
+                <div class="form-row">
+                    <div class="form-group form-group-name">
+                        <label for="item-name" class="input-label">ITEM DESIGNATION</label>
+                        <input type="text" id="item-name" class="input-field" placeholder="e.g., Film Reels..."
+                            required>
+                    </div>
+                    <div class="form-group form-group-goal">
+                        <label for="item-goal" class="input-label">QTY REQ</label>
+                        <input type="number" id="item-goal" class="input-field input-number" min="1" max="9999"
+                            value="4">
+                    </div>
+                </div>
+                <div id="category-section" class="form-row category-row hidden">
+                    <div class="form-group">
+                        <label for="item-category" class="input-label">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                class="label-icon" aria-hidden="true">
+                                <path
+                                    d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                                <line x1="7" y1="7" x2="7.01" y2="7" />
+                            </svg>
+                            CLASSIFICATION
+                        </label>
+                        <input type="text" id="item-category" class="input-field" list="category-list"
+                            placeholder="e.g., Main Quest, Crafting...">
+                        <datalist id="category-list"></datalist>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" id="toggle-category" class="btn-link">+ Add Classification</button>
+                    <button type="submit" class="btn btn-primary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="12" y1="8" x2="12" y2="16" />
+                            <line x1="8" y1="12" x2="16" y2="12" />
+                        </svg>
+                        <span>LOG ITEM</span>
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <!-- Quest List -->
+        <main id="quest-container" class="quest-container">
+            <!-- Empty state -->
+            <div id="empty-state" class="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-icon"
+                    aria-hidden="true">
+                    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="9" y1="15" x2="15" y2="15" />
+                </svg>
+                <h3 class="empty-title">NO ACTIVE REQUISITIONS</h3>
+                <p class="empty-text">Log an acquisition target above or import existing data.</p>
+            </div>
+
+            <!-- Quest groups will be inserted here -->
+        </main>
+
+        <!-- Status Bar -->
+        <footer class="status-bar">
+            <div class="status-item">
+                <span class="status-label">ITEMS:</span>
+                <span id="status-total" class="status-value">0</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">COMPLETE:</span>
+                <span id="status-complete" class="status-value">0</span>
+            </div>
+            <div class="status-divider"></div>
+            <div class="status-item status-storage">
+                <span class="status-indicator"></span>
+                <span class="status-label">LOCAL STORAGE</span>
+            </div>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
