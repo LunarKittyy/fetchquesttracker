@@ -177,8 +177,145 @@ body.shake {
     display: none !important;
 }
 
+/* --- App Layout & Spaces Sidebar --- */
+.app-layout {
+    display: flex;
+    min-height: 100vh;
+    background: var(--clr-bg-deep);
+}
+
+.spaces-sidebar {
+    width: 64px;
+    background: var(--clr-bg-primary);
+    border-right: var(--border-strong);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem 0;
+    gap: 1.5rem;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    z-index: 100;
+}
+
+.spaces-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    flex: 1;
+    width: 100%;
+    align-items: center;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Hide scrollbar for sidebar */
+.spaces-list::-webkit-scrollbar {
+    width: 0;
+}
+
+.space-tab {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.space-tab-button {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-family: var(--font-display);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--clr-text-muted);
+    text-transform: uppercase;
+    background: none;
+    border: none;
+    padding: 1rem 0.25rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.space-tab.active .space-tab-button {
+    color: var(--clr-text-primary);
+}
+
+.space-tab::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--space-color, var(--clr-accent-primary));
+    opacity: 0.15;
+    transition: opacity 0.2s ease;
+}
+
+.space-tab.active::before {
+    opacity: 1;
+    box-shadow: 0 0 10px var(--space-color, var(--clr-accent-primary));
+}
+
+.space-tab:hover .space-tab-button {
+    color: var(--clr-text-secondary);
+}
+
+.space-progress {
+    width: 3px;
+    height: 60px;
+    background: var(--clr-bg-tertiary);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.space-progress-fill {
+    width: 100%;
+    height: 0%;
+    background: var(--space-color, var(--clr-accent-primary));
+    transition: height 0.3s ease;
+}
+
+.btn-add-space {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    border: var(--border-medium);
+    background: var(--clr-bg-tertiary);
+    color: var(--clr-text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 2rem;
+    flex-shrink: 0;
+}
+
+.btn-add-space:hover {
+    background: var(--clr-bg-elevated);
+    color: var(--clr-accent-secondary);
+    border-color: var(--clr-accent-secondary);
+    box-shadow: var(--glow-teal);
+}
+
+.btn-add-space svg {
+    width: 20px;
+    height: 20px;
+}
+
 /* --- Layout --- */
 .container {
+    flex: 1;
     max-width: 720px;
     margin: 0 auto;
     padding: 1.5rem;
@@ -277,6 +414,123 @@ body.shake {
     display: flex;
     gap: 0.5rem;
     align-items: center;
+}
+
+/* Compact Header */
+.header-compact {
+    padding-bottom: 0.75rem;
+    margin-bottom: 1rem;
+    align-items: center;
+}
+
+.header-compact::after {
+    width: 60px;
+}
+
+.title-compact {
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--clr-text-muted);
+}
+
+/* Search bar */
+.search-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--clr-bg-tertiary);
+    border: var(--border-medium);
+    border-radius: var(--radius-md);
+    padding: 0.35rem 0.75rem;
+    flex: 1;
+    max-width: 300px;
+}
+
+.search-icon {
+    width: 14px;
+    height: 14px;
+    color: var(--clr-text-muted);
+    flex-shrink: 0;
+}
+
+.search-input {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--clr-text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    outline: none;
+    min-width: 0;
+}
+
+.search-input::placeholder {
+    color: var(--clr-text-muted);
+}
+
+.search-all-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    cursor: pointer;
+    padding: 0.2rem 0.4rem;
+    border-radius: var(--radius-sm);
+    transition: all 0.15s ease;
+}
+
+.search-all-toggle:hover {
+    background: var(--clr-bg-elevated);
+}
+
+.search-all-toggle input {
+    display: none;
+}
+
+.search-all-toggle .toggle-text {
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--clr-text-muted);
+    transition: color 0.15s ease;
+}
+
+.search-all-toggle input:checked+.toggle-text {
+    color: var(--clr-accent-secondary);
+}
+
+.search-clear {
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: var(--clr-text-muted);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: all 0.15s ease;
+}
+
+.search-clear:hover {
+    color: var(--clr-accent-danger);
+}
+
+.search-clear svg {
+    width: 12px;
+    height: 12px;
+}
+
+.btn-icon-only {
+    padding: 0.5rem;
+    width: 36px;
+    height: 36px;
+}
+
+.btn-icon-only span {
+    display: none;
 }
 
 /* Sound toggle */
@@ -712,6 +966,355 @@ body.shake {
     border-top: var(--border-subtle);
 }
 
+/* Dropdown picker trigger buttons */
+/* Dropdown picker trigger buttons */
+.form-group-dropdown {
+    display: flex;
+    gap: 0.35rem;
+    position: relative;
+    z-index: 50;
+}
+
+.dropdown-trigger-wrapper {
+    position: relative;
+    z-index: 51;
+}
+
+.dropdown-trigger {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    padding: 0.4rem;
+    background: var(--clr-bg-tertiary);
+    border: var(--border-medium);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    width: 44px;
+    height: 44px;
+}
+
+.dropdown-trigger:hover {
+    background: var(--clr-bg-elevated);
+    border-color: var(--clr-accent-secondary);
+}
+
+.trigger-label {
+    font-size: 0.45rem;
+    font-weight: 700;
+    color: var(--clr-text-muted);
+    letter-spacing: 0.05em;
+}
+
+.color-indicator {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--clr-bg-deep);
+    border: 2px dashed var(--clr-text-muted);
+}
+
+.color-indicator.has-color {
+    border-style: solid;
+    border-color: transparent;
+}
+
+.priority-indicator {
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--clr-text-muted);
+    line-height: 1;
+}
+
+.priority-indicator.priority-low {
+    color: var(--clr-accent-success);
+}
+
+.priority-indicator.priority-medium {
+    color: var(--clr-accent-primary);
+}
+
+.priority-indicator.priority-high {
+    color: var(--clr-accent-danger);
+}
+
+/* Picker dropdown popup (portal at body level) */
+.picker-dropdown-portal {
+    position: fixed;
+    background: var(--clr-bg-secondary);
+    border: var(--border-strong);
+    border-radius: var(--radius-md);
+    padding: 0.5rem;
+    z-index: 9999;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    animation: dropdownIn 0.15s ease;
+}
+
+@keyframes dropdownIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.picker-options {
+    display: flex;
+    gap: 0.35rem;
+}
+
+.color-picker-options {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.35rem;
+}
+
+/* Color options with proper backgrounds */
+.color-option {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-size: 0.7rem;
+    color: var(--clr-text-muted);
+}
+
+.color-option:hover {
+    transform: scale(1.15);
+}
+
+.color-option.active {
+    border-color: var(--clr-text-primary);
+    box-shadow: 0 0 8px currentColor;
+}
+
+.color-option.color-none {
+    background: var(--clr-bg-tertiary);
+    border: 2px dashed var(--clr-text-muted);
+}
+
+.color-option.color-amber {
+    background: #e8b84a;
+}
+
+.color-option.color-teal {
+    background: #4ecdb4;
+}
+
+.color-option.color-red {
+    background: #d45454;
+}
+
+.color-option.color-green {
+    background: #5cb572;
+}
+
+.color-option.color-indigo {
+    background: #6366f1;
+}
+
+.color-option.color-purple {
+    background: #a855f7;
+}
+
+.color-option.color-pink {
+    background: #ec4899;
+}
+
+.color-option.color-orange {
+    background: #f97316;
+}
+
+/* Priority options */
+.priority-picker-options {
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.priority-option {
+    padding: 0.4rem 0.75rem;
+    background: var(--clr-bg-tertiary);
+    border: var(--border-subtle);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-display);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--clr-text-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.priority-option:hover {
+    background: var(--clr-bg-elevated);
+}
+
+.priority-option.active {
+    background: var(--clr-bg-elevated);
+    color: var(--clr-text-primary);
+}
+
+.priority-option.priority-low {
+    color: var(--clr-accent-success);
+}
+
+.priority-option.priority-medium {
+    color: var(--clr-accent-primary);
+}
+
+.priority-option.priority-high {
+    color: var(--clr-accent-danger);
+}
+
+.priority-option.priority-low.active {
+    background: rgba(92, 181, 114, 0.15);
+}
+
+.priority-option.priority-medium.active {
+    background: rgba(232, 184, 74, 0.15);
+}
+
+.priority-option.priority-high.active {
+    background: rgba(212, 84, 84, 0.15);
+}
+
+/* Quest card color tag indicator */
+.quest-card[data-color]::before {
+    background: var(--quest-color, var(--clr-accent-secondary));
+}
+
+/* Priority tag on quest card */
+.quest-priority-tag {
+    font-size: 0.55rem;
+    font-weight: 700;
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.quest-priority-tag.priority-low {
+    color: var(--clr-accent-success);
+    background: rgba(92, 181, 114, 0.15);
+}
+
+.quest-priority-tag.priority-medium {
+    color: var(--clr-accent-primary);
+    background: rgba(232, 184, 74, 0.15);
+}
+
+.quest-priority-tag.priority-high {
+    color: var(--clr-accent-danger);
+    background: rgba(212, 84, 84, 0.15);
+}
+
+/* Quest notes section */
+.quest-notes-section {
+    display: flex;
+    flex-direction: column;
+    margin-top: 0.5rem;
+}
+
+.btn-notes-toggle {
+    align-self: flex-start;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.5rem;
+    background: none;
+    border: none;
+    color: var(--clr-text-muted);
+    font-size: 0.65rem;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: all 0.15s ease;
+}
+
+.btn-notes-toggle:hover {
+    color: var(--clr-text-secondary);
+    background: var(--clr-bg-elevated);
+}
+
+.btn-notes-toggle.has-notes {
+    color: var(--clr-accent-secondary);
+}
+
+.btn-notes-toggle svg {
+    width: 14px;
+    height: 14px;
+}
+
+.quest-notes {
+    margin-top: 0.5rem;
+    animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.notes-textarea {
+    width: 100%;
+    min-height: 60px;
+    padding: 0.5rem;
+    background: var(--clr-bg-tertiary);
+    border: var(--border-subtle);
+    border-radius: var(--radius-sm);
+    color: var(--clr-text-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+
+.notes-textarea:focus {
+    border-color: var(--clr-accent-secondary);
+}
+
+.notes-textarea::placeholder {
+    color: var(--clr-text-muted);
+}
+
+/* Inline edit for quest name */
+.quest-name-text {
+    cursor: pointer;
+}
+
+.quest-name-text:hover {
+    text-decoration: underline;
+    text-decoration-style: dashed;
+    text-underline-offset: 3px;
+}
+
+.inline-edit-input {
+    background: var(--clr-bg-tertiary);
+    border: 1px solid var(--clr-accent-secondary);
+    border-radius: var(--radius-sm);
+    color: var(--clr-text-primary);
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    padding: 0.15rem 0.35rem;
+    outline: none;
+    width: 100%;
+}
+
 /* Hide qty field when in quest mode */
 .form-group-inline.hidden {
     display: none;
@@ -981,14 +1584,32 @@ body.shake {
     }
 }
 
-/* Quest card image */
+/* Quest card inner flex layout */
+.quest-card-inner {
+    display: flex;
+    gap: 1rem;
+}
+
+.quest-content {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Quest card image - right side */
+.quest-image-wrapper {
+    width: 120px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: flex-start;
+}
+
 .quest-image {
     width: 100%;
-    height: 120px;
-    object-fit: cover;
+    max-height: 140px;
+    object-fit: contain;
     border-radius: var(--radius-md);
-    margin-bottom: 1rem;
     border: var(--border-subtle);
+    background: var(--clr-bg-deep);
 }
 
 .quest-header {
@@ -1623,6 +2244,88 @@ body.shake {
         opacity: 0.6;
         transform: scale(0.9);
     }
+}
+
+.version-tag {
+    margin-left: auto;
+    font-size: 0.6rem;
+    color: var(--clr-text-muted);
+    letter-spacing: 0.1em;
+    opacity: 0.5;
+}
+
+/* Color Presets for Space Edit */
+.color-presets {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+}
+
+.color-swatch {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-md);
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.color-swatch:hover {
+    transform: scale(1.1);
+}
+
+.color-swatch.selected {
+    border-color: var(--clr-text-primary);
+    box-shadow: 0 0 12px currentColor;
+}
+
+/* Color swatch specific colors */
+.color-swatch.color-amber {
+    background: #e8b84a;
+}
+
+.color-swatch.color-teal {
+    background: #4ecdb4;
+}
+
+.color-swatch.color-red {
+    background: #d45454;
+}
+
+.color-swatch.color-green {
+    background: #5cb572;
+}
+
+.color-swatch.color-indigo {
+    background: #6366f1;
+}
+
+.color-swatch.color-purple {
+    background: #a855f7;
+}
+
+.color-swatch.color-pink {
+    background: #ec4899;
+}
+
+.color-swatch.color-orange {
+    background: #f97316;
+}
+
+/* Modal footer split layout */
+.modal-footer-split {
+    justify-content: space-between;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+/* Form group with bottom spacing */
+.form-group-spaced {
+    margin-bottom: 1rem;
 }
 
 /* --- Responsive --- */

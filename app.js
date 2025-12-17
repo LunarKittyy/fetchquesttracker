@@ -13,14 +13,16 @@
 
     // --- State ---
     let state = {
-        items: [],
-        archivedItems: [],
-        categories: [...DEFAULT_CATEGORIES],
-        soundEnabled: false,  // Sound OFF by default
+        spaces: [],
+        activeSpaceId: null,
+        soundEnabled: false,
         shiftAmount: 5,
         ctrlAmount: 10,
         autoArchive: true
     };
+
+    // Pointers for active space data (to minimize changes to existing code)
+    let activeSpace = null;
 
     // --- DOM References ---
     const $ = (sel) => document.querySelector(sel);
@@ -37,6 +39,10 @@
         fileImport: $('#file-import'),
         statusTotal: $('#status-total'),
         statusComplete: $('#status-complete'),
+        // Search
+        searchInput: $('#search-input'),
+        searchAllSpaces: $('#search-all-spaces'),
+        searchClear: $('#search-clear'),
         typeBtns: $$('.type-btn'),
         itemFields: $('#item-fields'),
         questFields: $('#quest-fields'),
@@ -46,7 +52,6 @@
         modalCategory: $('#modal-category'),
         newCategoryName: $('#new-category-name'),
         btnSaveCategory: $('#btn-save-category'),
-        toggleSound: $('#toggle-sound'),
         particlesCanvas: $('#particles-canvas'),
         celebrationOverlay: $('#celebration-overlay'),
         soundTick: $('#sound-tick'),
@@ -80,7 +85,20 @@
         archivePanel: $('#archive-panel'),
         archiveTrigger: $('#archive-trigger'),
         archiveContainer: $('#archive-container'),
-        archiveCount: $('#archive-count')
+        archiveCount: $('#archive-count'),
+        // Spaces sidebar
+        spacesList: $('#spaces-list'),
+        btnAddSpace: $('#btn-add-space'),
+        // Color picker dropdown
+        btnColorPicker: $('#btn-color-picker'),
+        colorDropdown: $('#color-dropdown'),
+        colorIndicator: $('#color-indicator'),
+        itemColor: $('#item-color'),
+        // Priority picker dropdown
+        btnPriorityPicker: $('#btn-priority-picker'),
+        priorityDropdown: $('#priority-dropdown'),
+        priorityIndicator: $('#priority-indicator'),
+        itemPriority: $('#item-priority')
     };
 
     let currentType = 'item';
@@ -90,12 +108,15 @@
     let particles = [];
     let animationsPaused = false;
     let saveIndicatorTimeout = null;
+    let searchQuery = '';
 
     // --- LocalStorage Functions ---
     function saveState() {
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
             showSaveIndicator();
+            // Update spaces progress live
+            renderSpaces();
         } catch (e) {
             console.error('Failed to save to localStorage:', e);
         }
@@ -114,24 +135,100 @@
     function loadState() {
         try {
             const stored = localStorage.getItem(STORAGE_KEY);
-            if (stored) {
-                const parsed = JSON.parse(stored);
-                state.items = parsed.items || [];
-                state.archivedItems = parsed.archivedItems || [];
-                state.categories = parsed.categories || [...DEFAULT_CATEGORIES];
+            let parsed = stored ? JSON.parse(stored) : null;
+
+            if (parsed) {
+                // Ensure global settings are loaded
                 state.soundEnabled = parsed.soundEnabled !== false;
                 state.shiftAmount = parsed.shiftAmount || 5;
                 state.ctrlAmount = parsed.ctrlAmount || 10;
                 state.autoArchive = parsed.autoArchive !== false;
 
-                // Ensure all items have required properties
-                state.items = state.items.map(item => normalizeItem(item));
-                state.archivedItems = state.archivedItems.map(item => normalizeItem(item));
+                if (parsed.spaces && Array.isArray(parsed.spaces) && parsed.spaces.length > 0) {
+                    state.spaces = parsed.spaces;
+                    state.activeSpaceId = parsed.activeSpaceId || state.spaces[0].id;
+                } else {
+                    // Migration: Create first space from existing v2 data
+                    const defaultSpace = {
+                        id: 'space-' + Date.now(),
+                        name: 'MAIN',
+                        color: '#4ecdb4',
+                        items: parsed.items || [],
+                        archivedItems: parsed.archivedItems || [],
+                        categories: parsed.categories || [...DEFAULT_CATEGORIES]
+                    };
+                    state.spaces = [defaultSpace];
+                    state.activeSpaceId = defaultSpace.id;
+                    delete parsed.items;
+                    delete parsed.archivedItems;
+                    delete parsed.categories;
+                }
+            } else {
+                // Initial State
+                const defaultSpace = {
+                    id: 'space-' + Date.now(),
+                    name: 'MAIN',
+                    color: '#4ecdb4',
+                    items: [],
+                    archivedItems: [],
+                    categories: [...DEFAULT_CATEGORIES]
+                };
+                state.spaces = [defaultSpace];
+                state.activeSpaceId = defaultSpace.id;
             }
+
+            // Set active space pointer and sync top-level state for legacy code
+            syncActiveSpace();
+
+            // Normalize items across all spaces
+            state.spaces.forEach(space => {
+                space.items = (space.items || []).map(item => normalizeItem(item));
+                space.archivedItems = (space.archivedItems || []).map(item => normalizeItem(item));
+            });
+
         } catch (e) {
             console.error('Failed to load from localStorage:', e);
-            state = { items: [], archivedItems: [], categories: [...DEFAULT_CATEGORIES], soundEnabled: false, shiftAmount: 5, ctrlAmount: 10, autoArchive: true };
+            const defaultSpace = {
+                id: 'space-' + Date.now(),
+                name: 'MAIN',
+                color: '#4ecdb4',
+                items: [],
+                archivedItems: [],
+                categories: [...DEFAULT_CATEGORIES]
+            };
+            state = {
+                spaces: [defaultSpace],
+                activeSpaceId: defaultSpace.id,
+                soundEnabled: false,
+                shiftAmount: 5,
+                ctrlAmount: 10,
+                autoArchive: true
+            };
+            syncActiveSpace();
         }
+    }
+
+    function syncActiveSpace() {
+        activeSpace = state.spaces.find(s => s.id === state.activeSpaceId) || state.spaces[0];
+        state.activeSpaceId = activeSpace.id;
+
+        // Expose items/archivedItems/categories at top level of state for existing code compatibility
+        // Using Object.defineProperty to keep them in sync with activeSpace
+        Object.defineProperty(state, 'items', {
+            get: () => activeSpace.items,
+            set: (val) => { activeSpace.items = val; },
+            configurable: true
+        });
+        Object.defineProperty(state, 'archivedItems', {
+            get: () => activeSpace.archivedItems,
+            set: (val) => { activeSpace.archivedItems = val; },
+            configurable: true
+        });
+        Object.defineProperty(state, 'categories', {
+            get: () => activeSpace.categories,
+            set: (val) => { activeSpace.categories = val; },
+            configurable: true
+        });
     }
 
     function normalizeItem(item) {
@@ -152,8 +249,217 @@
                 complete: obj.complete || false
             })),
             createdAt: item.createdAt || Date.now(),
-            completedAt: item.completedAt || null
+            completedAt: item.completedAt || null,
+            color: item.color || null,
+            priority: item.priority || null,
+            notes: item.notes || ''
         };
+    }
+
+    // --- Spaces Management ---
+    function renderSpaces() {
+        const list = elements.spacesList;
+        if (!list) return;
+
+        list.innerHTML = state.spaces.map(space => {
+            const isActive = space.id === state.activeSpaceId;
+            const progress = calculateSpaceProgress(space);
+
+            return `
+                <div class="space-tab ${isActive ? 'active' : ''}" 
+                     data-id="${space.id}" 
+                     style="--space-color: ${space.color || 'var(--clr-accent-primary)'}">
+                    <div class="space-progress" title="Completion: ${Math.round(progress)}%">
+                        <div class="space-progress-fill" style="height: ${progress}%"></div>
+                    </div>
+                    <button class="space-tab-button" title="${escapeHtml(space.name)}">
+                        ${escapeHtml(space.name)}
+                    </button>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function calculateSpaceProgress(space) {
+        const items = space.items || [];
+        if (items.length === 0) return 0;
+
+        let totalCurrent = 0;
+        let totalTarget = 0;
+
+        items.forEach(item => {
+            const prog = getItemProgress(item);
+            totalCurrent += prog.current;
+            totalTarget += prog.total;
+        });
+
+        return totalTarget > 0 ? (totalCurrent / totalTarget) * 100 : 0;
+    }
+
+    function handleSpaceAction(e) {
+        const tab = e.target.closest('.space-tab');
+        if (!tab) return;
+
+        const spaceId = tab.dataset.id;
+
+        // Double-click or click on active space = open edit modal
+        if (spaceId === state.activeSpaceId) {
+            openSpaceEditModal(spaceId);
+            return;
+        }
+
+        // Single click on different space = switch to it
+        switchSpace(spaceId);
+    }
+
+    function switchSpace(spaceId) {
+        state.activeSpaceId = spaceId;
+        syncActiveSpace();
+        saveState();
+
+        // Complete re-render
+        render();
+        renderArchive();
+        renderSpaces();
+        updateCategoryDropdown();
+
+        playSound('tick');
+    }
+
+    function handleAddSpace() {
+        const colors = ['#e8b84a', '#4ecdb4', '#d45454', '#5cb572', '#6366f1', '#a855f7', '#ec4899'];
+        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+
+        // Open modal for new space
+        const modal = $('#modal-space');
+        if (!modal) return;
+
+        $('#edit-space-id').value = '';
+        $('#edit-space-name').value = '';
+        $('#edit-space-color').value = randomColor;
+
+        // Update modal title for new space
+        modal.querySelector('.modal-title').textContent = 'NEW SPACE';
+        $('#btn-delete-space').style.display = 'none';
+
+        // Highlight selected color
+        updateColorSwatchSelection(randomColor);
+
+        modal.classList.remove('hidden');
+        $('#edit-space-name').focus();
+    }
+
+    function openSpaceEditModal(spaceId) {
+        const space = state.spaces.find(s => s.id === spaceId);
+        if (!space) return;
+
+        const modal = $('#modal-space');
+        if (!modal) return;
+
+        $('#edit-space-id').value = spaceId;
+        $('#edit-space-name').value = space.name;
+        $('#edit-space-color').value = space.color;
+
+        // Update modal title
+        modal.querySelector('.modal-title').textContent = 'EDIT SPACE';
+
+        // Show delete button only if not the last space
+        const deleteBtn = $('#btn-delete-space');
+        deleteBtn.style.display = state.spaces.length > 1 ? 'block' : 'none';
+
+        // Highlight selected color
+        updateColorSwatchSelection(space.color);
+
+        modal.classList.remove('hidden');
+        $('#edit-space-name').focus();
+    }
+
+    function updateColorSwatchSelection(color) {
+        const swatches = $$('#color-presets .color-swatch');
+        swatches.forEach(swatch => {
+            swatch.classList.toggle('selected', swatch.dataset.color === color);
+        });
+    }
+
+    function handleColorSwatchClick(e) {
+        const swatch = e.target.closest('.color-swatch');
+        if (!swatch) return;
+
+        const color = swatch.dataset.color;
+        $('#edit-space-color').value = color;
+        updateColorSwatchSelection(color);
+    }
+
+    function handleSaveSpace() {
+        const spaceId = $('#edit-space-id').value;
+        const name = $('#edit-space-name').value.trim().toUpperCase();
+        const color = $('#edit-space-color').value;
+
+        if (!name) {
+            $('#edit-space-name').focus();
+            return;
+        }
+
+        if (spaceId) {
+            // Editing existing space
+            const space = state.spaces.find(s => s.id === spaceId);
+            if (space) {
+                space.name = name;
+                space.color = color;
+            }
+        } else {
+            // Creating new space
+            const newSpace = {
+                id: 'space-' + Date.now(),
+                name: name,
+                color: color,
+                items: [],
+                archivedItems: [],
+                categories: [...DEFAULT_CATEGORIES]
+            };
+            state.spaces.push(newSpace);
+            state.activeSpaceId = newSpace.id;
+            syncActiveSpace();
+        }
+
+        saveState();
+        render();
+        renderArchive();
+        renderSpaces();
+        updateCategoryDropdown();
+
+        $('#modal-space').classList.add('hidden');
+        playSound('tick');
+    }
+
+    function handleDeleteSpace() {
+        const spaceId = $('#edit-space-id').value;
+        if (!spaceId) return;
+
+        const space = state.spaces.find(s => s.id === spaceId);
+        if (!space) return;
+
+        if (state.spaces.length <= 1) {
+            alert('Cannot delete the last remaining space.');
+            return;
+        }
+
+        if (!confirm(`Permanently delete "${space.name}" and all its quests? This cannot be undone.`)) {
+            return;
+        }
+
+        state.spaces = state.spaces.filter(s => s.id !== spaceId);
+        state.activeSpaceId = state.spaces[0].id;
+        syncActiveSpace();
+
+        saveState();
+        render();
+        renderArchive();
+        renderSpaces();
+        updateCategoryDropdown();
+
+        $('#modal-space').classList.add('hidden');
+        playSound('tick');
     }
 
     // --- Utility Functions ---
@@ -184,10 +490,21 @@
     }
 
     function sortItems() {
+        // Priority order: high=0, medium=1, none=2, low=3
+        const priorityOrder = { high: 0, medium: 1, '': 2, null: 2, low: 3 };
+
         state.items.sort((a, b) => {
+            // Completed items go to bottom
             const aComplete = isItemComplete(a);
             const bComplete = isItemComplete(b);
             if (aComplete !== bComplete) return aComplete ? 1 : -1;
+
+            // Sort by priority
+            const aPriority = priorityOrder[a.priority] ?? 2;
+            const bPriority = priorityOrder[b.priority] ?? 2;
+            if (aPriority !== bPriority) return aPriority - bPriority;
+
+            // Then by creation time (newest first)
             return (b.createdAt || 0) - (a.createdAt || 0);
         });
     }
@@ -198,11 +515,12 @@
         return all.sort();
     }
 
-    function groupItemsByCategory() {
-        const categories = getUniqueCategories();
+    function groupItemsByCategory(items = null) {
+        const itemsToGroup = items || state.items;
+        const categories = [...new Set(itemsToGroup.map(i => i.category || 'Misc'))];
         const grouped = {};
         categories.forEach(cat => {
-            const catItems = state.items.filter(i => (i.category || 'Misc') === cat);
+            const catItems = itemsToGroup.filter(i => (i.category || 'Misc') === cat);
             if (catItems.length > 0) {
                 grouped[cat] = catItems;
             }
@@ -342,6 +660,8 @@
             name: data.name,
             imageUrl: data.imageUrl || null,
             category: data.category || 'Misc',
+            color: data.color || null,
+            priority: data.priority || null,
             current: 0,
             target: data.target || 1,
             objectives: data.objectives || [],
@@ -876,71 +1196,94 @@
         }
 
         return `
-            <article class="quest-card ${isComplete ? 'complete' : ''}" data-id="${item.id}" data-type="${item.type}">
-                ${imageHTML}
-                <div class="quest-header">
-                    <div class="quest-info">
-                        <div class="quest-tags">
-                            ${item.type === 'quest' ? '<span class="quest-type-tag">QUEST</span>' : ''}
-                            <span class="quest-category-tag">${escapeHtml(item.category)}</span>
-                            ${isComplete ? '<span class="quest-complete-tag">ACQUIRED</span>' : ''}
+            <article class="quest-card ${isComplete ? 'complete' : ''} ${item.imageUrl ? 'has-image' : ''}" data-id="${item.id}" data-type="${item.type}" ${item.color ? `style="--quest-color: ${item.color}" data-color="${item.color}"` : ''}>
+                <div class="quest-card-inner">
+                    <div class="quest-content">
+                        <div class="quest-header">
+                            <div class="quest-info">
+                                <div class="quest-tags">
+                                    ${item.type === 'quest' ? '<span class="quest-type-tag">QUEST</span>' : ''}
+                                    ${item.priority ? `<span class="quest-priority-tag priority-${item.priority}">${item.priority.toUpperCase()}</span>` : ''}
+                                    <span class="quest-category-tag">${escapeHtml(item.category)}</span>
+                                    ${isComplete ? '<span class="quest-complete-tag">ACQUIRED</span>' : ''}
+                                </div>
+                                <h3 class="quest-name">
+                                    ${isComplete ? `
+                                        <svg class="trophy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+                                            <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+                                            <path d="M4 22h16"/>
+                                            <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+                                            <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+                                            <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+                                        </svg>
+                                    ` : ''}
+                                    <span class="quest-name-text" data-action="edit-name">${escapeHtml(item.name)}</span>
+                                </h3>
+                            </div>
+                            <button class="btn-delete" data-action="delete" title="Delete">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="3 6 5 6 21 6"/>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                </svg>
+                            </button>
                         </div>
-                        <h3 class="quest-name">
-                            ${isComplete ? `
-                                <svg class="trophy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
-                                    <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
-                                    <path d="M4 22h16"/>
-                                    <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
-                                    <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
-                                    <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
-                                </svg>
-                            ` : ''}
-                            ${escapeHtml(item.name)}
-                        </h3>
-                    </div>
-                    <button class="btn-delete" data-action="delete" title="Delete">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="3 6 5 6 21 6"/>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                        </svg>
-                    </button>
-                </div>
-                
-                <div class="progress-container">
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: ${percent}%"></div>
-                        <div class="progress-segments">${segmentsHTML}</div>
-                    </div>
-                </div>
-                
-                ${item.type === 'item' ? `
-                    <div class="quest-controls">
-                        <button class="btn-control btn-decrement" data-action="decrement" ${item.current <= 0 ? 'disabled' : ''}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="5" y1="12" x2="19" y2="12"/>
-                            </svg>
-                        </button>
-                        <span class="quest-count">
-                            <span class="quest-count-current">${progress.current}</span>
-                            <span class="quest-count-divider">/</span>
-                            <span class="quest-count-target">${progress.total}</span>
-                        </span>
-                        <button class="btn-control btn-increment" data-action="increment" ${isComplete ? 'disabled' : ''}>
-                            ${isComplete ? `
+                        
+                        <div class="progress-container">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${percent}%"></div>
+                                <div class="progress-segments">${segmentsHTML}</div>
+                            </div>
+                        </div>
+                        
+                        ${item.type === 'item' ? `
+                            <div class="quest-controls">
+                                <button class="btn-control btn-decrement" data-action="decrement" ${item.current <= 0 ? 'disabled' : ''}>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="5" y1="12" x2="19" y2="12"/>
+                                    </svg>
+                                </button>
+                                <span class="quest-count">
+                                    <span class="quest-count-current">${progress.current}</span>
+                                    <span class="quest-count-divider">/</span>
+                                    <span class="quest-count-target">${progress.total}</span>
+                                </span>
+                                <button class="btn-control btn-increment" data-action="increment" ${isComplete ? 'disabled' : ''}>
+                                    ${isComplete ? `
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                            <polyline points="22 4 12 14.01 9 11.01"/>
+                                        </svg>
+                                    ` : `
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="12" y1="5" x2="12" y2="19"/>
+                                            <line x1="5" y1="12" x2="19" y2="12"/>
+                                        </svg>
+                                    `}
+                                </button>
+                            </div>
+                        ` : objectivesHTML}
+                        
+                        <div class="quest-notes-section">
+                            <button class="btn-notes-toggle ${item.notes ? 'has-notes' : ''}" data-action="toggle-notes" title="Notes">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                                    <polyline points="22 4 12 14.01 9 11.01"/>
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                    <polyline points="14 2 14 8 20 8"/>
+                                    <line x1="16" y1="13" x2="8" y2="13"/>
+                                    <line x1="16" y1="17" x2="8" y2="17"/>
                                 </svg>
-                            ` : `
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <line x1="12" y1="5" x2="12" y2="19"/>
-                                    <line x1="5" y1="12" x2="19" y2="12"/>
-                                </svg>
-                            `}
-                        </button>
+                            </button>
+                            <div class="quest-notes hidden">
+                                <textarea class="notes-textarea" data-action="update-notes" placeholder="Add notes...">${escapeHtml(item.notes || '')}</textarea>
+                            </div>
+                        </div>
                     </div>
-                ` : objectivesHTML}
+                    ${item.imageUrl ? `
+                        <div class="quest-image-wrapper">
+                            <img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.name)}" class="quest-image" loading="lazy" onerror="this.style.display='none'">
+                        </div>
+                    ` : ''}
+                </div>
             </article>
         `;
     }
@@ -971,20 +1314,48 @@
         `;
     }
 
+
     function render() {
         updateCategoryDropdown();
         updateStatusBar();
+        renderSpaces();
 
         // Clear existing groups
         const existingGroups = elements.questContainer.querySelectorAll('.category-group');
         existingGroups.forEach(g => g.remove());
 
-        if (state.items.length === 0) {
+        // Get items to display, applying search filter
+        let itemsToRender = state.items;
+
+        if (searchQuery) {
+            const query = searchQuery.toLowerCase();
+            const searchAllSpaces = elements.searchAllSpaces?.checked;
+
+            if (searchAllSpaces) {
+                // Search across all spaces
+                itemsToRender = [];
+                state.spaces.forEach(space => {
+                    const matches = space.items.filter(item =>
+                        item.name.toLowerCase().includes(query) ||
+                        item.category.toLowerCase().includes(query)
+                    );
+                    itemsToRender.push(...matches);
+                });
+            } else {
+                // Search current space only
+                itemsToRender = state.items.filter(item =>
+                    item.name.toLowerCase().includes(query) ||
+                    item.category.toLowerCase().includes(query)
+                );
+            }
+        }
+
+        if (itemsToRender.length === 0) {
             elements.emptyState.classList.remove('hidden');
         } else {
             elements.emptyState.classList.add('hidden');
 
-            const grouped = groupItemsByCategory();
+            const grouped = groupItemsByCategory(itemsToRender);
             let html = '';
             Object.entries(grouped).forEach(([category, categoryItems]) => {
                 html += createCategoryGroupHTML(category, categoryItems);
@@ -1035,6 +1406,8 @@
             name: name || 'Unnamed Item',  // Default name if image-only
             imageUrl: tempImageData || elements.itemImage.value || null,
             category: elements.itemCategory.value,
+            color: elements.itemColor.value || null,
+            priority: elements.itemPriority.value || null,
             target: parseInt(elements.itemGoal.value) || 1,
             objectives: currentType === 'quest' ? [...tempObjectives] : []
         };
@@ -1044,6 +1417,8 @@
         // Reset form
         elements.itemName.value = '';
         elements.itemImage.value = '';
+        elements.itemColor.value = '';
+        elements.itemPriority.value = '';
         tempImageData = null;
         elements.btnAddImage.classList.remove('has-image');
         elements.imagePreview.classList.add('hidden');
@@ -1052,6 +1427,18 @@
         elements.objectivesList.innerHTML = '';
         elements.itemName.focus();
         updateFormContentState();
+
+        // Reset color picker
+        elements.colorDropdown.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('active'));
+        elements.colorDropdown.querySelector('.color-none').classList.add('active');
+        elements.colorIndicator.style.background = '';
+        elements.colorIndicator.classList.remove('has-color');
+
+        // Reset priority picker
+        elements.priorityDropdown.querySelectorAll('.priority-option').forEach(opt => opt.classList.remove('active'));
+        elements.priorityDropdown.querySelector('[data-priority=""]').classList.add('active');
+        elements.priorityIndicator.textContent = '—';
+        elements.priorityIndicator.className = 'priority-indicator';
 
         playSound('tick');
     }
@@ -1195,6 +1582,72 @@
                     deleteItem(itemId);
                 }
                 break;
+
+            case 'edit-name':
+                const nameEl = card.querySelector('.quest-name-text');
+                if (!nameEl || nameEl.querySelector('input')) return; // Already editing
+
+                const currentName = item.name;
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'inline-edit-input';
+                input.value = currentName;
+
+                const finishEdit = () => {
+                    const newName = input.value.trim() || currentName;
+                    if (newName !== currentName) {
+                        updateItemField(itemId, 'name', newName);
+                    }
+                    nameEl.textContent = newName;
+                };
+
+                input.addEventListener('blur', finishEdit);
+                input.addEventListener('keydown', (ev) => {
+                    if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
+                    if (ev.key === 'Escape') { input.value = currentName; input.blur(); }
+                });
+
+                nameEl.textContent = '';
+                nameEl.appendChild(input);
+                input.focus();
+                input.select();
+                break;
+
+            case 'toggle-notes':
+                const notesSection = card.querySelector('.quest-notes');
+                if (notesSection) {
+                    notesSection.classList.toggle('hidden');
+                    const textarea = notesSection.querySelector('.notes-textarea');
+                    if (!notesSection.classList.contains('hidden') && textarea) {
+                        textarea.focus();
+                    }
+                }
+                break;
+
+            case 'update-notes':
+                // Handled by blur event below
+                break;
+        }
+    }
+
+    function handleNotesBlur(e) {
+        if (!e.target.classList.contains('notes-textarea')) return;
+
+        const card = e.target.closest('.quest-card');
+        if (!card) return;
+
+        const itemId = card.dataset.id;
+        const item = state.items.find(i => i.id === itemId);
+        if (!item) return;
+
+        const newNotes = e.target.value;
+        if (item.notes !== newNotes) {
+            updateItemField(itemId, 'notes', newNotes);
+            // Update button indicator
+            const btn = card.querySelector('.btn-notes-toggle');
+            if (btn) {
+                btn.classList.toggle('has-notes', !!newNotes.trim());
+            }
         }
     }
 
@@ -1222,9 +1675,11 @@
         if (e.target.classList.contains('modal-backdrop') ||
             e.target.classList.contains('modal-close') ||
             e.target.classList.contains('modal-cancel')) {
-            elements.modalCategory.classList.add('hidden');
-            elements.modalImage.classList.add('hidden');
-            elements.modalSettings.classList.add('hidden');
+            // Find the closest modal and hide it
+            const modal = e.target.closest('.modal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
         }
     }
 
@@ -1470,6 +1925,7 @@
         }
     }
 
+
     // --- Image Picker Handlers ---
     function handleOpenImageModal() {
         elements.modalImage.classList.remove('hidden');
@@ -1566,21 +2022,16 @@
         render();
         initParticles();
 
-        // Sound toggle state
-        if (elements.toggleSound) {
-            elements.toggleSound.checked = state.soundEnabled;
-        }
-
         // Event listeners
         elements.form.addEventListener('submit', handleFormSubmit);
         elements.typeBtns.forEach(btn => btn.addEventListener('click', handleTypeToggle));
         elements.btnAddObjective.addEventListener('click', handleAddObjective);
         elements.objectivesList.addEventListener('click', handleRemoveObjective);
         elements.questContainer.addEventListener('click', handleQuestAction);
+        elements.questContainer.addEventListener('blur', handleNotesBlur, true); // capture phase for blur
         elements.btnAddCategory.addEventListener('click', handleAddCategory);
         elements.btnSaveCategory.addEventListener('click', handleSaveCategory);
         elements.modalCategory.addEventListener('click', handleCloseModal);
-        elements.toggleSound.addEventListener('change', handleSoundToggle);
         elements.fileImport.addEventListener('change', handleFileChange);
         document.addEventListener('keydown', handleKeydown);
 
@@ -1609,6 +2060,116 @@
         elements.archiveTrigger.addEventListener('click', handleArchiveToggle);
         elements.archiveContainer.addEventListener('click', handleArchiveAction);
 
+        // Spaces sidebar listeners
+        if (elements.btnAddSpace) {
+            elements.btnAddSpace.addEventListener('click', handleAddSpace);
+        } else {
+            console.warn('btnAddSpace element not found');
+        }
+        if (elements.spacesList) {
+            elements.spacesList.addEventListener('click', handleSpaceAction);
+        } else {
+            console.warn('spacesList element not found');
+        }
+
+        // Space modal listeners
+        const modalSpace = $('#modal-space');
+        if (modalSpace) {
+            modalSpace.addEventListener('click', handleCloseModal);
+            $('#color-presets').addEventListener('click', handleColorSwatchClick);
+            $('#btn-save-space').addEventListener('click', handleSaveSpace);
+            $('#btn-delete-space').addEventListener('click', handleDeleteSpace);
+        }
+
+        // Color picker dropdown (portal)
+        if (elements.btnColorPicker) {
+            elements.btnColorPicker.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isHidden = elements.colorDropdown.classList.contains('hidden');
+                elements.priorityDropdown.classList.add('hidden');
+
+                if (isHidden) {
+                    // Position dropdown relative to button
+                    const rect = elements.btnColorPicker.getBoundingClientRect();
+                    elements.colorDropdown.style.top = (rect.bottom + 8) + 'px';
+                    elements.colorDropdown.style.left = rect.left + 'px';
+                    elements.colorDropdown.classList.remove('hidden');
+                } else {
+                    elements.colorDropdown.classList.add('hidden');
+                }
+            });
+
+            elements.colorDropdown.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const option = e.target.closest('.color-option');
+                if (!option) return;
+
+                // Update selection
+                elements.colorDropdown.querySelectorAll('.color-option').forEach(o => o.classList.remove('active'));
+                option.classList.add('active');
+
+                // Update hidden input and indicator
+                const color = option.dataset.color || '';
+                elements.itemColor.value = color;
+                if (color) {
+                    elements.colorIndicator.style.background = color;
+                    elements.colorIndicator.classList.add('has-color');
+                } else {
+                    elements.colorIndicator.style.background = '';
+                    elements.colorIndicator.classList.remove('has-color');
+                }
+
+                // Close dropdown
+                elements.colorDropdown.classList.add('hidden');
+            });
+        }
+
+        // Priority picker dropdown (portal)
+        if (elements.btnPriorityPicker) {
+            elements.btnPriorityPicker.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isHidden = elements.priorityDropdown.classList.contains('hidden');
+                elements.colorDropdown.classList.add('hidden');
+
+                if (isHidden) {
+                    // Position dropdown relative to button
+                    const rect = elements.btnPriorityPicker.getBoundingClientRect();
+                    elements.priorityDropdown.style.top = (rect.bottom + 8) + 'px';
+                    elements.priorityDropdown.style.left = rect.left + 'px';
+                    elements.priorityDropdown.classList.remove('hidden');
+                } else {
+                    elements.priorityDropdown.classList.add('hidden');
+                }
+            });
+
+            elements.priorityDropdown.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const option = e.target.closest('.priority-option');
+                if (!option) return;
+
+                // Update selection
+                elements.priorityDropdown.querySelectorAll('.priority-option').forEach(o => o.classList.remove('active'));
+                option.classList.add('active');
+
+                // Update hidden input and indicator
+                const priority = option.dataset.priority || '';
+                elements.itemPriority.value = priority;
+
+                const labels = { high: 'H', medium: 'M', low: 'L', '': '—' };
+                elements.priorityIndicator.textContent = labels[priority] || '—';
+                elements.priorityIndicator.className = 'priority-indicator' + (priority ? ` priority-${priority}` : '');
+
+                // Close dropdown
+                elements.priorityDropdown.classList.add('hidden');
+            });
+        }
+
+        // Close dropdowns on outside click
+        document.addEventListener('click', () => {
+            elements.colorDropdown?.classList.add('hidden');
+            elements.priorityDropdown?.classList.add('hidden');
+        });
+
         // Animation pause on window blur
         window.addEventListener('focus', handleWindowFocus);
         window.addEventListener('blur', handleWindowBlur);
@@ -1617,8 +2178,37 @@
         elements.itemName.addEventListener('input', handleTextareaInput);
         elements.itemName.addEventListener('input', updateFormContentState);
 
-        // Render archive on load
+        // Search functionality
+        let searchTimeout;
+        if (elements.searchInput) {
+            elements.searchInput.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    searchQuery = e.target.value.trim();
+                    elements.searchClear?.classList.toggle('hidden', !searchQuery);
+                    render();
+                }, 150);
+            });
+        }
+
+        if (elements.searchClear) {
+            elements.searchClear.addEventListener('click', () => {
+                elements.searchInput.value = '';
+                searchQuery = '';
+                elements.searchClear.classList.add('hidden');
+                render();
+            });
+        }
+
+        if (elements.searchAllSpaces) {
+            elements.searchAllSpaces.addEventListener('change', () => {
+                if (searchQuery) render();
+            });
+        }
+
+        // Render archive and spaces on load
         renderArchive();
+        renderSpaces();
 
         console.log('FETCH QUEST v2.2 initialized. Local storage active.');
     }
