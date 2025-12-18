@@ -134,7 +134,11 @@
         migrateSpacesCount: $('#migrate-spaces-count'),
         migrateItemsCount: $('#migrate-items-count'),
         btnMigrateSkip: $('#btn-migrate-skip'),
-        btnMigrateUpload: $('#btn-migrate-upload')
+        btnMigrateUpload: $('#btn-migrate-upload'),
+        // Account management
+        lastSynced: $('#last-synced'),
+        btnExportData: $('#btn-export-data'),
+        btnDeleteAccount: $('#btn-delete-account')
     };
 
     let currentType = 'item';
@@ -147,6 +151,8 @@
     let searchQuery = '';
     let bulkMode = false;
     let selectedItems = new Set();
+    let cloudSyncTimeout = null;
+    let syncTimeInterval = null;
 
     // --- LocalStorage Functions ---
     function saveState() {
@@ -155,8 +161,34 @@
             showSaveIndicator();
             // Update spaces progress live
             renderSpaces();
+            // Auto-sync to cloud (debounced)
+            if (window.FirebaseBridge?.currentUser) {
+                debouncedCloudSync();
+            }
         } catch (e) {
             console.error('Failed to save to localStorage:', e);
+        }
+    }
+
+    function debouncedCloudSync() {
+        if (cloudSyncTimeout) clearTimeout(cloudSyncTimeout);
+        cloudSyncTimeout = setTimeout(async () => {
+            if (!window.FirebaseBridge?.currentUser) return;
+            updateSyncStatusUI('syncing');
+            const result = await window.FirebaseBridge.saveToCloud(state);
+            if (result.success) {
+                window.FirebaseBridge.updateLastSyncTime();
+                updateSyncStatusUI('synced');
+                updateLastSyncedDisplay();
+            } else {
+                updateSyncStatusUI('error');
+            }
+        }, 2000); // 2 second debounce
+    }
+
+    function updateLastSyncedDisplay() {
+        if (elements.lastSynced && window.FirebaseBridge) {
+            elements.lastSynced.textContent = window.FirebaseBridge.getRelativeSyncTime();
         }
     }
 
@@ -2347,6 +2379,71 @@
         if (elements.userDropdown) elements.userDropdown.classList.add('hidden');
     }
 
+    async function handleExportData() {
+        if (!window.FirebaseBridge?.currentUser) {
+            alert('Not logged in');
+            return;
+        }
+        
+        const result = await window.FirebaseBridge.exportUserData();
+        if (result.success) {
+            const dataStr = JSON.stringify(result.data, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `fetchquest-data-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } else {
+            alert('Export failed: ' + result.error);
+        }
+        if (elements.userDropdown) elements.userDropdown.classList.add('hidden');
+    }
+
+    async function handleDeleteAccount() {
+        if (!window.FirebaseBridge?.currentUser) {
+            alert('Not logged in');
+            return;
+        }
+        
+        // First confirmation
+        const confirm1 = confirm(
+            '⚠️ DELETE ACCOUNT\n\n' +
+            'This will permanently delete:\n' +
+            '• Your account\n' +
+            '• All your cloud-saved data\n' +
+            '• All spaces and quests stored online\n\n' +
+            'Your local data will NOT be deleted.\n\n' +
+            'Are you sure you want to continue?'
+        );
+        
+        if (!confirm1) return;
+        
+        // Second confirmation - type to confirm
+        const userEmail = window.FirebaseBridge.currentUser.email;
+        const confirm2 = prompt(
+            '🚨 FINAL CONFIRMATION\n\n' +
+            `Type your email (${userEmail}) to confirm deletion:`
+        );
+        
+        if (confirm2 !== userEmail) {
+            alert('Email did not match. Account NOT deleted.');
+            return;
+        }
+        
+        const result = await window.FirebaseBridge.deleteAccount();
+        if (result.success) {
+            alert('Account deleted successfully.');
+            updateAuthUI(null);
+        } else {
+            alert('Delete failed: ' + result.error);
+        }
+        if (elements.userDropdown) elements.userDropdown.classList.add('hidden');
+    }
+
     // --- Animation Pause on Blur ---
     function handleWindowFocus() {
         animationsPaused = false;
@@ -2638,6 +2735,15 @@
                 }
             }
         });
+        
+        // Export data handler
+        if (elements.btnExportData) {
+            elements.btnExportData.addEventListener('click', handleExportData);
+        }
+        // Delete account handler
+        if (elements.btnDeleteAccount) {
+            elements.btnDeleteAccount.addEventListener('click', handleDeleteAccount);
+        }
 
         // Render archive and spaces on load
         renderArchive();
@@ -2646,6 +2752,8 @@
         // Subscribe to Firebase auth state changes
         if (window.FirebaseBridge?.isConfigured) {
             window.FirebaseBridge.onAuthChange(updateAuthUI);
+            // Update relative sync time every 10 seconds
+            syncTimeInterval = setInterval(updateLastSyncedDisplay, 10000);
             console.log('FETCH QUEST v2.2 initialized. Firebase active.');
         } else {
             console.log('FETCH QUEST v2.2 initialized. Local storage only.');

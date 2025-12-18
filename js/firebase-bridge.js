@@ -235,6 +235,89 @@ window.FirebaseBridge = {
             console.error('Cloud load error:', error);
             return { success: false, error: error.message };
         }
+    },
+    
+    // Track last sync time
+    lastSyncTime: null,
+    
+    // Get relative time string
+    getRelativeSyncTime() {
+        if (!this.lastSyncTime) return 'Not synced yet';
+        const seconds = Math.floor((Date.now() - this.lastSyncTime) / 1000);
+        if (seconds < 5) return 'Just now';
+        if (seconds < 60) return `${seconds}s ago`;
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `${minutes}m ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}h ago`;
+        const days = Math.floor(hours / 24);
+        return `${days}d ago`;
+    },
+    
+    // Update last sync time
+    updateLastSyncTime() {
+        this.lastSyncTime = Date.now();
+    },
+    
+    // Export user data (GDPR)
+    async exportUserData() {
+        if (!db || !this.currentUser) return { success: false, error: 'Not logged in' };
+        try {
+            const userRef = doc(db, 'users', this.currentUser.uid);
+            const userSnap = await getDoc(userRef);
+            const spacesRef = collection(db, 'users', this.currentUser.uid, 'spaces');
+            const spacesSnap = await getDocs(spacesRef);
+            
+            const spaces = [];
+            spacesSnap.forEach(doc => {
+                spaces.push({ id: doc.id, ...doc.data() });
+            });
+            
+            const exportData = {
+                exportDate: new Date().toISOString(),
+                user: {
+                    email: this.currentUser.email,
+                    displayName: this.currentUser.displayName
+                },
+                userData: userSnap.exists() ? userSnap.data() : {},
+                spaces: spaces
+            };
+            
+            return { success: true, data: exportData };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    },
+    
+    // Delete account and all data (GDPR)
+    async deleteAccount() {
+        if (!db || !auth || !this.currentUser) return { success: false, error: 'Not logged in' };
+        try {
+            // Delete all spaces
+            const spacesRef = collection(db, 'users', this.currentUser.uid, 'spaces');
+            const spacesSnap = await getDocs(spacesRef);
+            const batch = writeBatch(db);
+            spacesSnap.forEach(docRef => {
+                batch.delete(doc(db, 'users', this.currentUser.uid, 'spaces', docRef.id));
+            });
+            await batch.commit();
+            
+            // Delete user document
+            const userRef = doc(db, 'users', this.currentUser.uid);
+            await deleteDoc(userRef);
+            
+            // Delete the Firebase auth account
+            await this.currentUser.delete();
+            
+            return { success: true };
+        } catch (error) {
+            console.error('Delete account error:', error);
+            // If requires recent login
+            if (error.code === 'auth/requires-recent-login') {
+                return { success: false, error: 'Please sign out and sign in again before deleting your account.' };
+            }
+            return { success: false, error: error.message };
+        }
     }
 };
 
