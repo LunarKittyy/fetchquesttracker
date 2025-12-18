@@ -75,7 +75,7 @@ if (isFirebaseConfigured()) {
 
         // Initialize App Check with reCAPTCHA v3
         initializeAppCheck(app, {
-            provider: new ReCaptchaV3Provider('6Ld2ETAsAAAAALgMe6039Lu-9s2yJ3xZ5I5yhT2e'),
+            provider: new ReCaptchaV3Provider('6Ld2ETAsAAAAALgMe6039Lu-9s2yl3xZ5I5yhT2e'),
             isTokenAutoRefreshEnabled: true
         });
 
