@@ -1,541 +1,1127 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>FETCH QUEST // Loot Tracker</title>
-    <meta name="description"
-        content="Track your quest items, objectives, and loot with this retro-futuristic quest tracker">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <meta
+      name="description"
+      content="Track your quest items, objectives, and loot with this retro-futuristic quest tracker"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-        href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;500;700;900&display=swap"
-        rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-</head>
+      href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;500;700;900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
 
-<body>
+  <body>
     <!-- Effects layers -->
     <div class="scanlines" aria-hidden="true"></div>
     <div class="noise" aria-hidden="true"></div>
     <canvas id="particles-canvas" aria-hidden="true"></canvas>
-    <div id="celebration-overlay" class="celebration-overlay" aria-hidden="true"></div>
+    <div
+      id="celebration-overlay"
+      class="celebration-overlay"
+      aria-hidden="true"
+    ></div>
 
     <div class="app-layout">
-        <!-- Spaces Sidebar -->
-        <aside id="spaces-sidebar" class="spaces-sidebar">
-            <div id="spaces-list" class="spaces-list">
-                <!-- Spaces rendered here -->
-            </div>
-            <button id="btn-add-space" class="btn-add-space" title="Create New Space">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <line x1="12" y1="5" x2="12" y2="19" />
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-            </button>
-        </aside>
-
-        <div class="container">
-            <!-- Header -->
-            <header class="header header-compact">
-                <div class="header-brand">
-                    <span class="title-compact">FETCH QUEST</span>
-                </div>
-                <div class="search-bar">
-                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8" />
-                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                    </svg>
-                    <input type="text" id="search-input" class="search-input" placeholder="Search quests...">
-                    <label class="search-all-toggle" title="Search all spaces">
-                        <input type="checkbox" id="search-all-spaces">
-                        <span class="toggle-text">ALL</span>
-                    </label>
-                    <button type="button" id="search-clear" class="search-clear hidden" title="Clear search">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="18" y1="6" x2="6" y2="18" />
-                            <line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
-                    </button>
-                </div>
-                <div class="header-actions">
-                    <button id="btn-bulk-mode" class="btn btn-secondary btn-icon-only" title="Bulk Mode">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                            <rect x="3" y="3" width="7" height="7" />
-                            <rect x="14" y="3" width="7" height="7" />
-                            <rect x="3" y="14" width="7" height="7" />
-                            <rect x="14" y="14" width="7" height="7" />
-                        </svg>
-                    </button>
-                    <button id="btn-settings" class="btn btn-secondary btn-icon-only" title="Settings">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                            <circle cx="12" cy="12" r="3" />
-                            <path
-                                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                        </svg>
-                    </button>
-                    <input type="file" id="file-import" accept=".json" class="hidden" aria-label="Import JSON file">
-                </div>
-            </header>
-
-            <!-- Add Quest Form -->
-            <form id="add-quest-form" class="add-form">
-                <div class="form-header">
-                    <span class="form-label">+ NEW ACQUISITION TARGET</span>
-                    <div class="form-type-toggle">
-                        <button type="button" class="type-btn active" data-type="item">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10" />
-                            </svg>
-                            ITEM
-                        </button>
-                        <button type="button" class="type-btn" data-type="quest">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-                                <polyline points="14 2 14 8 20 8" />
-                            </svg>
-                            QUEST
-                        </button>
-                    </div>
-                </div>
-                <div class="form-body">
-                    <!-- Main info row -->
-                    <div class="form-row">
-                        <div class="form-group form-group-name">
-                            <label for="item-name" class="input-label">DESIGNATION</label>
-                            <div class="input-with-image">
-                                <textarea id="item-name" class="input-field input-autosize" rows="1"
-                                    placeholder="e.g., Film Reels, or leave blank for image-only..."></textarea>
-                                <button type="button" id="btn-add-image" class="btn-image" title="Add image">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                                        <circle cx="8.5" cy="8.5" r="1.5" />
-                                        <polyline points="21 15 16 10 5 21" />
-                                    </svg>
-                                </button>
-                                <input type="hidden" id="item-image" value="">
-                            </div>
-                        </div>
-                        <div id="image-preview" class="image-preview hidden"></div>
-                        <div class="form-group form-group-category">
-                            <label for="item-category" class="input-label">CLASSIFICATION</label>
-                            <div class="category-select-wrapper">
-                                <select id="item-category" class="input-field input-select">
-                                    <option value="Misc">Misc</option>
-                                </select>
-                                <button type="button" id="btn-add-category" class="btn-icon" title="Add new category">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <line x1="12" y1="5" x2="12" y2="19" />
-                                        <line x1="5" y1="12" x2="19" y2="12" />
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="form-group form-group-dropdown">
-                            <div class="dropdown-trigger-wrapper">
-                                <button type="button" id="btn-color-picker" class="dropdown-trigger" title="Tag Color">
-                                    <span class="color-indicator" id="color-indicator"></span>
-                                    <span class="trigger-label">COLOR</span>
-                                </button>
-                            </div>
-                            <input type="hidden" id="item-color" value="">
-
-                            <div class="dropdown-trigger-wrapper">
-                                <button type="button" id="btn-priority-picker" class="dropdown-trigger"
-                                    title="Priority">
-                                    <span class="priority-indicator" id="priority-indicator">—</span>
-                                    <span class="trigger-label">PRI</span>
-                                </button>
-                            </div>
-                            <input type="hidden" id="item-priority" value="">
-                        </div>
-                    </div>
-
-                    <!-- Quest-specific: objectives -->
-                    <div id="quest-fields" class="form-section hidden">
-                        <div class="objectives-header">
-                            <span class="input-label">OBJECTIVES</span>
-                            <button type="button" id="btn-add-objective" class="btn-link">+ Add Objective</button>
-                        </div>
-                        <div id="objectives-list" class="objectives-list"></div>
-                    </div>
-
-
-                    <div class="form-actions">
-                        <!-- Item-specific: quantity (inline with submit) -->
-                        <div id="item-fields" class="form-group-inline">
-                            <label for="item-goal" class="input-label">QTY</label>
-                            <input type="number" id="item-goal" class="input-field input-number" min="1" max="9999"
-                                value="4">
-                        </div>
-                        <button type="submit" class="btn btn-primary btn-submit">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                aria-hidden="true">
-                                <circle cx="12" cy="12" r="10" />
-                                <line x1="12" y1="8" x2="12" y2="16" />
-                                <line x1="8" y1="12" x2="16" y2="12" />
-                            </svg>
-                            <span>LOG ITEM</span>
-                        </button>
-                    </div>
-                </div>
-            </form>
-
-            <!-- Quest List -->
-            <main id="quest-container" class="quest-container">
-                <!-- Empty state -->
-                <div id="empty-state" class="empty-state">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-icon"
-                        aria-hidden="true">
-                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-                        <polyline points="14 2 14 8 20 8" />
-                        <line x1="9" y1="15" x2="15" y2="15" />
-                    </svg>
-                    <h3 class="empty-title">NO ACTIVE REQUISITIONS</h3>
-                    <p class="empty-text">Log an acquisition target above or import existing data.</p>
-                </div>
-            </main>
-
-            <!-- Status Bar -->
-            <footer class="status-bar">
-                <div class="status-item">
-                    <span class="status-label">TARGETS:</span>
-                    <span id="status-total" class="status-value">0</span>
-                </div>
-                <div class="status-item">
-                    <span class="status-label">ACQUIRED:</span>
-                    <span id="status-complete" class="status-value">0</span>
-                </div>
-                <span class="version-tag">v2.2</span>
-            </footer>
+      <!-- Spaces Sidebar -->
+      <aside id="spaces-sidebar" class="spaces-sidebar">
+        <div id="spaces-list" class="spaces-list">
+          <!-- Spaces rendered here -->
         </div>
+        <button
+          id="btn-add-space"
+          class="btn-add-space"
+          title="Create New Space"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+          >
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </button>
+      </aside>
 
-        <!-- Archive Panel (Slide-out for completed quests) -->
-        <aside id="archive-panel" class="archive-panel">
-            <button id="archive-trigger" class="archive-trigger" title="Toggle Archive"
-                aria-label="Toggle completed quests archive">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="15 18 9 12 15 6" />
-                </svg>
-            </button>
-            <div class="archive-content">
-                <div class="archive-header">
-                    <h2 class="archive-title">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 8v13H3V8M1 3h22v5H1z" />
-                            <path d="M10 12h4" />
-                        </svg>
-                        ARCHIVE
-                    </h2>
-                    <span id="archive-count" class="archive-count">0</span>
-                </div>
-                <div id="archive-container" class="archive-items">
-                    <div class="archive-empty">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M9 12l2 2 4-4" />
-                            <circle cx="12" cy="12" r="10" />
-                        </svg>
-                        <p>No completed quests yet</p>
-                    </div>
-                </div>
-            </div>
-        </aside>
-
-        <!-- Add Category Modal -->
-        <div id="modal-category" class="modal hidden">
-            <div class="modal-backdrop"></div>
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 class="modal-title">NEW CLASSIFICATION</h3>
-                    <button type="button" class="modal-close" aria-label="Close modal">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="18" y1="6" x2="6" y2="18" />
-                            <line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <input type="text" id="new-category-name" class="input-field" placeholder="Enter category name...">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary modal-cancel">CANCEL</button>
-                    <button type="button" class="btn btn-primary" id="btn-save-category">CREATE</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Space Edit Modal -->
-        <div id="modal-space" class="modal hidden">
-            <div class="modal-backdrop"></div>
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 class="modal-title">EDIT SPACE</h3>
-                    <button type="button" class="modal-close" aria-label="Close modal">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="18" y1="6" x2="6" y2="18" />
-                            <line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" id="edit-space-id" value="">
-                    <div class="form-group form-group-spaced">
-                        <label for="edit-space-name" class="input-label">SPACE NAME</label>
-                        <input type="text" id="edit-space-name" class="input-field" placeholder="e.g., ELDEN RING">
-                    </div>
-                    <div class="form-group">
-                        <label class="input-label">SPACE COLOR</label>
-                        <div id="color-presets" class="color-presets">
-                            <button type="button" class="color-swatch color-amber" data-color="#e8b84a"
-                                title="Amber"></button>
-                            <button type="button" class="color-swatch color-teal" data-color="#4ecdb4"
-                                title="Teal"></button>
-                            <button type="button" class="color-swatch color-red" data-color="#d45454"
-                                title="Red"></button>
-                            <button type="button" class="color-swatch color-green" data-color="#5cb572"
-                                title="Green"></button>
-                            <button type="button" class="color-swatch color-indigo" data-color="#6366f1"
-                                title="Indigo"></button>
-                            <button type="button" class="color-swatch color-purple" data-color="#a855f7"
-                                title="Purple"></button>
-                            <button type="button" class="color-swatch color-pink" data-color="#ec4899"
-                                title="Pink"></button>
-                            <button type="button" class="color-swatch color-orange" data-color="#f97316"
-                                title="Orange"></button>
-                        </div>
-                        <input type="hidden" id="edit-space-color" value="">
-                    </div>
-                </div>
-                <div class="modal-footer modal-footer-split">
-                    <button type="button" class="btn btn-danger" id="btn-delete-space">DELETE</button>
-                    <div class="modal-actions">
-                        <button type="button" class="btn btn-secondary modal-cancel">CANCEL</button>
-                        <button type="button" class="btn btn-primary" id="btn-save-space">SAVE</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Settings Modal -->
-        <div id="modal-settings" class="modal hidden">
-            <div class="modal-backdrop"></div>
-            <div class="modal-content modal-content-wide">
-                <div class="modal-header">
-                    <h3 class="modal-title">SETTINGS</h3>
-                    <button type="button" class="modal-close" aria-label="Close modal">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="18" y1="6" x2="6" y2="18" />
-                            <line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
-                    </button>
-                </div>
-                <div class="modal-body settings-body">
-                    <!-- Bulk Increment Settings -->
-                    <div class="settings-section">
-                        <h4 class="settings-section-title">BULK INCREMENT</h4>
-                        <p class="settings-hint">Hold Shift or Ctrl while clicking +/- to add/subtract in bulk</p>
-                        <div class="settings-row">
-                            <label for="setting-shift-amount" class="settings-label">
-                                <kbd>Shift</kbd> + Click Amount
-                            </label>
-                            <input type="number" id="setting-shift-amount" class="input-field input-number" min="1"
-                                max="1000" value="5">
-                        </div>
-                        <div class="settings-row">
-                            <label for="setting-ctrl-amount" class="settings-label">
-                                <kbd>Ctrl</kbd> + Click Amount
-                            </label>
-                            <input type="number" id="setting-ctrl-amount" class="input-field input-number" min="1"
-                                max="1000" value="10">
-                        </div>
-                    </div>
-
-                    <!-- Sound Settings -->
-                    <div class="settings-section">
-                        <h4 class="settings-section-title">SOUND</h4>
-                        <div class="settings-row">
-                            <label for="setting-sound-enabled" class="settings-label">Sound Effects</label>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="setting-sound-enabled">
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- Archive Settings -->
-                    <div class="settings-section">
-                        <h4 class="settings-section-title">ARCHIVE</h4>
-                        <p class="settings-hint">Completed quests can be automatically moved to the archive panel</p>
-                        <div class="settings-row">
-                            <label for="setting-auto-archive" class="settings-label">Auto-Archive Completed</label>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="setting-auto-archive" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- Data Management -->
-                    <div class="settings-section">
-                        <h4 class="settings-section-title">DATA MANAGEMENT</h4>
-                        <div class="settings-row settings-row-buttons">
-                            <button type="button" id="settings-btn-export" class="btn btn-secondary">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                    <polyline points="7 10 12 15 17 10" />
-                                    <line x1="12" y1="15" x2="12" y2="3" />
-                                </svg>
-                                EXPORT DATA
-                            </button>
-                            <button type="button" id="settings-btn-import" class="btn btn-secondary">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                    <polyline points="17 8 12 3 7 8" />
-                                    <line x1="12" y1="3" x2="12" y2="15" />
-                                </svg>
-                                IMPORT DATA
-                            </button>
-                        </div>
-                        <div class="settings-row settings-row-buttons">
-                            <button type="button" id="settings-btn-clear" class="btn btn-danger">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="3 6 5 6 21 6" />
-                                    <path
-                                        d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                </svg>
-                                CLEAR ALL DATA
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary modal-close">DONE</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Image Picker Modal -->
-        <div id="modal-image" class="modal hidden">
-            <div class="modal-backdrop"></div>
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 class="modal-title">ADD IMAGE</h3>
-                    <button type="button" class="modal-close" aria-label="Close modal">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="18" y1="6" x2="6" y2="18" />
-                            <line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="image-options">
-                        <button type="button" id="btn-image-url" class="image-option-btn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                            </svg>
-                            <span>FROM URL</span>
-                        </button>
-                        <button type="button" id="btn-image-local" class="image-option-btn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                <polyline points="17 8 12 3 7 8" />
-                                <line x1="12" y1="3" x2="12" y2="15" />
-                            </svg>
-                            <span>LOCAL FILE</span>
-                        </button>
-                    </div>
-                    <div id="image-url-input" class="image-input-section hidden">
-                        <input type="url" id="image-url-field" class="input-field"
-                            placeholder="https://example.com/image.png">
-                    </div>
-                    <input type="file" id="image-file-input" accept="image/*" class="hidden"
-                        aria-label="Select image file" title="Select an image file">
-                    <div id="image-modal-preview" class="image-modal-preview hidden">
-                        <img id="image-modal-preview-img" src="" alt="Preview">
-                        <button type="button" id="btn-remove-image" class="btn-remove-preview" title="Remove image">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="18" y1="6" x2="6" y2="18" />
-                                <line x1="6" y1="6" x2="18" y2="18" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary modal-cancel">CANCEL</button>
-                    <button type="button" class="btn btn-primary" id="btn-save-image">APPLY</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Save Indicator -->
-        <div id="save-indicator" class="save-indicator" aria-live="polite">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                <polyline points="22 4 12 14.01 9 11.01" />
+      <div class="container">
+        <!-- Header -->
+        <header class="header header-compact">
+          <div class="header-brand">
+            <span class="title-compact">FETCH QUEST</span>
+          </div>
+          <div class="search-bar">
+            <svg
+              class="search-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
-            <span>SAVED</span>
+            <input
+              type="text"
+              id="search-input"
+              class="search-input"
+              placeholder="Search quests..."
+            />
+            <label class="search-all-toggle" title="Search all spaces">
+              <input type="checkbox" id="search-all-spaces" />
+              <span class="toggle-text">ALL</span>
+            </label>
+            <button
+              type="button"
+              id="search-clear"
+              class="search-clear hidden"
+              title="Clear search"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+          <div class="header-actions">
+            <!-- User Menu (hidden when not logged in) -->
+            <div id="user-menu" class="user-menu hidden">
+              <button
+                id="btn-user-menu"
+                class="btn btn-secondary btn-icon-only"
+                title="Account"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M4 20c0-4 4-6 8-6s8 2 8 6" />
+                </svg>
+              </button>
+              <div id="user-dropdown" class="user-dropdown hidden">
+                <div class="user-info">
+                  <span id="user-email" class="user-email"></span>
+                  <span id="sync-status" class="sync-status">Synced</span>
+                </div>
+                <button id="btn-sync-now" class="dropdown-item">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <polyline points="23 4 23 10 17 10" />
+                    <polyline points="1 20 1 14 7 14" />
+                    <path
+                      d="m3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"
+                    />
+                  </svg>
+                  Sync Now
+                </button>
+                <button
+                  id="btn-logout"
+                  class="dropdown-item dropdown-item-danger"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                  </svg>
+                  Sign Out
+                </button>
+              </div>
+            </div>
+            <!-- Login button (shown when not logged in) -->
+            <button
+              id="btn-login"
+              class="btn btn-secondary btn-icon-only"
+              title="Sign In"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                aria-hidden="true"
+              >
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                <polyline points="10 17 15 12 10 7" />
+                <line x1="15" y1="12" x2="3" y2="12" />
+              </svg>
+            </button>
+            <button
+              id="btn-bulk-mode"
+              class="btn btn-secondary btn-icon-only"
+              title="Bulk Mode"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                aria-hidden="true"
+              >
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" />
+              </svg>
+            </button>
+            <button
+              id="btn-settings"
+              class="btn btn-secondary btn-icon-only"
+              title="Settings"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="3" />
+                <path
+                  d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+                />
+              </svg>
+            </button>
+            <input
+              type="file"
+              id="file-import"
+              accept=".json"
+              class="hidden"
+              aria-label="Import JSON file"
+            />
+          </div>
+        </header>
+
+        <!-- Add Quest Form -->
+        <form id="add-quest-form" class="add-form">
+          <div class="form-header">
+            <span class="form-label">+ NEW ACQUISITION TARGET</span>
+            <div class="form-type-toggle">
+              <button type="button" class="type-btn active" data-type="item">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                </svg>
+                ITEM
+              </button>
+              <button type="button" class="type-btn" data-type="quest">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"
+                  />
+                  <polyline points="14 2 14 8 20 8" />
+                </svg>
+                QUEST
+              </button>
+            </div>
+          </div>
+          <div class="form-body">
+            <!-- Main info row -->
+            <div class="form-row">
+              <div class="form-group form-group-name">
+                <label for="item-name" class="input-label">DESIGNATION</label>
+                <div class="input-with-image">
+                  <textarea
+                    id="item-name"
+                    class="input-field input-autosize"
+                    rows="1"
+                    placeholder="e.g., Film Reels, or leave blank for image-only..."
+                  ></textarea>
+                  <button
+                    type="button"
+                    id="btn-add-image"
+                    class="btn-image"
+                    title="Add image"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                      <circle cx="8.5" cy="8.5" r="1.5" />
+                      <polyline points="21 15 16 10 5 21" />
+                    </svg>
+                  </button>
+                  <input type="hidden" id="item-image" value="" />
+                </div>
+              </div>
+              <div id="image-preview" class="image-preview hidden"></div>
+              <div class="form-group form-group-category">
+                <label for="item-category" class="input-label"
+                  >CLASSIFICATION</label
+                >
+                <div class="category-select-wrapper">
+                  <select id="item-category" class="input-field input-select">
+                    <option value="Misc">Misc</option>
+                  </select>
+                  <button
+                    type="button"
+                    id="btn-add-category"
+                    class="btn-icon"
+                    title="Add new category"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <line x1="12" y1="5" x2="12" y2="19" />
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div class="form-group form-group-dropdown">
+                <div class="dropdown-trigger-wrapper">
+                  <button
+                    type="button"
+                    id="btn-color-picker"
+                    class="dropdown-trigger"
+                    title="Tag Color"
+                  >
+                    <span class="color-indicator" id="color-indicator"></span>
+                    <span class="trigger-label">COLOR</span>
+                  </button>
+                </div>
+                <input type="hidden" id="item-color" value="" />
+
+                <div class="dropdown-trigger-wrapper">
+                  <button
+                    type="button"
+                    id="btn-priority-picker"
+                    class="dropdown-trigger"
+                    title="Priority"
+                  >
+                    <span class="priority-indicator" id="priority-indicator"
+                      >—</span
+                    >
+                    <span class="trigger-label">PRI</span>
+                  </button>
+                </div>
+                <input type="hidden" id="item-priority" value="" />
+              </div>
+            </div>
+
+            <!-- Quest-specific: objectives -->
+            <div id="quest-fields" class="form-section hidden">
+              <div class="objectives-header">
+                <span class="input-label">OBJECTIVES</span>
+                <button type="button" id="btn-add-objective" class="btn-link">
+                  + Add Objective
+                </button>
+              </div>
+              <div id="objectives-list" class="objectives-list"></div>
+            </div>
+
+            <div class="form-actions">
+              <!-- Item-specific: quantity (inline with submit) -->
+              <div id="item-fields" class="form-group-inline">
+                <label for="item-goal" class="input-label">QTY</label>
+                <input
+                  type="number"
+                  id="item-goal"
+                  class="input-field input-number"
+                  min="1"
+                  max="9999"
+                  value="4"
+                />
+              </div>
+              <button type="submit" class="btn btn-primary btn-submit">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="16" />
+                  <line x1="8" y1="12" x2="16" y2="12" />
+                </svg>
+                <span>LOG ITEM</span>
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <!-- Quest List -->
+        <main id="quest-container" class="quest-container">
+          <!-- Empty state -->
+          <div id="empty-state" class="empty-state">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              class="empty-icon"
+              aria-hidden="true"
+            >
+              <path
+                d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"
+              />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="9" y1="15" x2="15" y2="15" />
+            </svg>
+            <h3 class="empty-title">NO ACTIVE REQUISITIONS</h3>
+            <p class="empty-text">
+              Log an acquisition target above or import existing data.
+            </p>
+          </div>
+        </main>
+
+        <!-- Status Bar -->
+        <footer class="status-bar">
+          <div class="status-item">
+            <span class="status-label">TARGETS:</span>
+            <span id="status-total" class="status-value">0</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">ACQUIRED:</span>
+            <span id="status-complete" class="status-value">0</span>
+          </div>
+          <span class="version-tag">v2.2</span>
+        </footer>
+      </div>
+
+      <!-- Archive Panel (Slide-out for completed quests) -->
+      <aside id="archive-panel" class="archive-panel">
+        <button
+          id="archive-trigger"
+          class="archive-trigger"
+          title="Toggle Archive"
+          aria-label="Toggle completed quests archive"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
+        <div class="archive-content">
+          <div class="archive-header">
+            <h2 class="archive-title">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M21 8v13H3V8M1 3h22v5H1z" />
+                <path d="M10 12h4" />
+              </svg>
+              ARCHIVE
+            </h2>
+            <span id="archive-count" class="archive-count">0</span>
+          </div>
+          <div id="archive-container" class="archive-items">
+            <div class="archive-empty">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+              >
+                <path d="M9 12l2 2 4-4" />
+                <circle cx="12" cy="12" r="10" />
+              </svg>
+              <p>No completed quests yet</p>
+            </div>
+          </div>
         </div>
+      </aside>
 
-        <!-- Audio elements - Using Web Audio API via JS is preferred, these are fallbacks -->
-        <audio id="sound-tick" preload="auto">
-            <source
-                src="data:audio/wav;base64,UklGRpYAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YXIAAAAEBggKDA4QEhQWGBocHh4eHh4cGhgWFBIQDgwKCAYEAgD+/Pz8/Pz8/v4AAgQGCAoMDhASFBYYGhweHh4eHhwaGBYUEhAODAoIBgQCAP7+/v7+/v7+AAICBAQGBggICgoMDA4ODg4ODgwMCgoICAYGBAQCAgAA"
-                type="audio/wav">
-        </audio>
-        <audio id="sound-complete" preload="auto">
-            <source
-                src="data:audio/wav;base64,UklGRqgBAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YYQBAAB4gIiQmKCosLC4uLi4sKigoJiQiIB4cGhgWFBQSEhAQDg4MDAwMDAwODhASEhQUFhgaHB4gIiQmKCosLi4wMDAwMDAuLCooJiQiIBwcGhgWFBISEBAODgwMCgoKCgoKCgwMDhAQEhIUFhgaHBwgIiQmKCosLC4uLi4uLCwqKCgmJCIgHhwcGhoYFhQUEhIQEA4ODAwLCwsLCwwMDA4OEBASEhQWFhgaGhwcHiAiJCYoKiwsLCwsLCwsLCwqKiooKCYmJCQiIiAgHh4cHBwcHBwcHBweHiAgIiIkJCYmKCgqKissLC0tLS0tLS0tLCwsKiopKSkoKCgnp6enp6enp6enp6goKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoJ6enp6enp6enp6enp6enp6enp6cnJycnJycnJycmpqampqampqYmJiYl5eXl5eXlpaWlpaWlpaWlpaWl5eXl5eYmJiYmJk="
-                type="audio/wav">
-        </audio>
-        <audio id="sound-fanfare" preload="auto">
-            <source
-                src="data:audio/wav;base64,UklGRqoCAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YYYCAABwgJCgoLCwwMDAuLCooJCQgIBweHh4gICIkJigqLC4wMjIyMjAwLiwqKCYkIiAgHh4cHBweHiAgIiQmKCosLjAyMjQ0NDQyMjAuLCooJiQiICAdnZwcHR0eHx+goaIjJCUlpianJ6ennhweICAiJCYoKiwuMDIyNDY2NjY0MzIwLiwqKSckIyIf318eHZ2dnR0dnZ4fH6ChouOkpSWmZudo6OlpaqssLC4wMDIzMzQ0NTU1NTQ0MzIxMC8uLSwoJuXko6KhoR+fnx4dnh4eHx+goaIkJSYmqCkqK6ysrS2ur6+wsLExMTExMTExMC+vLq4tLCspqCYkIiAdnJ0dHR2dnh6fH6ChomMj5KUlpeam52foKGipKaoqqysrq6usLCurrCwsK6urq6urKqopp6WjIB2bnJwcHJ0dHZ4fICEhoqOkJKSmJyeo6aoq66wsbKzs7S0tLSzsrGvra2sq6mopaOenZqYlpSSjoyKhoKAenZ2dHR0dnZ4eHx+goaIi46QkpWYm5yeoaOkpqeop6ioqKiopqampKOhoJ6cmpmXlZSTkY6MioiGhIKAgH58enp4eHh4eHl6ent8fX5/gIGChIWGhoaGhoaEhIOCgYB/foB+fnx8fHt6enp4eHh2dnh4dnZ2dnd4eXp7fH1+f4CAgYKCgoKCgoKBgH9/f35+fn19fHx8fHx8fHx8fX5+fn9/f4CAgICAgICAgIB/f39+fn5+fn5+fn5+fn5+fn9/f39/gIB/f39/f39/f39/f39/f39+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fnx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8"
-                type="audio/wav">
-        </audio>
+      <!-- Add Category Modal -->
+      <div id="modal-category" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 class="modal-title">NEW CLASSIFICATION</h3>
+            <button type="button" class="modal-close" aria-label="Close modal">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+          <div class="modal-body">
+            <input
+              type="text"
+              id="new-category-name"
+              class="input-field"
+              placeholder="Enter category name..."
+            />
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary modal-cancel">
+              CANCEL
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              id="btn-save-category"
+            >
+              CREATE
+            </button>
+          </div>
+        </div>
+      </div>
 
-    </div><!-- /app-layout -->
+      <!-- Space Edit Modal -->
+      <div id="modal-space" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 class="modal-title">EDIT SPACE</h3>
+            <button type="button" class="modal-close" aria-label="Close modal">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="edit-space-id" value="" />
+            <div class="form-group form-group-spaced">
+              <label for="edit-space-name" class="input-label"
+                >SPACE NAME</label
+              >
+              <input
+                type="text"
+                id="edit-space-name"
+                class="input-field"
+                placeholder="e.g., ELDEN RING"
+              />
+            </div>
+            <div class="form-group">
+              <label class="input-label">SPACE COLOR</label>
+              <div id="color-presets" class="color-presets">
+                <button
+                  type="button"
+                  class="color-swatch color-amber"
+                  data-color="#e8b84a"
+                  title="Amber"
+                ></button>
+                <button
+                  type="button"
+                  class="color-swatch color-teal"
+                  data-color="#4ecdb4"
+                  title="Teal"
+                ></button>
+                <button
+                  type="button"
+                  class="color-swatch color-red"
+                  data-color="#d45454"
+                  title="Red"
+                ></button>
+                <button
+                  type="button"
+                  class="color-swatch color-green"
+                  data-color="#5cb572"
+                  title="Green"
+                ></button>
+                <button
+                  type="button"
+                  class="color-swatch color-indigo"
+                  data-color="#6366f1"
+                  title="Indigo"
+                ></button>
+                <button
+                  type="button"
+                  class="color-swatch color-purple"
+                  data-color="#a855f7"
+                  title="Purple"
+                ></button>
+                <button
+                  type="button"
+                  class="color-swatch color-pink"
+                  data-color="#ec4899"
+                  title="Pink"
+                ></button>
+                <button
+                  type="button"
+                  class="color-swatch color-orange"
+                  data-color="#f97316"
+                  title="Orange"
+                ></button>
+              </div>
+              <input type="hidden" id="edit-space-color" value="" />
+            </div>
+          </div>
+          <div class="modal-footer modal-footer-split">
+            <button type="button" class="btn btn-danger" id="btn-delete-space">
+              DELETE
+            </button>
+            <div class="modal-actions">
+              <button type="button" class="btn btn-secondary modal-cancel">
+                CANCEL
+              </button>
+              <button type="button" class="btn btn-primary" id="btn-save-space">
+                SAVE
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings Modal -->
+      <div id="modal-settings" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content modal-content-wide">
+          <div class="modal-header">
+            <h3 class="modal-title">SETTINGS</h3>
+            <button type="button" class="modal-close" aria-label="Close modal">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+          <div class="modal-body settings-body">
+            <!-- Bulk Increment Settings -->
+            <div class="settings-section">
+              <h4 class="settings-section-title">BULK INCREMENT</h4>
+              <p class="settings-hint">
+                Hold Shift or Ctrl while clicking +/- to add/subtract in bulk
+              </p>
+              <div class="settings-row">
+                <label for="setting-shift-amount" class="settings-label">
+                  <kbd>Shift</kbd> + Click Amount
+                </label>
+                <input
+                  type="number"
+                  id="setting-shift-amount"
+                  class="input-field input-number"
+                  min="1"
+                  max="1000"
+                  value="5"
+                />
+              </div>
+              <div class="settings-row">
+                <label for="setting-ctrl-amount" class="settings-label">
+                  <kbd>Ctrl</kbd> + Click Amount
+                </label>
+                <input
+                  type="number"
+                  id="setting-ctrl-amount"
+                  class="input-field input-number"
+                  min="1"
+                  max="1000"
+                  value="10"
+                />
+              </div>
+            </div>
+
+            <!-- Sound Settings -->
+            <div class="settings-section">
+              <h4 class="settings-section-title">SOUND</h4>
+              <div class="settings-row">
+                <label for="setting-sound-enabled" class="settings-label"
+                  >Sound Effects</label
+                >
+                <label class="toggle-switch">
+                  <input type="checkbox" id="setting-sound-enabled" />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Archive Settings -->
+            <div class="settings-section">
+              <h4 class="settings-section-title">ARCHIVE</h4>
+              <p class="settings-hint">
+                Completed quests can be automatically moved to the archive panel
+              </p>
+              <div class="settings-row">
+                <label for="setting-auto-archive" class="settings-label"
+                  >Auto-Archive Completed</label
+                >
+                <label class="toggle-switch">
+                  <input type="checkbox" id="setting-auto-archive" checked />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Data Management -->
+            <div class="settings-section">
+              <h4 class="settings-section-title">DATA MANAGEMENT</h4>
+              <div class="settings-row settings-row-buttons">
+                <button
+                  type="button"
+                  id="settings-btn-export"
+                  class="btn btn-secondary"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
+                  EXPORT DATA
+                </button>
+                <button
+                  type="button"
+                  id="settings-btn-import"
+                  class="btn btn-secondary"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                  IMPORT DATA
+                </button>
+              </div>
+              <div class="settings-row settings-row-buttons">
+                <button
+                  type="button"
+                  id="settings-btn-clear"
+                  class="btn btn-danger"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <polyline points="3 6 5 6 21 6" />
+                    <path
+                      d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                    />
+                  </svg>
+                  CLEAR ALL DATA
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary modal-close">
+              DONE
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Image Picker Modal -->
+      <div id="modal-image" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 class="modal-title">ADD IMAGE</h3>
+            <button type="button" class="modal-close" aria-label="Close modal">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="image-options">
+              <button type="button" id="btn-image-url" class="image-option-btn">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
+                  />
+                  <path
+                    d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
+                  />
+                </svg>
+                <span>FROM URL</span>
+              </button>
+              <button
+                type="button"
+                id="btn-image-local"
+                class="image-option-btn"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+                <span>LOCAL FILE</span>
+              </button>
+            </div>
+            <div id="image-url-input" class="image-input-section hidden">
+              <input
+                type="url"
+                id="image-url-field"
+                class="input-field"
+                placeholder="https://example.com/image.png"
+              />
+            </div>
+            <input
+              type="file"
+              id="image-file-input"
+              accept="image/*"
+              class="hidden"
+              aria-label="Select image file"
+              title="Select an image file"
+            />
+            <div id="image-modal-preview" class="image-modal-preview hidden">
+              <img id="image-modal-preview-img" src="" alt="Preview" />
+              <button
+                type="button"
+                id="btn-remove-image"
+                class="btn-remove-preview"
+                title="Remove image"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary modal-cancel">
+              CANCEL
+            </button>
+            <button type="button" class="btn btn-primary" id="btn-save-image">
+              APPLY
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Save Indicator -->
+      <div id="save-indicator" class="save-indicator" aria-live="polite">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+          <polyline points="22 4 12 14.01 9 11.01" />
+        </svg>
+        <span>SAVED</span>
+      </div>
+
+      <!-- Auth Modal -->
+      <div id="modal-auth" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content modal-auth">
+          <div class="modal-header">
+            <h3 class="modal-title" id="auth-modal-title">SIGN IN</h3>
+            <button type="button" class="modal-close" aria-label="Close modal">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+          <div class="modal-body auth-body">
+            <div class="auth-tabs">
+              <button type="button" class="auth-tab active" data-tab="signin">Sign In</button>
+              <button type="button" class="auth-tab" data-tab="signup">Create Account</button>
+            </div>
+            <form id="form-signin" class="auth-form">
+              <div class="form-group">
+                <label for="signin-email" class="input-label">EMAIL</label>
+                <input type="email" id="signin-email" class="input-field" placeholder="your@email.com" required>
+              </div>
+              <div class="form-group">
+                <label for="signin-password" class="input-label">PASSWORD</label>
+                <input type="password" id="signin-password" class="input-field" placeholder="••••••••" required>
+              </div>
+              <button type="button" id="btn-forgot-password" class="btn-link auth-forgot">Forgot password?</button>
+              <div id="signin-error" class="auth-error hidden"></div>
+              <button type="submit" class="btn btn-primary auth-submit">SIGN IN</button>
+            </form>
+            <form id="form-signup" class="auth-form hidden">
+              <div class="form-group">
+                <label for="signup-name" class="input-label">DISPLAY NAME</label>
+                <input type="text" id="signup-name" class="input-field" placeholder="Your name (optional)">
+              </div>
+              <div class="form-group">
+                <label for="signup-email" class="input-label">EMAIL</label>
+                <input type="email" id="signup-email" class="input-field" placeholder="your@email.com" required>
+              </div>
+              <div class="form-group">
+                <label for="signup-password" class="input-label">PASSWORD</label>
+                <input type="password" id="signup-password" class="input-field" placeholder="Min 6 characters" required minlength="6">
+              </div>
+              <div id="signup-error" class="auth-error hidden"></div>
+              <button type="submit" class="btn btn-primary auth-submit">CREATE ACCOUNT</button>
+            </form>
+            <form id="form-reset" class="auth-form hidden">
+              <p class="auth-hint">Enter your email and we'll send a password reset link.</p>
+              <div class="form-group">
+                <label for="reset-email" class="input-label">EMAIL</label>
+                <input type="email" id="reset-email" class="input-field" placeholder="your@email.com" required>
+              </div>
+              <div id="reset-message" class="auth-message hidden"></div>
+              <div id="reset-error" class="auth-error hidden"></div>
+              <div class="auth-buttons-row">
+                <button type="button" id="btn-back-to-signin" class="btn btn-secondary">BACK</button>
+                <button type="submit" class="btn btn-primary">SEND RESET LINK</button>
+              </div>
+            </form>
+            <div class="auth-divider" id="auth-divider"><span>or</span></div>
+            <button type="button" id="btn-google-signin" class="btn btn-google">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+              CONTINUE WITH GOOGLE
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data Migration Modal -->
+      <div id="modal-migrate" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 class="modal-title">EXISTING DATA FOUND</h3>
+          </div>
+          <div class="modal-body">
+            <p class="migrate-message">You have local data saved. Would you like to upload it to your account?</p>
+            <div class="migrate-stats">
+              <div class="migrate-stat">
+                <span id="migrate-spaces-count">0</span>
+                <span>Spaces</span>
+              </div>
+              <div class="migrate-stat">
+                <span id="migrate-items-count">0</span>
+                <span>Items</span>
+              </div>
+            </div>
+            <p class="migrate-warning">This will NOT overwrite cloud data. Local and cloud data will be merged.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="btn-migrate-skip">SKIP</button>
+            <button type="button" class="btn btn-primary" id="btn-migrate-upload">UPLOAD LOCAL DATA</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Audio elements - Using Web Audio API via JS is preferred, these are fallbacks -->
+      <audio id="sound-tick" preload="auto">
+        <source
+          src="data:audio/wav;base64,UklGRpYAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YXIAAAAEBggKDA4QEhQWGBocHh4eHh4cGhgWFBIQDgwKCAYEAgD+/Pz8/Pz8/v4AAgQGCAoMDhASFBYYGhweHh4eHhwaGBYUEhAODAoIBgQCAP7+/v7+/v7+AAICBAQGBggICgoMDA4ODg4ODgwMCgoICAYGBAQCAgAA"
+          type="audio/wav"
+        />
+      </audio>
+      <audio id="sound-complete" preload="auto">
+        <source
+          src="data:audio/wav;base64,UklGRqgBAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YYQBAAB4gIiQmKCosLC4uLi4sKigoJiQiIB4cGhgWFBQSEhAQDg4MDAwMDAwODhASEhQUFhgaHB4gIiQmKCosLi4wMDAwMDAuLCooJiQiIBwcGhgWFBISEBAODgwMCgoKCgoKCgwMDhAQEhIUFhgaHBwgIiQmKCosLC4uLi4uLCwqKCgmJCIgHhwcGhoYFhQUEhIQEA4ODAwLCwsLCwwMDA4OEBASEhQWFhgaGhwcHiAiJCYoKiwsLCwsLCwsLCwqKiooKCYmJCQiIiAgHh4cHBwcHBwcHBweHiAgIiIkJCYmKCgqKissLC0tLS0tLS0tLCwsKiopKSkoKCgnp6enp6enp6enp6goKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoJ6enp6enp6enp6enp6enp6enp6cnJycnJycnJycmpqampqampqYmJiYl5eXl5eXlpaWlpaWlpaWlpaWl5eXl5eYmJiYmJk="
+          type="audio/wav"
+        />
+      </audio>
+      <audio id="sound-fanfare" preload="auto">
+        <source
+          src="data:audio/wav;base64,UklGRqoCAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YYYCAABwgJCgoLCwwMDAuLCooJCQgIBweHh4gICIkJigqLC4wMjIyMjAwLiwqKCYkIiAgHh4cHBweHiAgIiQmKCosLjAyMjQ0NDQyMjAuLCooJiQiICAdnZwcHR0eHx+goaIjJCUlpianJ6ennhweICAiJCYoKiwuMDIyNDY2NjY0MzIwLiwqKSckIyIf318eHZ2dnR0dnZ4fH6ChouOkpSWmZudo6OlpaqssLC4wMDIzMzQ0NTU1NTQ0MzIxMC8uLSwoJuXko6KhoR+fnx4dnh4eHx+goaIkJSYmqCkqK6ysrS2ur6+wsLExMTExMTExMC+vLq4tLCspqCYkIiAdnJ0dHR2dnh6fH6ChomMj5KUlpeam52foKGipKaoqqysrq6usLCurrCwsK6urq6urKqopp6WjIB2bnJwcHJ0dHZ4fICEhoqOkJKSmJyeo6aoq66wsbKzs7S0tLSzsrGvra2sq6mopaOenZqYlpSSjoyKhoKAenZ2dHR0dnZ4eHx+goaIi46QkpWYm5yeoaOkpqeop6ioqKiopqampKOhoJ6cmpmXlZSTkY6MioiGhIKAgH58enp4eHh4eHl6ent8fX5/gIGChIWGhoaGhoaEhIOCgYB/foB+fnx8fHt6enp4eHh2dnh4dnZ2dnd4eXp7fH1+f4CAgYKCgoKCgoKBgH9/f35+fn19fHx8fHx8fHx8fX5+fn9/f4CAgICAgICAgIB/f39+fn5+fn5+fn5+fn5+fn9/f39/gIB/f39/f39/f39/f39/f39+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fnx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8"
+          type="audio/wav"
+        />
+      </audio>
+    </div>
+    <!-- /app-layout -->
 
     <!-- Portal dropdowns (positioned via JS) -->
     <div id="color-dropdown" class="picker-dropdown-portal hidden">
-        <div class="picker-options color-picker-options">
-            <button type="button" class="color-option color-none active" data-color="" title="None">✕</button>
-            <button type="button" class="color-option color-amber" data-color="#e8b84a" title="Amber"></button>
-            <button type="button" class="color-option color-teal" data-color="#4ecdb4" title="Teal"></button>
-            <button type="button" class="color-option color-red" data-color="#d45454" title="Red"></button>
-            <button type="button" class="color-option color-green" data-color="#5cb572" title="Green"></button>
-            <button type="button" class="color-option color-indigo" data-color="#6366f1" title="Indigo"></button>
-            <button type="button" class="color-option color-purple" data-color="#a855f7" title="Purple"></button>
-            <button type="button" class="color-option color-pink" data-color="#ec4899" title="Pink"></button>
-            <button type="button" class="color-option color-orange" data-color="#f97316" title="Orange"></button>
-        </div>
+      <div class="picker-options color-picker-options">
+        <button
+          type="button"
+          class="color-option color-none active"
+          data-color=""
+          title="None"
+        >
+          ✕
+        </button>
+        <button
+          type="button"
+          class="color-option color-amber"
+          data-color="#e8b84a"
+          title="Amber"
+        ></button>
+        <button
+          type="button"
+          class="color-option color-teal"
+          data-color="#4ecdb4"
+          title="Teal"
+        ></button>
+        <button
+          type="button"
+          class="color-option color-red"
+          data-color="#d45454"
+          title="Red"
+        ></button>
+        <button
+          type="button"
+          class="color-option color-green"
+          data-color="#5cb572"
+          title="Green"
+        ></button>
+        <button
+          type="button"
+          class="color-option color-indigo"
+          data-color="#6366f1"
+          title="Indigo"
+        ></button>
+        <button
+          type="button"
+          class="color-option color-purple"
+          data-color="#a855f7"
+          title="Purple"
+        ></button>
+        <button
+          type="button"
+          class="color-option color-pink"
+          data-color="#ec4899"
+          title="Pink"
+        ></button>
+        <button
+          type="button"
+          class="color-option color-orange"
+          data-color="#f97316"
+          title="Orange"
+        ></button>
+      </div>
     </div>
 
     <div id="priority-dropdown" class="picker-dropdown-portal hidden">
-        <div class="picker-options priority-picker-options">
-            <button type="button" class="priority-option active" data-priority="" title="None">NONE</button>
-            <button type="button" class="priority-option priority-low" data-priority="low" title="Low">LOW</button>
-            <button type="button" class="priority-option priority-medium" data-priority="medium"
-                title="Medium">MEDIUM</button>
-            <button type="button" class="priority-option priority-high" data-priority="high" title="High">HIGH</button>
-        </div>
+      <div class="picker-options priority-picker-options">
+        <button
+          type="button"
+          class="priority-option active"
+          data-priority=""
+          title="None"
+        >
+          NONE
+        </button>
+        <button
+          type="button"
+          class="priority-option priority-low"
+          data-priority="low"
+          title="Low"
+        >
+          LOW
+        </button>
+        <button
+          type="button"
+          class="priority-option priority-medium"
+          data-priority="medium"
+          title="Medium"
+        >
+          MEDIUM
+        </button>
+        <button
+          type="button"
+          class="priority-option priority-high"
+          data-priority="high"
+          title="High"
+        >
+          HIGH
+        </button>
+      </div>
     </div>
 
     <!-- Bulk Actions Bar -->
     <div id="bulk-actions-bar" class="bulk-actions-bar hidden">
-        <div class="bulk-info">
-            <span id="bulk-count">0</span> selected
-        </div>
-        <div class="bulk-buttons">
-            <button type="button" id="bulk-select-all" class="btn btn-secondary">Select All</button>
-            <button type="button" id="bulk-archive" class="btn btn-primary">Archive Selected</button>
-            <button type="button" id="bulk-delete" class="btn btn-danger">Delete Selected</button>
-            <button type="button" id="bulk-cancel" class="btn btn-secondary">Cancel</button>
-        </div>
+      <div class="bulk-info"><span id="bulk-count">0</span> selected</div>
+      <div class="bulk-buttons">
+        <button type="button" id="bulk-select-all" class="btn btn-secondary">
+          Select All
+        </button>
+        <button type="button" id="bulk-archive" class="btn btn-primary">
+          Archive Selected
+        </button>
+        <button type="button" id="bulk-delete" class="btn btn-danger">
+          Delete Selected
+        </button>
+        <button type="button" id="bulk-cancel" class="btn btn-secondary">
+          Cancel
+        </button>
+      </div>
     </div>
 
     <script src="app.js"></script>
-</body>
-
+  </body>
 </html>

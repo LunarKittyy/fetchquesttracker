@@ -106,7 +106,35 @@
         bulkSelectAll: $('#bulk-select-all'),
         bulkArchive: $('#bulk-archive'),
         bulkDelete: $('#bulk-delete'),
-        bulkCancel: $('#bulk-cancel')
+        bulkCancel: $('#bulk-cancel'),
+        // Auth elements
+        btnLogin: $('#btn-login'),
+        userMenu: $('#user-menu'),
+        btnUserMenu: $('#btn-user-menu'),
+        userDropdown: $('#user-dropdown'),
+        userEmail: $('#user-email'),
+        syncStatus: $('#sync-status'),
+        btnSyncNow: $('#btn-sync-now'),
+        btnLogout: $('#btn-logout'),
+        modalAuth: $('#modal-auth'),
+        authTabs: $$('.auth-tab'),
+        formSignin: $('#form-signin'),
+        formSignup: $('#form-signup'),
+        formReset: $('#form-reset'),
+        signinError: $('#signin-error'),
+        signupError: $('#signup-error'),
+        resetError: $('#reset-error'),
+        resetMessage: $('#reset-message'),
+        btnForgotPassword: $('#btn-forgot-password'),
+        btnBackToSignin: $('#btn-back-to-signin'),
+        btnGoogleSignin: $('#btn-google-signin'),
+        authDivider: $('#auth-divider'),
+        // Migration modal
+        modalMigrate: $('#modal-migrate'),
+        migrateSpacesCount: $('#migrate-spaces-count'),
+        migrateItemsCount: $('#migrate-items-count'),
+        btnMigrateSkip: $('#btn-migrate-skip'),
+        btnMigrateUpload: $('#btn-migrate-upload')
     };
 
     let currentType = 'item';
@@ -2124,6 +2152,156 @@
         render();
     }
 
+    // --- Auth UI Handlers ---
+    function openAuthModal() {
+        if (elements.modalAuth) {
+            elements.modalAuth.classList.remove('hidden');
+            switchAuthTab('signin');
+            clearAuthErrors();
+        }
+    }
+
+    function closeAuthModal() {
+        if (elements.modalAuth) {
+            elements.modalAuth.classList.add('hidden');
+            clearAuthErrors();
+        }
+    }
+
+    function switchAuthTab(tab) {
+        // Update tab buttons
+        elements.authTabs.forEach(t => {
+            t.classList.toggle('active', t.dataset.tab === tab);
+        });
+
+        // Show/hide forms
+        if (elements.formSignin) elements.formSignin.classList.toggle('hidden', tab !== 'signin');
+        if (elements.formSignup) elements.formSignup.classList.toggle('hidden', tab !== 'signup');
+        if (elements.formReset) elements.formReset.classList.add('hidden');
+        
+        // Show/hide divider and Google button for reset form
+        if (elements.authDivider) elements.authDivider.classList.toggle('hidden', false);
+        if (elements.btnGoogleSignin) elements.btnGoogleSignin.classList.toggle('hidden', false);
+        
+        clearAuthErrors();
+    }
+
+    function showPasswordReset() {
+        if (elements.formSignin) elements.formSignin.classList.add('hidden');
+        if (elements.formSignup) elements.formSignup.classList.add('hidden');
+        if (elements.formReset) elements.formReset.classList.remove('hidden');
+        if (elements.authDivider) elements.authDivider.classList.add('hidden');
+        if (elements.btnGoogleSignin) elements.btnGoogleSignin.classList.add('hidden');
+        elements.authTabs.forEach(t => t.classList.remove('active'));
+        clearAuthErrors();
+    }
+
+    function clearAuthErrors() {
+        if (elements.signinError) {
+            elements.signinError.classList.add('hidden');
+            elements.signinError.textContent = '';
+        }
+        if (elements.signupError) {
+            elements.signupError.classList.add('hidden');
+            elements.signupError.textContent = '';
+        }
+        if (elements.resetError) {
+            elements.resetError.classList.add('hidden');
+            elements.resetError.textContent = '';
+        }
+        if (elements.resetMessage) {
+            elements.resetMessage.classList.add('hidden');
+            elements.resetMessage.textContent = '';
+        }
+    }
+
+    function showAuthError(form, message) {
+        const errorEl = form === 'signin' ? elements.signinError :
+                       form === 'signup' ? elements.signupError : elements.resetError;
+        if (errorEl) {
+            errorEl.textContent = message;
+            errorEl.classList.remove('hidden');
+        }
+    }
+
+    function showResetMessage(message) {
+        if (elements.resetMessage) {
+            elements.resetMessage.textContent = message;
+            elements.resetMessage.classList.remove('hidden');
+        }
+    }
+
+    function toggleUserDropdown() {
+        if (elements.userDropdown) {
+            elements.userDropdown.classList.toggle('hidden');
+        }
+    }
+
+    function updateAuthUI(user) {
+        if (user) {
+            // User is logged in
+            if (elements.btnLogin) elements.btnLogin.classList.add('hidden');
+            if (elements.userMenu) elements.userMenu.classList.remove('hidden');
+            if (elements.userEmail) elements.userEmail.textContent = user.email || user.displayName || 'User';
+            closeAuthModal();
+        } else {
+            // User is logged out
+            if (elements.btnLogin) elements.btnLogin.classList.remove('hidden');
+            if (elements.userMenu) elements.userMenu.classList.add('hidden');
+            if (elements.userDropdown) elements.userDropdown.classList.add('hidden');
+        }
+    }
+
+    function updateSyncStatusUI(status) {
+        if (!elements.syncStatus) return;
+        elements.syncStatus.className = 'sync-status';
+        if (status === 'syncing') {
+            elements.syncStatus.textContent = 'Syncing...';
+            elements.syncStatus.classList.add('syncing');
+        } else if (status === 'synced') {
+            elements.syncStatus.textContent = 'Synced';
+        } else if (status === 'error') {
+            elements.syncStatus.textContent = 'Sync error';
+            elements.syncStatus.classList.add('error');
+        }
+    }
+
+    // Placeholder async auth functions (will be replaced when Firebase is configured)
+    async function handleSignIn(e) {
+        e.preventDefault();
+        const email = $('#signin-email').value;
+        const password = $('#signin-password').value;
+        
+        // For now, just show a message since Firebase isn't configured
+        showAuthError('signin', 'Firebase not configured. Please add your config to js/firebase-config.js');
+    }
+
+    async function handleSignUp(e) {
+        e.preventDefault();
+        const name = $('#signup-name').value;
+        const email = $('#signup-email').value;
+        const password = $('#signup-password').value;
+        
+        showAuthError('signup', 'Firebase not configured. Please add your config to js/firebase-config.js');
+    }
+
+    async function handlePasswordReset(e) {
+        e.preventDefault();
+        const email = $('#reset-email').value;
+        
+        showAuthError('reset', 'Firebase not configured. Please add your config to js/firebase-config.js');
+    }
+
+    async function handleGoogleSignIn() {
+        showAuthError('signin', 'Firebase not configured. Please add your config to js/firebase-config.js');
+    }
+
+    async function handleLogout() {
+        // For now, just update UI
+        updateAuthUI(null);
+        if (elements.userDropdown) elements.userDropdown.classList.add('hidden');
+    }
+
     // --- Animation Pause on Blur ---
     function handleWindowFocus() {
         animationsPaused = false;
@@ -2364,6 +2542,57 @@
         if (elements.bulkCancel) {
             elements.bulkCancel.addEventListener('click', exitBulkMode);
         }
+
+        // Auth event listeners
+        if (elements.btnLogin) {
+            elements.btnLogin.addEventListener('click', openAuthModal);
+        }
+        if (elements.btnUserMenu) {
+            elements.btnUserMenu.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleUserDropdown();
+            });
+        }
+        if (elements.btnLogout) {
+            elements.btnLogout.addEventListener('click', handleLogout);
+        }
+        if (elements.modalAuth) {
+            elements.modalAuth.addEventListener('click', (e) => {
+                if (e.target.classList.contains('modal-backdrop') || 
+                    e.target.closest('.modal-close')) {
+                    closeAuthModal();
+                }
+            });
+        }
+        elements.authTabs.forEach(tab => {
+            tab.addEventListener('click', () => switchAuthTab(tab.dataset.tab));
+        });
+        if (elements.formSignin) {
+            elements.formSignin.addEventListener('submit', handleSignIn);
+        }
+        if (elements.formSignup) {
+            elements.formSignup.addEventListener('submit', handleSignUp);
+        }
+        if (elements.formReset) {
+            elements.formReset.addEventListener('submit', handlePasswordReset);
+        }
+        if (elements.btnForgotPassword) {
+            elements.btnForgotPassword.addEventListener('click', showPasswordReset);
+        }
+        if (elements.btnBackToSignin) {
+            elements.btnBackToSignin.addEventListener('click', () => switchAuthTab('signin'));
+        }
+        if (elements.btnGoogleSignin) {
+            elements.btnGoogleSignin.addEventListener('click', handleGoogleSignIn);
+        }
+        // Close user dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (elements.userDropdown && !elements.userDropdown.classList.contains('hidden')) {
+                if (!e.target.closest('.user-menu')) {
+                    elements.userDropdown.classList.add('hidden');
+                }
+            }
+        });
 
         // Render archive and spaces on load
         renderArchive();
