@@ -160,15 +160,20 @@
 
     // --- LocalStorage Functions ---
     function saveState() {
+        saveStateLocal();
+        // Auto-sync to cloud (debounced)
+        if (window.FirebaseBridge?.currentUser) {
+            debouncedCloudSync();
+        }
+    }
+
+    // Save to localStorage only (no cloud sync) - for local preferences like activeSpaceId
+    function saveStateLocal() {
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
             showSaveIndicator();
             // Update spaces progress live
             renderSpaces();
-            // Auto-sync to cloud (debounced)
-            if (window.FirebaseBridge?.currentUser) {
-                debouncedCloudSync();
-            }
         } catch (e) {
             console.error('Failed to save to localStorage:', e);
         }
@@ -208,10 +213,10 @@
     function updateStorageDisplay() {
         if (!window.FirebaseBridge || !elements.storageFill || !elements.storageText) return;
         const info = window.FirebaseBridge.getStorageInfo();
-        
+
         // Update bar width
         elements.storageFill.style.width = `${info.percent}%`;
-        
+
         // Update bar color based on usage
         elements.storageFill.className = 'storage-fill';
         if (info.percent >= 90) {
@@ -219,7 +224,7 @@
         } else if (info.percent >= 70) {
             elements.storageFill.classList.add('warning');
         }
-        
+
         // Update text
         elements.storageText.textContent = `${info.usedMB} / ${info.limitMB} MB`;
     }
@@ -420,7 +425,7 @@
     function switchSpace(spaceId) {
         state.activeSpaceId = spaceId;
         syncActiveSpace();
-        saveState();
+        saveStateLocal(); // Local only - don't sync just for switching spaces
 
         // Complete re-render
         render();
@@ -2242,11 +2247,11 @@
         if (elements.formSignin) elements.formSignin.classList.toggle('hidden', tab !== 'signin');
         if (elements.formSignup) elements.formSignup.classList.toggle('hidden', tab !== 'signup');
         if (elements.formReset) elements.formReset.classList.add('hidden');
-        
+
         // Show/hide divider and Google button for reset form
         if (elements.authDivider) elements.authDivider.classList.toggle('hidden', false);
         if (elements.btnGoogleSignin) elements.btnGoogleSignin.classList.toggle('hidden', false);
-        
+
         clearAuthErrors();
     }
 
@@ -2281,7 +2286,7 @@
 
     function showAuthError(form, message) {
         const errorEl = form === 'signin' ? elements.signinError :
-                       form === 'signup' ? elements.signupError : elements.resetError;
+            form === 'signup' ? elements.signupError : elements.resetError;
         if (errorEl) {
             errorEl.textContent = message;
             errorEl.classList.remove('hidden');
@@ -2308,7 +2313,7 @@
             if (elements.userMenu) elements.userMenu.classList.remove('hidden');
             if (elements.userEmail) elements.userEmail.textContent = user.email || user.displayName || 'User';
             closeAuthModal();
-            
+
             // Load data from cloud
             console.log('📥 Loading data from cloud...');
             const result = await window.FirebaseBridge.loadFromCloud();
@@ -2320,10 +2325,10 @@
                 state.shiftAmount = result.state.shiftAmount;
                 state.ctrlAmount = result.state.ctrlAmount;
                 state.autoArchive = result.state.autoArchive;
-                
+
                 // Also save to localStorage for offline access
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-                
+
                 // Re-render with cloud data
                 sortItems();
                 render();
@@ -2334,7 +2339,7 @@
             } else {
                 console.log('ℹ️ No cloud data or error, using local data');
             }
-            
+
             // Start real-time sync
             window.FirebaseBridge.startRealtimeSync();
             window.FirebaseBridge.onDataChange(handleRealtimeUpdate);
@@ -2343,53 +2348,99 @@
             if (elements.btnLogin) elements.btnLogin.classList.remove('hidden');
             if (elements.userMenu) elements.userMenu.classList.add('hidden');
             if (elements.userDropdown) elements.userDropdown.classList.add('hidden');
-            
+
             // Stop real-time sync
             if (window.FirebaseBridge) {
                 window.FirebaseBridge.stopRealtimeSync();
             }
         }
     }
-    
+
     function handleRealtimeUpdate(data) {
         console.log('📡 Received real-time update');
         if (data.spaces) {
-            // Compare incoming data with current data (ignoring lastModified timestamps)
-            const incomingData = JSON.stringify(data.spaces.map(s => ({
-                id: s.id,
-                name: s.name,
-                color: s.color,
-                items: s.items,
-                archivedItems: s.archivedItems,
-                categories: s.categories
-            })));
-            const currentData = JSON.stringify(state.spaces.map(s => ({
-                id: s.id,
-                name: s.name,
-                color: s.color,
-                items: s.items,
-                archivedItems: s.archivedItems,
-                categories: s.categories
-            })));
-            
-            if (incomingData === currentData) {
-                console.log('📡 No changes detected, skipping render');
+            // Get the active space from incoming data
+            const incomingActiveSpace = data.spaces.find(s => s.id === state.activeSpaceId);
+            const currentActiveSpace = state.spaces.find(s => s.id === state.activeSpaceId);
+
+            if (!incomingActiveSpace || !currentActiveSpace) {
+                // Space mismatch - do full update
+                state.spaces = data.spaces;
+                state.activeSpaceId = state.activeSpaceId || state.spaces[0]?.id;
+                syncActiveSpace();
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+                sortItems();
+                render();
+                renderArchive();
+                renderSpaces();
                 return;
             }
-            
-            console.log('📡 Changes detected, updating UI');
-            
+
+            // Compare only items in the active space (what's currently displayed)
+            const incomingItems = JSON.stringify(incomingActiveSpace.items || []);
+            const currentItems = JSON.stringify(currentActiveSpace.items || []);
+
+            if (incomingItems === currentItems) {
+                // Check space metadata (name, color) for sidebar update
+                const incomingMeta = JSON.stringify(data.spaces.map(s => ({ id: s.id, name: s.name, color: s.color })));
+                const currentMeta = JSON.stringify(state.spaces.map(s => ({ id: s.id, name: s.name, color: s.color })));
+
+                if (incomingMeta !== currentMeta) {
+                    // Only update sidebar, not quest list
+                    state.spaces = data.spaces;
+                    syncActiveSpace();
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+                    renderSpaces();
+                    console.log('📡 Sidebar updated (space metadata changed)');
+                } else {
+                    console.log('📡 No visible changes, skipping render');
+                }
+                return;
+            }
+
+            console.log('📡 Items changed, doing surgical update');
+
+            // Find changed items and update only those
+            const oldItems = currentActiveSpace.items || [];
+            const newItems = incomingActiveSpace.items || [];
+
+            // Update state first
             state.spaces = data.spaces;
-            state.activeSpaceId = state.activeSpaceId || state.spaces[0]?.id;
-            
-            // Re-bind state.items to the new active space object
             syncActiveSpace();
-            
             localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-            sortItems();
-            render();
-            renderArchive();
+
+            // Count changes to decide if full or surgical update
+            let changesCount = 0;
+
+            // Check each new item
+            newItems.forEach(newItem => {
+                const oldItem = oldItems.find(i => i.id === newItem.id);
+                if (!oldItem) {
+                    // New item added
+                    changesCount++;
+                } else if (JSON.stringify(oldItem) !== JSON.stringify(newItem)) {
+                    // Item changed - do surgical update
+                    changesCount++;
+                    updateCardProgress(newItem.id);
+                }
+            });
+
+            // Check for removed items
+            oldItems.forEach(oldItem => {
+                if (!newItems.find(i => i.id === oldItem.id)) {
+                    changesCount++;
+                }
+            });
+
+            // If more than 3 changes or items added/removed, do full render
+            if (changesCount > 3 || newItems.length !== oldItems.length) {
+                sortItems();
+                render();
+                renderArchive();
+            }
+
             renderSpaces();
+            console.log(`📡 Updated ${changesCount} items`);
         }
     }
 
@@ -2413,12 +2464,12 @@
         e.preventDefault();
         const email = $('#signin-email').value;
         const password = $('#signin-password').value;
-        
+
         if (!window.FirebaseBridge?.isConfigured) {
             showAuthError('signin', 'Firebase not configured. Please add your config to js/firebase-config.js');
             return;
         }
-        
+
         clearAuthErrors();
         const result = await window.FirebaseBridge.signIn(email, password);
         if (!result.success) {
@@ -2432,15 +2483,15 @@
         const name = $('#signup-name').value;
         const email = $('#signup-email').value;
         const password = $('#signup-password').value;
-        
+
         console.log('handleSignUp called, FirebaseBridge:', window.FirebaseBridge);
         console.log('isConfigured:', window.FirebaseBridge?.isConfigured);
-        
+
         if (!window.FirebaseBridge || !window.FirebaseBridge.isConfigured) {
             showAuthError('signup', 'Firebase not configured. Please add your config to js/firebase-config.js');
             return;
         }
-        
+
         clearAuthErrors();
         console.log('Calling signUp with:', email);
         const result = await window.FirebaseBridge.signUp(email, password, name);
@@ -2453,12 +2504,12 @@
     async function handlePasswordReset(e) {
         e.preventDefault();
         const email = $('#reset-email').value;
-        
+
         if (!window.FirebaseBridge?.isConfigured) {
             showAuthError('reset', 'Firebase not configured.');
             return;
         }
-        
+
         clearAuthErrors();
         const result = await window.FirebaseBridge.resetPassword(email);
         if (result.success) {
@@ -2473,7 +2524,7 @@
             showAuthError('signin', 'Firebase not configured.');
             return;
         }
-        
+
         clearAuthErrors();
         const result = await window.FirebaseBridge.signInWithGoogle();
         if (!result.success) {
@@ -2494,7 +2545,7 @@
             alert('Not logged in');
             return;
         }
-        
+
         const result = await window.FirebaseBridge.exportUserData();
         if (result.success) {
             const dataStr = JSON.stringify(result.data, null, 2);
@@ -2518,7 +2569,7 @@
             alert('Not logged in');
             return;
         }
-        
+
         // First confirmation
         const confirm1 = confirm(
             '⚠️ DELETE ACCOUNT\n\n' +
@@ -2529,21 +2580,21 @@
             'Your local data will NOT be deleted.\n\n' +
             'Are you sure you want to continue?'
         );
-        
+
         if (!confirm1) return;
-        
+
         // Second confirmation - type to confirm
         const userEmail = window.FirebaseBridge.currentUser.email;
         const confirm2 = prompt(
             '🚨 FINAL CONFIRMATION\n\n' +
             `Type your email (${userEmail}) to confirm deletion:`
         );
-        
+
         if (confirm2 !== userEmail) {
             alert('Email did not match. Account NOT deleted.');
             return;
         }
-        
+
         const result = await window.FirebaseBridge.deleteAccount();
         if (result.success) {
             alert('Account deleted successfully.');
@@ -2809,7 +2860,7 @@
         }
         if (elements.modalAuth) {
             elements.modalAuth.addEventListener('click', (e) => {
-                if (e.target.classList.contains('modal-backdrop') || 
+                if (e.target.classList.contains('modal-backdrop') ||
                     e.target.closest('.modal-close')) {
                     closeAuthModal();
                 }
@@ -2844,7 +2895,7 @@
                 }
             }
         });
-        
+
         // Export data handler
         if (elements.btnExportData) {
             elements.btnExportData.addEventListener('click', handleExportData);
