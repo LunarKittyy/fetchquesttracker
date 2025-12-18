@@ -2291,13 +2291,18 @@
         const email = $('#signup-email').value;
         const password = $('#signup-password').value;
         
-        if (!window.FirebaseBridge?.isConfigured) {
+        console.log('handleSignUp called, FirebaseBridge:', window.FirebaseBridge);
+        console.log('isConfigured:', window.FirebaseBridge?.isConfigured);
+        
+        if (!window.FirebaseBridge || !window.FirebaseBridge.isConfigured) {
             showAuthError('signup', 'Firebase not configured. Please add your config to js/firebase-config.js');
             return;
         }
         
         clearAuthErrors();
+        console.log('Calling signUp with:', email);
         const result = await window.FirebaseBridge.signUp(email, password, name);
+        console.log('signUp result:', result);
         if (!result.success) {
             showAuthError('signup', result.error);
         }
