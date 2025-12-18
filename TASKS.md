@@ -60,7 +60,7 @@
 
 ## Deferred
 
-- [ ] File split refactor (separate the thousands of lines into smaller files for easier maintenance)
+- [x] File split refactor (separate the thousands of lines into smaller files for easier maintenance)
 
 ## Future Considerations
 

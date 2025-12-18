@@ -887,6 +887,7 @@ function init() {
     document.addEventListener('click', () => {
         elements.colorDropdown?.classList.add('hidden');
         elements.priorityDropdown?.classList.add('hidden');
+        elements.userDropdown?.classList.add('hidden');
     });
 
     // Settings
