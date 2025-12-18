@@ -260,7 +260,7 @@ export async function handlePasswordReset(e) {
     clearAuthErrors();
     const result = await window.FirebaseBridge.resetPassword(email);
     if (result.success) {
-        showResetMessage('Password reset email sent! Check your inbox.');
+        showResetMessage('Password reset email sent. Check your Spam folder!');
     } else {
         showAuthError('reset', result.error);
     }
