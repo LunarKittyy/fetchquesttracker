@@ -3577,6 +3577,12 @@ body.bulk-mode .quest-content {
   background: var(--clr-bg-elevated);
 }
 
+.category-item-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .category-item-name {
   font-size: 0.9rem;
   color: var(--clr-text-primary);
@@ -3607,12 +3613,12 @@ body.bulk-mode .quest-content {
   color: var(--clr-accent-danger);
 }
 
-.category-item-delete:disabled {
+.category-item-delete.is-disabled {
   opacity: 0.3;
   cursor: not-allowed;
 }
 
-.category-item-delete:disabled:hover {
+.category-item-delete.is-disabled:hover {
   background: none;
   color: var(--clr-text-muted);
 }
@@ -3625,6 +3631,10 @@ body.bulk-mode .quest-content {
 }
 
 /* --- Custom Popup Modal --- */
+#modal-popup {
+  z-index: 2500;
+}
+
 .modal-popup {
   max-width: 400px;
   animation: popupIn 0.2s var(--ease-out-back);

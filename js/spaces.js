@@ -1,0 +1,267 @@
+/**
+ * Spaces Management Module
+ * Handles space creation, editing, switching
+ */
+
+import { state, syncActiveSpace, DEFAULT_CATEGORIES } from './state.js';
+import { $, $$, escapeHtml, getItemProgress } from './utils.js';
+import { saveState, saveStateLocal } from './storage.js';
+import { showConfirm, showAlert } from './popup.js';
+import { playSound } from './particles.js';
+
+// Callback references (set via init)
+let renderCallback = null;
+let renderArchiveCallback = null;
+let updateCategoryDropdownCallback = null;
+
+/**
+ * Initialize spaces module with callbacks
+ */
+export function initSpaces(callbacks) {
+    if (callbacks.render) renderCallback = callbacks.render;
+    if (callbacks.renderArchive) renderArchiveCallback = callbacks.renderArchive;
+    if (callbacks.updateCategoryDropdown) updateCategoryDropdownCallback = callbacks.updateCategoryDropdown;
+}
+
+/**
+ * Render the spaces sidebar
+ */
+export function renderSpaces() {
+    const list = $('#spaces-list');
+    if (!list) return;
+
+    list.innerHTML = state.spaces.map(space => {
+        const isActive = space.id === state.activeSpaceId;
+        const progress = calculateSpaceProgress(space);
+
+        return `
+            <div class="space-tab ${isActive ? 'active' : ''}" 
+                 data-id="${space.id}" 
+                 style="--space-color: ${space.color || 'var(--clr-accent-primary)'}">
+                <div class="space-progress" title="Completion: ${Math.round(progress)}%">
+                    <div class="space-progress-fill" style="height: ${progress}%"></div>
+                </div>
+                <button class="space-tab-button" title="${escapeHtml(space.name)}">
+                    ${escapeHtml(space.name)}
+                </button>
+            </div>
+        `;
+    }).join('');
+}
+
+/**
+ * Calculate overall progress percentage for a space
+ * @param {Object} space - The space object
+ * @returns {number} Progress percentage (0-100)
+ */
+export function calculateSpaceProgress(space) {
+    const items = space.items || [];
+    const archivedItems = space.archivedItems || [];
+    const allItems = [...items, ...archivedItems];
+
+    if (allItems.length === 0) return 0;
+
+    let totalCurrent = 0;
+    let totalTarget = 0;
+
+    allItems.forEach(item => {
+        const prog = getItemProgress(item);
+        totalCurrent += prog.current;
+        totalTarget += prog.total;
+    });
+
+    return totalTarget > 0 ? (totalCurrent / totalTarget) * 100 : 0;
+}
+
+/**
+ * Handle click on space tab
+ * @param {Event} e - Click event
+ */
+export function handleSpaceAction(e) {
+    const tab = e.target.closest('.space-tab');
+    if (!tab) return;
+
+    const spaceId = tab.dataset.id;
+
+    // If already active space, do nothing (use right-click to edit)
+    if (spaceId === state.activeSpaceId) {
+        return;
+    }
+
+    // Single click on different space = switch to it
+    switchSpace(spaceId);
+}
+
+/**
+ * Switch to a different space
+ * @param {string} spaceId - ID of space to switch to
+ */
+export function switchSpace(spaceId) {
+    state.activeSpaceId = spaceId;
+    syncActiveSpace();
+    saveStateLocal(); // Local only - don't sync just for switching spaces
+
+    // Complete re-render
+    if (renderCallback) renderCallback();
+    if (renderArchiveCallback) renderArchiveCallback();
+    renderSpaces();
+    if (updateCategoryDropdownCallback) updateCategoryDropdownCallback();
+
+    playSound('tick');
+}
+
+/**
+ * Handle adding a new space
+ */
+export function handleAddSpace() {
+    const colors = ['#e8b84a', '#4ecdb4', '#d45454', '#5cb572', '#6366f1', '#a855f7', '#ec4899'];
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+
+    // Open modal for new space
+    const modal = $('#modal-space');
+    if (!modal) return;
+
+    $('#edit-space-id').value = '';
+    $('#edit-space-name').value = '';
+    $('#edit-space-color').value = randomColor;
+
+    // Update modal title for new space
+    modal.querySelector('.modal-title').textContent = 'NEW SPACE';
+    $('#btn-delete-space').style.display = 'none';
+
+    // Highlight selected color
+    updateColorSwatchSelection(randomColor);
+
+    modal.classList.remove('hidden');
+    $('#edit-space-name').focus();
+}
+
+/**
+ * Open the space edit modal for an existing space
+ * @param {string} spaceId - ID of space to edit
+ */
+export function openSpaceEditModal(spaceId) {
+    const space = state.spaces.find(s => s.id === spaceId);
+    if (!space) return;
+
+    const modal = $('#modal-space');
+    if (!modal) return;
+
+    $('#edit-space-id').value = spaceId;
+    $('#edit-space-name').value = space.name;
+    $('#edit-space-color').value = space.color;
+
+    // Update modal title
+    modal.querySelector('.modal-title').textContent = 'EDIT SPACE';
+
+    // Show delete button only if not the last space
+    const deleteBtn = $('#btn-delete-space');
+    deleteBtn.style.display = state.spaces.length > 1 ? 'block' : 'none';
+
+    // Highlight selected color
+    updateColorSwatchSelection(space.color);
+
+    modal.classList.remove('hidden');
+    $('#edit-space-name').focus();
+}
+
+/**
+ * Update color swatch selection in the modal
+ * @param {string} color - The selected color
+ */
+export function updateColorSwatchSelection(color) {
+    const swatches = $$('#color-presets .color-swatch');
+    swatches.forEach(swatch => {
+        swatch.classList.toggle('selected', swatch.dataset.color === color);
+    });
+}
+
+/**
+ * Handle color swatch click in modal
+ * @param {Event} e - Click event
+ */
+export function handleColorSwatchClick(e) {
+    const swatch = e.target.closest('.color-swatch');
+    if (!swatch) return;
+
+    const color = swatch.dataset.color;
+    $('#edit-space-color').value = color;
+    updateColorSwatchSelection(color);
+}
+
+/**
+ * Handle saving space from modal
+ */
+export function handleSaveSpace() {
+    const spaceId = $('#edit-space-id').value;
+    const name = $('#edit-space-name').value.trim().toUpperCase();
+    const color = $('#edit-space-color').value;
+
+    if (!name) {
+        $('#edit-space-name').focus();
+        return;
+    }
+
+    if (spaceId) {
+        // Editing existing space
+        const space = state.spaces.find(s => s.id === spaceId);
+        if (space) {
+            space.name = name;
+            space.color = color;
+        }
+    } else {
+        // Creating new space
+        const newSpace = {
+            id: 'space-' + Date.now(),
+            name: name,
+            color: color,
+            items: [],
+            archivedItems: [],
+            categories: [...DEFAULT_CATEGORIES]
+        };
+        state.spaces.push(newSpace);
+        state.activeSpaceId = newSpace.id;
+        syncActiveSpace();
+    }
+
+    saveState();
+    if (renderCallback) renderCallback();
+    if (renderArchiveCallback) renderArchiveCallback();
+    renderSpaces();
+    if (updateCategoryDropdownCallback) updateCategoryDropdownCallback();
+
+    $('#modal-space').classList.add('hidden');
+    playSound('tick');
+}
+
+/**
+ * Handle deleting a space
+ */
+export async function handleDeleteSpace() {
+    const spaceId = $('#edit-space-id').value;
+    if (!spaceId) return;
+
+    const space = state.spaces.find(s => s.id === spaceId);
+    if (!space) return;
+
+    if (state.spaces.length <= 1) {
+        await showAlert('Cannot delete the last remaining space.', 'ERROR');
+        return;
+    }
+
+    const confirmed = await showConfirm(`Permanently delete "${space.name}" and all its quests? This cannot be undone.`, 'DELETE SPACE', true);
+    if (!confirmed) return;
+
+    state.spaces = state.spaces.filter(s => s.id !== spaceId);
+    state.activeSpaceId = state.spaces[0].id;
+    syncActiveSpace();
+
+    saveState();
+    if (renderCallback) renderCallback();
+    if (renderArchiveCallback) renderArchiveCallback();
+    renderSpaces();
+    if (updateCategoryDropdownCallback) updateCategoryDropdownCallback();
+
+    $('#modal-space').classList.add('hidden');
+    playSound('tick');
+}
