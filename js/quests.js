@@ -511,6 +511,12 @@ export function updateObjectiveDisplay(itemId, objectiveId, archiveItemCallback)
     const countEl = objEl.querySelector('.objective-count');
     if (countEl) countEl.textContent = `${objective.current}/${objective.target}`;
 
+    // Update button disabled states
+    const decrementBtn = objEl.querySelector('.objective-btn.decrement');
+    const incrementBtn = objEl.querySelector('.objective-btn.increment');
+    if (decrementBtn) decrementBtn.disabled = objective.current <= 0;
+    if (incrementBtn) incrementBtn.disabled = isObjComplete;
+
     objEl.classList.toggle('complete', isObjComplete);
     if (isObjComplete) playSound('tick');
 

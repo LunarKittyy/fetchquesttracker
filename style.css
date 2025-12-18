@@ -220,10 +220,16 @@ body.shake {
   align-items: center;
   padding: 1.5rem 0;
   gap: 1.5rem;
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
   height: 100vh;
   z-index: 100;
+}
+
+/* Offset main content to account for fixed sidebar */
+.app-layout>.container {
+  margin-left: 64px;
 }
 
 .spaces-list {

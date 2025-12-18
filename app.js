@@ -71,6 +71,8 @@ const elements = {
     itemPriority: $('#item-priority'),
     typeToggle: $('.type-toggle'),
     typeBtns: $$('.type-btn'),
+    itemFields: $('#item-fields'),
+    questFields: $('#quest-fields'),
     objectivesList: $('#objectives-list'),
     btnAddObjective: $('#btn-add-objective'),
     btnAddImage: $('#btn-add-image'),
@@ -329,6 +331,15 @@ function handleTypeToggle(e) {
     setCurrentType(newType);
     elements.typeBtns.forEach(b => b.classList.toggle('active', b.dataset.type === newType));
     elements.addQuestForm?.classList.toggle('quest-mode', newType === 'quest');
+
+    // Toggle visibility of item fields vs quest fields
+    if (newType === 'item') {
+        elements.itemFields?.classList.remove('hidden');
+        elements.questFields?.classList.add('hidden');
+    } else {
+        elements.itemFields?.classList.add('hidden');
+        elements.questFields?.classList.remove('hidden');
+    }
 }
 
 // Update form's has-content class based on whether user entered any content
@@ -364,8 +375,8 @@ function renderObjectives() {
     if (!elements.objectivesList) return;
     elements.objectivesList.innerHTML = tempObjectives.map(obj => `
         <div class="objective-row" data-id="${obj.id}">
-            <input type="text" class="objective-name-input" placeholder="Objective name" value="${escapeHtml(obj.name)}" data-field="name">
-            <input type="number" class="objective-target-input" min="1" value="${obj.target}" data-field="target">
+            <input type="text" class="input-field objective-name-input" placeholder="Objective name" value="${escapeHtml(obj.name)}" data-field="name">
+            <input type="number" class="input-field objective-target-input" min="1" value="${obj.target}" data-field="target">
             <button type="button" class="btn-remove-objective" data-id="${obj.id}">×</button>
         </div>
     `).join('');
@@ -407,7 +418,7 @@ function handleQuestAction(e) {
             let delta = action === 'increment' ? 1 : -1;
             if (e.shiftKey) delta *= state.shiftAmount;
             if (e.ctrlKey) delta *= state.ctrlAmount;
-            const newVal = Math.max(0, item.current + delta);
+            const newVal = Math.min(item.target, Math.max(0, item.current + delta));
             updateItemField(itemId, 'current', newVal);
             updateCardProgress(itemId, archiveItem);
             if (action === 'increment') playSound('tick');
@@ -422,7 +433,7 @@ function handleQuestAction(e) {
             let delta = action === 'obj-increment' ? 1 : -1;
             if (e.shiftKey) delta *= state.shiftAmount;
             if (e.ctrlKey) delta *= state.ctrlAmount;
-            const newVal = Math.max(0, objective.current + delta);
+            const newVal = Math.min(objective.target, Math.max(0, objective.current + delta));
             updateItemField(itemId, 'current', newVal, objId);
             updateObjectiveDisplay(itemId, objId, archiveItem);
             break;
