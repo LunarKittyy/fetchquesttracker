@@ -96,7 +96,7 @@ function getAuthErrorMessage(errorCode) {
 }
 
 // Storage limits
-const USER_STORAGE_LIMIT_MB = 20;
+const USER_STORAGE_LIMIT_MB = 10;
 const USER_STORAGE_LIMIT_BYTES = USER_STORAGE_LIMIT_MB * 1024 * 1024;
 const MAX_IMAGE_DIMENSION = 800;
 const IMAGE_QUALITY = 0.7;

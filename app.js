@@ -157,10 +157,13 @@
     let selectedItems = new Set();
     let cloudSyncTimeout = null;
     let syncTimeInterval = null;
+    let pendingLocalChange = false; // Flag to prevent incoming sync from overwriting local changes
 
     // --- LocalStorage Functions ---
     function saveState() {
         saveStateLocal();
+        // Mark that we have a pending local change
+        pendingLocalChange = true;
         // Auto-sync to cloud (debounced)
         if (window.FirebaseBridge?.currentUser) {
             debouncedCloudSync();
@@ -170,12 +173,59 @@
     // Save to localStorage only (no cloud sync) - for local preferences like activeSpaceId
     function saveStateLocal() {
         try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            // For logged-in users, strip base64 images to save localStorage space
+            // (images are stored in Firebase Storage instead)
+            if (window.FirebaseBridge?.currentUser) {
+                const stateForLocal = JSON.parse(JSON.stringify(state));
+                stateForLocal.spaces.forEach(space => {
+                    (space.items || []).forEach(item => {
+                        if (item.imageUrl && item.imageUrl.startsWith('data:')) {
+                            item.imageUrl = null; // Will be loaded from cloud
+                        }
+                        (item.objectives || []).forEach(obj => {
+                            if (obj.imageUrl && obj.imageUrl.startsWith('data:')) {
+                                obj.imageUrl = null;
+                            }
+                        });
+                    });
+                    (space.archivedItems || []).forEach(item => {
+                        if (item.imageUrl && item.imageUrl.startsWith('data:')) {
+                            item.imageUrl = null;
+                        }
+                    });
+                });
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(stateForLocal));
+            } else {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            }
             showSaveIndicator();
             // Update spaces progress live
             renderSpaces();
         } catch (e) {
             console.error('Failed to save to localStorage:', e);
+            // If quota exceeded, try saving without images
+            if (e.name === 'QuotaExceededError') {
+                try {
+                    const minimalState = JSON.parse(JSON.stringify(state));
+                    minimalState.spaces.forEach(space => {
+                        (space.items || []).forEach(item => { item.imageUrl = null; });
+                        (space.archivedItems || []).forEach(item => { item.imageUrl = null; });
+                    });
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(minimalState));
+                    console.log('Saved without images due to quota');
+
+                    // Notify non-logged-in users about storage limits
+                    if (!window.FirebaseBridge?.currentUser) {
+                        alert('⚠️ Storage limit reached!\n\nYour browser storage is full. Images have been removed to save your data.\n\nSign in to get cloud storage and keep your images safe!');
+                    }
+                } catch (e2) {
+                    console.error('Still failed to save:', e2);
+                    // Critical error - notify user
+                    if (!window.FirebaseBridge?.currentUser) {
+                        alert('❌ Storage full!\n\nUnable to save your data. Please sign in for cloud storage, or export your data and clear some quests.');
+                    }
+                }
+            }
         }
     }
 
@@ -204,6 +254,7 @@
             const result = await window.FirebaseBridge.saveToCloud(state);
             console.log('🔄 Sync result:', result);
             if (result.success) {
+                pendingLocalChange = false; // Local changes are now synced
                 window.FirebaseBridge.updateLastSyncTime();
                 updateSyncStatusUI('synced');
                 updateLastSyncedDisplay();
@@ -1022,8 +1073,11 @@
         const countTarget = card.querySelector('.quest-count-target');
         if (countCurrent) {
             countCurrent.textContent = progress.current;
-            countCurrent.classList.add('bumping');
-            setTimeout(() => countCurrent.classList.remove('bumping'), 250);
+            // Only animate if not in sync mode
+            if (!document.body.classList.contains('sync-update')) {
+                countCurrent.classList.add('bumping');
+                setTimeout(() => countCurrent.classList.remove('bumping'), 250);
+            }
         }
         if (countTarget) {
             countTarget.textContent = progress.total;
@@ -1880,12 +1934,12 @@
 
     // --- Settings Handlers ---
     function handleOpenSettings() {
-        // Sync modal with current state
-        elements.settingShiftAmount.value = state.shiftAmount;
-        elements.settingCtrlAmount.value = state.ctrlAmount;
-        elements.settingSoundEnabled.checked = state.soundEnabled;
-        elements.settingAutoArchive.checked = state.autoArchive;
-        elements.modalSettings.classList.remove('hidden');
+        // Sync modal with current state (with null checks)
+        if (elements.settingShiftAmount) elements.settingShiftAmount.value = state.shiftAmount;
+        if (elements.settingCtrlAmount) elements.settingCtrlAmount.value = state.ctrlAmount;
+        if (elements.settingSoundEnabled) elements.settingSoundEnabled.checked = state.soundEnabled;
+        if (elements.settingAutoArchive) elements.settingAutoArchive.checked = state.autoArchive;
+        if (elements.modalSettings) elements.modalSettings.classList.remove('hidden');
     }
 
     function handleSettingChange() {
@@ -2378,6 +2432,12 @@
                 hoveredCard.addEventListener('mouseleave', () => {
                     handleRealtimeUpdate(data);
                 }, { once: true });
+                return;
+            }
+
+            // Skip incoming sync if we have pending local changes (prevents reverting to old state)
+            if (pendingLocalChange) {
+                console.log('📡 Skipping incoming sync (local changes pending)');
                 return;
             }
 
