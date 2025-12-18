@@ -256,13 +256,6 @@ export async function handleDeleteSpace() {
     state.activeSpaceId = state.spaces[0].id;
     syncActiveSpace();
 
-    // Trigger cloud deletion explicitly
-    if (window.FirebaseBridge && window.FirebaseBridge.currentUser) {
-        window.FirebaseBridge.deleteSpace(spaceId).catch(err => {
-            console.error('Failed to delete space from cloud:', err);
-        });
-    }
-
     saveState();
     if (renderCallback) renderCallback();
     if (renderArchiveCallback) renderArchiveCallback();
