@@ -229,7 +229,7 @@ body.shake {
 
 /* Offset main content to account for fixed sidebar */
 .app-layout>.container {
-  margin-left: 64px;
+  padding-left: 64px;
 }
 
 .spaces-list {
