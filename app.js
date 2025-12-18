@@ -1,5 +1,5 @@
-/**
- * FETCH QUEST v2.0 - Enhanced Loot & Quest Tracker
+﻿/**
+ * FETCH QUEST v2.1 - Enhanced Loot & Quest Tracker
  * Vanilla JavaScript with localStorage persistence
  * Surgical DOM updates for smooth UX
  */
@@ -14,8 +14,12 @@
     // --- State ---
     let state = {
         items: [],
+        archivedItems: [],
         categories: [...DEFAULT_CATEGORIES],
-        soundEnabled: true
+        soundEnabled: false,  // Sound OFF by default
+        shiftAmount: 5,
+        ctrlAmount: 10,
+        autoArchive: true
     };
 
     // --- DOM References ---
@@ -28,12 +32,8 @@
         itemGoal: $('#item-goal'),
         itemImage: $('#item-image'),
         itemCategory: $('#item-category'),
-        categorySection: $('#category-section'),
-        toggleCategory: $('#toggle-category'),
         questContainer: $('#quest-container'),
         emptyState: $('#empty-state'),
-        btnExport: $('#btn-export'),
-        btnImport: $('#btn-import'),
         fileImport: $('#file-import'),
         statusTotal: $('#status-total'),
         statusComplete: $('#status-complete'),
@@ -51,21 +51,64 @@
         celebrationOverlay: $('#celebration-overlay'),
         soundTick: $('#sound-tick'),
         soundComplete: $('#sound-complete'),
-        soundFanfare: $('#sound-fanfare')
+        soundFanfare: $('#sound-fanfare'),
+        // Image picker elements
+        btnAddImage: $('#btn-add-image'),
+        imagePreview: $('#image-preview'),
+        modalImage: $('#modal-image'),
+        btnImageUrl: $('#btn-image-url'),
+        btnImageLocal: $('#btn-image-local'),
+        imageUrlInput: $('#image-url-input'),
+        imageUrlField: $('#image-url-field'),
+        imageFileInput: $('#image-file-input'),
+        imageModalPreview: $('#image-modal-preview'),
+        imageModalPreviewImg: $('#image-modal-preview-img'),
+        btnRemoveImage: $('#btn-remove-image'),
+        btnSaveImage: $('#btn-save-image'),
+        saveIndicator: $('#save-indicator'),
+        // Settings modal elements
+        btnSettings: $('#btn-settings'),
+        modalSettings: $('#modal-settings'),
+        settingShiftAmount: $('#setting-shift-amount'),
+        settingCtrlAmount: $('#setting-ctrl-amount'),
+        settingSoundEnabled: $('#setting-sound-enabled'),
+        settingsBtnExport: $('#settings-btn-export'),
+        settingsBtnImport: $('#settings-btn-import'),
+        settingsBtnClear: $('#settings-btn-clear'),
+        settingAutoArchive: $('#setting-auto-archive'),
+        // Archive panel elements
+        archivePanel: $('#archive-panel'),
+        archiveTrigger: $('#archive-trigger'),
+        archiveContainer: $('#archive-container'),
+        archiveCount: $('#archive-count')
     };
 
     let currentType = 'item';
     let tempObjectives = [];
+    let tempImageData = null;
     let particleCtx = null;
     let particles = [];
+    let animationsPaused = false;
+    let saveIndicatorTimeout = null;
 
     // --- LocalStorage Functions ---
     function saveState() {
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            showSaveIndicator();
         } catch (e) {
             console.error('Failed to save to localStorage:', e);
         }
+    }
+
+    function showSaveIndicator() {
+        if (saveIndicatorTimeout) {
+            clearTimeout(saveIndicatorTimeout);
+        }
+        elements.saveIndicator.classList.add('visible');
+        saveIndicatorTimeout = setTimeout(() => {
+            elements.saveIndicator.classList.remove('visible');
+        }, 1500);
     }
 
     function loadState() {
@@ -74,15 +117,20 @@
             if (stored) {
                 const parsed = JSON.parse(stored);
                 state.items = parsed.items || [];
+                state.archivedItems = parsed.archivedItems || [];
                 state.categories = parsed.categories || [...DEFAULT_CATEGORIES];
                 state.soundEnabled = parsed.soundEnabled !== false;
+                state.shiftAmount = parsed.shiftAmount || 5;
+                state.ctrlAmount = parsed.ctrlAmount || 10;
+                state.autoArchive = parsed.autoArchive !== false;
 
                 // Ensure all items have required properties
                 state.items = state.items.map(item => normalizeItem(item));
+                state.archivedItems = state.archivedItems.map(item => normalizeItem(item));
             }
         } catch (e) {
             console.error('Failed to load from localStorage:', e);
-            state = { items: [], categories: [...DEFAULT_CATEGORIES], soundEnabled: true };
+            state = { items: [], archivedItems: [], categories: [...DEFAULT_CATEGORIES], soundEnabled: false, shiftAmount: 5, ctrlAmount: 10, autoArchive: true };
         }
     }
 
@@ -568,8 +616,30 @@
 
             // Celebrate!
             celebrate(card, item.type);
+
+            // Auto-archive: mark as pending, will archive on mouse leave (if enabled)
+            if (state.autoArchive) {
+                card.classList.add('pending-archive');
+                // Add mouse leave handler for delayed archive
+                const handleMouseLeave = () => {
+                    const pendingItem = state.items.find(i => i.id === item.id);
+                    if (pendingItem && isItemComplete(pendingItem) && card.classList.contains('pending-archive')) {
+                        setTimeout(() => {
+                            // Double check it's still complete and pending
+                            const stillPending = card.classList.contains('pending-archive');
+                            const stillComplete = state.items.find(i => i.id === item.id);
+                            if (stillPending && stillComplete && isItemComplete(stillComplete)) {
+                                archiveItem(item.id);
+                            }
+                        }, 800);
+                    }
+                    card.removeEventListener('mouseleave', handleMouseLeave);
+                };
+                card.addEventListener('mouseleave', handleMouseLeave, { once: true });
+            }
         } else if (!isComplete && card.classList.contains('complete')) {
             card.classList.remove('complete');
+            card.classList.remove('pending-archive'); // Cancel pending archive
 
             // Remove trophy and complete tag
             const trophy = card.querySelector('.trophy-icon');
@@ -682,7 +752,6 @@
 
         elements.statusTotal.textContent = total;
         elements.statusComplete.textContent = complete;
-        elements.btnExport.disabled = total === 0;
     }
 
     // --- Import/Export ---
@@ -938,17 +1007,33 @@
         }
     }
 
+    // Update form's has-content class based on whether user entered any content
+    function updateFormContentState() {
+        const hasText = elements.itemName.value.trim().length > 0;
+        const hasImage = tempImageData !== null || elements.btnAddImage.classList.contains('has-image');
+        const hasObjectives = tempObjectives.length > 0;
+
+        if (hasText || hasImage || hasObjectives) {
+            elements.form.classList.add('has-content');
+        } else {
+            elements.form.classList.remove('has-content');
+        }
+    }
+
     // --- Event Handlers ---
     function handleFormSubmit(e) {
         e.preventDefault();
 
         const name = elements.itemName.value.trim();
-        if (!name) return;
+        const hasImage = tempImageData || elements.itemImage.value;
+
+        // Require either a name OR an image
+        if (!name && !hasImage) return;
 
         const data = {
             type: currentType,
-            name,
-            imageUrl: elements.itemImage.value.trim() || null,
+            name: name || 'Unnamed Item',  // Default name if image-only
+            imageUrl: tempImageData || elements.itemImage.value || null,
             category: elements.itemCategory.value,
             target: parseInt(elements.itemGoal.value) || 1,
             objectives: currentType === 'quest' ? [...tempObjectives] : []
@@ -959,10 +1044,14 @@
         // Reset form
         elements.itemName.value = '';
         elements.itemImage.value = '';
+        tempImageData = null;
+        elements.btnAddImage.classList.remove('has-image');
+        elements.imagePreview.classList.add('hidden');
         elements.itemGoal.value = '4';
         tempObjectives = [];
         elements.objectivesList.innerHTML = '';
         elements.itemName.focus();
+        updateFormContentState();
 
         playSound('tick');
     }
@@ -1022,6 +1111,7 @@
             const obj = tempObjectives.find(o => o.id === id);
             if (obj) obj.target = parseInt(e.target.value) || 1;
         });
+        updateFormContentState();
     }
 
     function handleRemoveObjective(e) {
@@ -1034,6 +1124,7 @@
         const id = row.dataset.id;
         tempObjectives = tempObjectives.filter(o => o.id !== id);
         row.remove();
+        updateFormContentState();
     }
 
     function handleQuestAction(e) {
@@ -1049,10 +1140,19 @@
         const item = state.items.find(i => i.id === itemId);
         if (!item) return;
 
+        // Determine increment amount based on modifier keys
+        let amount = 1;
+        if (e.ctrlKey || e.metaKey) {
+            amount = state.ctrlAmount || 10;
+        } else if (e.shiftKey) {
+            amount = state.shiftAmount || 5;
+        }
+
         switch (action) {
             case 'increment':
                 if (item.current < item.target) {
-                    updateItemField(itemId, 'current', item.current + 1);
+                    const newValue = Math.min(item.current + amount, item.target);
+                    updateItemField(itemId, 'current', newValue);
                     updateCardProgress(itemId);
                     playSound('tick');
                 }
@@ -1060,7 +1160,8 @@
 
             case 'decrement':
                 if (item.current > 0) {
-                    updateItemField(itemId, 'current', item.current - 1);
+                    const newValue = Math.max(item.current - amount, 0);
+                    updateItemField(itemId, 'current', newValue);
                     updateCardProgress(itemId);
                 }
                 break;
@@ -1070,7 +1171,8 @@
                     const objId = objItem.dataset.objectiveId;
                     const obj = item.objectives.find(o => o.id === objId);
                     if (obj && obj.current < obj.target) {
-                        updateItemField(itemId, 'current', obj.current + 1, objId);
+                        const newValue = Math.min(obj.current + amount, obj.target);
+                        updateItemField(itemId, 'current', newValue, objId);
                         updateObjectiveDisplay(itemId, objId);
                     }
                 }
@@ -1081,7 +1183,8 @@
                     const objId = objItem.dataset.objectiveId;
                     const obj = item.objectives.find(o => o.id === objId);
                     if (obj && obj.current > 0) {
-                        updateItemField(itemId, 'current', obj.current - 1, objId);
+                        const newValue = Math.max(obj.current - amount, 0);
+                        updateItemField(itemId, 'current', newValue, objId);
                         updateObjectiveDisplay(itemId, objId);
                     }
                 }
@@ -1120,6 +1223,8 @@
             e.target.classList.contains('modal-close') ||
             e.target.classList.contains('modal-cancel')) {
             elements.modalCategory.classList.add('hidden');
+            elements.modalImage.classList.add('hidden');
+            elements.modalSettings.classList.add('hidden');
         }
     }
 
@@ -1147,10 +1252,311 @@
     function handleKeydown(e) {
         if (e.key === 'Escape') {
             elements.modalCategory.classList.add('hidden');
+            elements.modalImage.classList.add('hidden');
+            elements.modalSettings.classList.add('hidden');
         }
         if (e.key === 'Enter' && !elements.modalCategory.classList.contains('hidden')) {
             handleSaveCategory();
         }
+    }
+
+    // --- Settings Handlers ---
+    function handleOpenSettings() {
+        // Sync modal with current state
+        elements.settingShiftAmount.value = state.shiftAmount;
+        elements.settingCtrlAmount.value = state.ctrlAmount;
+        elements.settingSoundEnabled.checked = state.soundEnabled;
+        elements.settingAutoArchive.checked = state.autoArchive;
+        elements.modalSettings.classList.remove('hidden');
+    }
+
+    function handleSettingChange() {
+        state.shiftAmount = parseInt(elements.settingShiftAmount.value) || 5;
+        state.ctrlAmount = parseInt(elements.settingCtrlAmount.value) || 10;
+        state.soundEnabled = elements.settingSoundEnabled.checked;
+        state.autoArchive = elements.settingAutoArchive.checked;
+        // Sync header toggle
+        if (elements.toggleSound) {
+            elements.toggleSound.checked = state.soundEnabled;
+        }
+        saveState();
+    }
+
+    function handleClearAllData() {
+        if (confirm('Are you sure you want to delete ALL data? This cannot be undone!')) {
+            if (confirm('Really? This will permanently remove all your tracked items.')) {
+                state.items = [];
+                state.archivedItems = [];
+                state.categories = [...DEFAULT_CATEGORIES];
+                saveState();
+                render();
+                renderArchive();
+                updateCategoryDropdown();
+                elements.modalSettings.classList.add('hidden');
+            }
+        }
+    }
+
+    // --- Archive Panel Handlers ---
+    function handleArchiveToggle() {
+        elements.archivePanel.classList.toggle('open');
+    }
+
+    function archiveItem(itemId) {
+        const itemIndex = state.items.findIndex(i => i.id === itemId);
+        if (itemIndex === -1) return;
+
+        const item = state.items[itemIndex];
+        item.archivedAt = Date.now();
+        state.archivedItems.unshift(item);
+        state.items.splice(itemIndex, 1);
+        saveState();
+
+        // Remove from DOM
+        const card = $(`.quest-card[data-id="${itemId}"]`);
+        if (card) {
+            card.style.transform = 'translateX(100%)';
+            card.style.opacity = '0';
+            setTimeout(() => {
+                card.remove();
+                cleanupEmptyCategory(item.category);
+                updateCategoryProgress(item.category);
+            }, 300);
+        }
+
+        renderArchive();
+        updateStatusBar();
+    }
+
+    function restoreItem(itemId) {
+        const itemIndex = state.archivedItems.findIndex(i => i.id === itemId);
+        if (itemIndex === -1) return;
+
+        const item = state.archivedItems[itemIndex];
+        delete item.archivedAt;
+        // Reset progress to allow re-tracking
+        if (item.type === 'item') {
+            item.current = 0;
+        } else {
+            item.objectives.forEach(obj => {
+                obj.current = 0;
+                obj.complete = false;
+            });
+        }
+        item.completedAt = null;
+
+        state.items.push(item);
+        state.archivedItems.splice(itemIndex, 1);
+        saveState();
+
+        insertItemIntoDOM(item);
+        renderArchive();
+        updateStatusBar();
+    }
+
+    function deleteArchivedItem(itemId) {
+        const itemIndex = state.archivedItems.findIndex(i => i.id === itemId);
+        if (itemIndex === -1) return;
+
+        state.archivedItems.splice(itemIndex, 1);
+        saveState();
+        renderArchive();
+    }
+
+    function deleteAllArchived() {
+        if (state.archivedItems.length === 0) return;
+        if (!confirm(`Delete all ${state.archivedItems.length} archived items? This cannot be undone.`)) return;
+
+        state.archivedItems = [];
+        saveState();
+        renderArchive();
+    }
+
+    function renderArchive() {
+        const container = elements.archiveContainer;
+        elements.archiveCount.textContent = state.archivedItems.length;
+
+        if (state.archivedItems.length === 0) {
+            container.innerHTML = `
+                <div class="archive-empty">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M9 12l2 2 4-4"/>
+                        <circle cx="12" cy="12" r="10"/>
+                    </svg>
+                    <p>No completed quests yet</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Add delete all button at top
+        let html = `
+            <button class="btn btn-danger archive-delete-all" data-action="delete-all" style="margin-bottom: 1rem; width: 100%;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+                DELETE ALL
+            </button>
+        `;
+
+        html += state.archivedItems.map(item => {
+            const timeAgo = getTimeAgo(item.archivedAt || item.completedAt);
+            const imageHTML = item.imageUrl
+                ? `<img src="${escapeHtml(item.imageUrl)}" class="archive-card-image" alt="">`
+                : '';
+            return `
+                <div class="archive-card" data-id="${item.id}">
+                    ${imageHTML}
+                    <div class="archive-card-info">
+                        <div class="archive-card-name">${escapeHtml(item.name)}</div>
+                        <div class="archive-card-meta">
+                            <span>${escapeHtml(item.category)}</span>
+                            <span>•</span>
+                            <span>${timeAgo}</span>
+                        </div>
+                    </div>
+                    <button class="archive-card-restore" data-action="restore" title="Restore to active">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="1 4 1 10 7 10"/>
+                            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+                        </svg>
+                    </button>
+                    <button class="archive-card-delete" data-action="delete" title="Delete permanently">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                    </button>
+                </div>
+            `;
+        }).join('');
+
+        container.innerHTML = html;
+    }
+
+    function getTimeAgo(timestamp) {
+        if (!timestamp) return '';
+        const seconds = Math.floor((Date.now() - timestamp) / 1000);
+        if (seconds < 60) return 'just now';
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `${minutes}m ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}h ago`;
+        const days = Math.floor(hours / 24);
+        return `${days}d ago`;
+    }
+
+    function handleArchiveAction(e) {
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+
+        const action = btn.dataset.action;
+
+        // Handle delete all (not in a card)
+        if (action === 'delete-all') {
+            deleteAllArchived();
+            return;
+        }
+
+        const card = btn.closest('.archive-card');
+        if (!card) return;
+        const itemId = card.dataset.id;
+
+        if (action === 'restore') {
+            restoreItem(itemId);
+        } else if (action === 'delete') {
+            deleteArchivedItem(itemId);
+        }
+    }
+
+    // --- Image Picker Handlers ---
+    function handleOpenImageModal() {
+        elements.modalImage.classList.remove('hidden');
+        elements.imageUrlInput.classList.add('hidden');
+        elements.imageModalPreview.classList.add('hidden');
+        elements.btnImageUrl.classList.remove('active');
+        elements.btnImageLocal.classList.remove('active');
+        elements.imageUrlField.value = '';
+    }
+
+    function handleImageUrlOption() {
+        elements.btnImageUrl.classList.add('active');
+        elements.btnImageLocal.classList.remove('active');
+        elements.imageUrlInput.classList.remove('hidden');
+        elements.imageUrlField.focus();
+    }
+
+    function handleImageLocalOption() {
+        elements.btnImageUrl.classList.remove('active');
+        elements.btnImageLocal.classList.add('active');
+        elements.imageFileInput.click();
+    }
+
+    function handleImageUrlChange() {
+        const url = elements.imageUrlField.value.trim();
+        if (url) {
+            elements.imageModalPreviewImg.src = url;
+            elements.imageModalPreview.classList.remove('hidden');
+        } else {
+            elements.imageModalPreview.classList.add('hidden');
+        }
+    }
+
+    function handleImageFileSelect(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function (event) {
+            const base64 = event.target.result;
+            elements.imageModalPreviewImg.src = base64;
+            elements.imageModalPreview.classList.remove('hidden');
+            elements.imageUrlInput.classList.add('hidden');
+        };
+        reader.readAsDataURL(file);
+        e.target.value = null;
+    }
+
+    function handleRemovePreviewImage() {
+        elements.imageModalPreview.classList.add('hidden');
+        elements.imageModalPreviewImg.src = '';
+        elements.imageUrlField.value = '';
+    }
+
+    function handleSaveImage() {
+        const previewSrc = elements.imageModalPreviewImg.src;
+        if (previewSrc && previewSrc !== window.location.href) {
+            tempImageData = previewSrc;
+            elements.btnAddImage.classList.add('has-image');
+            // Show small preview in form
+            elements.imagePreview.innerHTML = `<img src="${tempImageData}" alt="Preview">`;
+            elements.imagePreview.classList.remove('hidden');
+        } else {
+            tempImageData = null;
+            elements.btnAddImage.classList.remove('has-image');
+            elements.imagePreview.classList.add('hidden');
+        }
+        elements.modalImage.classList.add('hidden');
+        updateFormContentState();
+    }
+
+    // --- Animation Pause on Blur ---
+    function handleWindowFocus() {
+        animationsPaused = false;
+        document.body.classList.remove('animations-paused');
+    }
+
+    function handleWindowBlur() {
+        animationsPaused = true;
+        document.body.classList.add('animations-paused');
+    }
+
+    // --- Textarea auto-resize ---
+    function handleTextareaInput(e) {
+        const textarea = e.target;
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
     }
 
     // --- Initialization ---
@@ -1161,7 +1567,9 @@
         initParticles();
 
         // Sound toggle state
-        elements.toggleSound.checked = state.soundEnabled;
+        if (elements.toggleSound) {
+            elements.toggleSound.checked = state.soundEnabled;
+        }
 
         // Event listeners
         elements.form.addEventListener('submit', handleFormSubmit);
@@ -1173,12 +1581,46 @@
         elements.btnSaveCategory.addEventListener('click', handleSaveCategory);
         elements.modalCategory.addEventListener('click', handleCloseModal);
         elements.toggleSound.addEventListener('change', handleSoundToggle);
-        elements.btnExport.addEventListener('click', handleExport);
-        elements.btnImport.addEventListener('click', handleImportClick);
         elements.fileImport.addEventListener('change', handleFileChange);
         document.addEventListener('keydown', handleKeydown);
 
-        console.log('FETCH QUEST v2.0 initialized. Local storage active.');
+        // Image picker listeners
+        elements.btnAddImage.addEventListener('click', handleOpenImageModal);
+        elements.btnImageUrl.addEventListener('click', handleImageUrlOption);
+        elements.btnImageLocal.addEventListener('click', handleImageLocalOption);
+        elements.imageUrlField.addEventListener('input', handleImageUrlChange);
+        elements.imageFileInput.addEventListener('change', handleImageFileSelect);
+        elements.btnRemoveImage.addEventListener('click', handleRemovePreviewImage);
+        elements.btnSaveImage.addEventListener('click', handleSaveImage);
+        elements.modalImage.addEventListener('click', handleCloseModal);
+
+        // Settings modal listeners
+        elements.btnSettings.addEventListener('click', handleOpenSettings);
+        elements.modalSettings.addEventListener('click', handleCloseModal);
+        elements.settingShiftAmount.addEventListener('change', handleSettingChange);
+        elements.settingCtrlAmount.addEventListener('change', handleSettingChange);
+        elements.settingSoundEnabled.addEventListener('change', handleSettingChange);
+        elements.settingAutoArchive.addEventListener('change', handleSettingChange);
+        elements.settingsBtnExport.addEventListener('click', handleExport);
+        elements.settingsBtnImport.addEventListener('click', handleImportClick);
+        elements.settingsBtnClear.addEventListener('click', handleClearAllData);
+
+        // Archive panel listeners
+        elements.archiveTrigger.addEventListener('click', handleArchiveToggle);
+        elements.archiveContainer.addEventListener('click', handleArchiveAction);
+
+        // Animation pause on window blur
+        window.addEventListener('focus', handleWindowFocus);
+        window.addEventListener('blur', handleWindowBlur);
+
+        // Textarea auto-resize and form content state
+        elements.itemName.addEventListener('input', handleTextareaInput);
+        elements.itemName.addEventListener('input', updateFormContentState);
+
+        // Render archive on load
+        renderArchive();
+
+        console.log('FETCH QUEST v2.2 initialized. Local storage active.');
     }
 
     // Start the app

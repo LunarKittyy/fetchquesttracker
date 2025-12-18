@@ -42,25 +42,17 @@
                 </div>
             </div>
             <div class="header-actions">
-                <button id="btn-export" class="btn btn-secondary" title="Export all data to JSON" disabled>
+                <button id="btn-settings" class="btn btn-secondary" title="Settings">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <polyline points="7 10 12 15 17 10" />
-                        <line x1="12" y1="15" x2="12" y2="3" />
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
                     </svg>
-                    <span>EXPORT</span>
-                </button>
-                <button id="btn-import" class="btn btn-secondary" title="Import data from JSON">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <polyline points="17 8 12 3 7 8" />
-                        <line x1="12" y1="3" x2="12" y2="15" />
-                    </svg>
-                    <span>IMPORT</span>
+                    <span>SETTINGS</span>
                 </button>
                 <input type="file" id="file-import" accept=".json" class="hidden" aria-label="Import JSON file">
                 <label class="toggle-container" title="Toggle sound effects">
-                    <input type="checkbox" id="toggle-sound" title="Toggle sound effects" checked>
+                    <input type="checkbox" id="toggle-sound" title="Toggle sound effects">
                     <span class="toggle-label">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
@@ -97,9 +89,20 @@
                 <div class="form-row">
                     <div class="form-group form-group-name">
                         <label for="item-name" class="input-label">DESIGNATION</label>
-                        <input type="text" id="item-name" class="input-field"
-                            placeholder="e.g., Film Reels, Main Story Quest..." required>
+                        <div class="input-with-image">
+                            <textarea id="item-name" class="input-field input-autosize" rows="1"
+                                placeholder="e.g., Film Reels, or leave blank for image-only..."></textarea>
+                            <button type="button" id="btn-add-image" class="btn-image" title="Add image">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                    <circle cx="8.5" cy="8.5" r="1.5" />
+                                    <polyline points="21 15 16 10 5 21" />
+                                </svg>
+                            </button>
+                            <input type="hidden" id="item-image" value="">
+                        </div>
                     </div>
+                    <div id="image-preview" class="image-preview hidden"></div>
                     <div class="form-group form-group-category">
                         <label for="item-category" class="input-label">CLASSIFICATION</label>
                         <div class="category-select-wrapper">
@@ -116,15 +119,6 @@
                     </div>
                 </div>
 
-                <!-- Item-specific: quantity -->
-                <div id="item-fields" class="form-row">
-                    <div class="form-group form-group-goal">
-                        <label for="item-goal" class="input-label">QTY REQUIRED</label>
-                        <input type="number" id="item-goal" class="input-field input-number" min="1" max="9999"
-                            value="4">
-                    </div>
-                </div>
-
                 <!-- Quest-specific: objectives -->
                 <div id="quest-fields" class="form-section hidden">
                     <div class="objectives-header">
@@ -134,24 +128,14 @@
                     <div id="objectives-list" class="objectives-list"></div>
                 </div>
 
-                <!-- Optional image -->
-                <div class="form-row">
-                    <div class="form-group form-group-image">
-                        <label for="item-image" class="input-label">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                class="label-icon" aria-hidden="true">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                                <circle cx="8.5" cy="8.5" r="1.5" />
-                                <polyline points="21 15 16 10 5 21" />
-                            </svg>
-                            IMAGE URL (optional)
-                        </label>
-                        <input type="url" id="item-image" class="input-field"
-                            placeholder="https://example.com/image.png">
-                    </div>
-                </div>
 
                 <div class="form-actions">
+                    <!-- Item-specific: quantity (inline with submit) -->
+                    <div id="item-fields" class="form-group-inline">
+                        <label for="item-goal" class="input-label">QTY</label>
+                        <input type="number" id="item-goal" class="input-field input-number" min="1" max="9999"
+                            value="4">
+                    </div>
                     <button type="submit" class="btn btn-primary btn-submit">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                             <circle cx="12" cy="12" r="10" />
@@ -189,13 +173,39 @@
                 <span class="status-label">ACQUIRED:</span>
                 <span id="status-complete" class="status-value">0</span>
             </div>
-            <div class="status-divider"></div>
-            <div class="status-item status-storage">
-                <span class="status-indicator"></span>
-                <span class="status-label">LOCAL STORAGE ACTIVE</span>
-            </div>
         </footer>
     </div>
+
+    <!-- Archive Panel (Slide-out for completed quests) -->
+    <aside id="archive-panel" class="archive-panel">
+        <button id="archive-trigger" class="archive-trigger" title="Toggle Archive"
+            aria-label="Toggle completed quests archive">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6" />
+            </svg>
+        </button>
+        <div class="archive-content">
+            <div class="archive-header">
+                <h2 class="archive-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 8v13H3V8M1 3h22v5H1z" />
+                        <path d="M10 12h4" />
+                    </svg>
+                    ARCHIVE
+                </h2>
+                <span id="archive-count" class="archive-count">0</span>
+            </div>
+            <div id="archive-container" class="archive-items">
+                <div class="archive-empty">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M9 12l2 2 4-4" />
+                        <circle cx="12" cy="12" r="10" />
+                    </svg>
+                    <p>No completed quests yet</p>
+                </div>
+            </div>
+        </div>
+    </aside>
 
     <!-- Add Category Modal -->
     <div id="modal-category" class="modal hidden">
@@ -220,20 +230,181 @@
         </div>
     </div>
 
-    <!-- Audio elements for satisfaction -->
+    <!-- Settings Modal -->
+    <div id="modal-settings" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content modal-content-wide">
+            <div class="modal-header">
+                <h3 class="modal-title">SETTINGS</h3>
+                <button type="button" class="modal-close" aria-label="Close modal">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body settings-body">
+                <!-- Bulk Increment Settings -->
+                <div class="settings-section">
+                    <h4 class="settings-section-title">BULK INCREMENT</h4>
+                    <p class="settings-hint">Hold Shift or Ctrl while clicking +/- to add/subtract in bulk</p>
+                    <div class="settings-row">
+                        <label for="setting-shift-amount" class="settings-label">
+                            <kbd>Shift</kbd> + Click Amount
+                        </label>
+                        <input type="number" id="setting-shift-amount" class="input-field input-number" min="1"
+                            max="1000" value="5">
+                    </div>
+                    <div class="settings-row">
+                        <label for="setting-ctrl-amount" class="settings-label">
+                            <kbd>Ctrl</kbd> + Click Amount
+                        </label>
+                        <input type="number" id="setting-ctrl-amount" class="input-field input-number" min="1"
+                            max="1000" value="10">
+                    </div>
+                </div>
+
+                <!-- Sound Settings -->
+                <div class="settings-section">
+                    <h4 class="settings-section-title">SOUND</h4>
+                    <div class="settings-row">
+                        <label for="setting-sound-enabled" class="settings-label">Sound Effects</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="setting-sound-enabled">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Archive Settings -->
+                <div class="settings-section">
+                    <h4 class="settings-section-title">ARCHIVE</h4>
+                    <p class="settings-hint">Completed quests can be automatically moved to the archive panel</p>
+                    <div class="settings-row">
+                        <label for="setting-auto-archive" class="settings-label">Auto-Archive Completed</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="setting-auto-archive" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Data Management -->
+                <div class="settings-section">
+                    <h4 class="settings-section-title">DATA MANAGEMENT</h4>
+                    <div class="settings-row settings-row-buttons">
+                        <button type="button" id="settings-btn-export" class="btn btn-secondary">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="7 10 12 15 17 10" />
+                                <line x1="12" y1="15" x2="12" y2="3" />
+                            </svg>
+                            EXPORT DATA
+                        </button>
+                        <button type="button" id="settings-btn-import" class="btn btn-secondary">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="17 8 12 3 7 8" />
+                                <line x1="12" y1="3" x2="12" y2="15" />
+                            </svg>
+                            IMPORT DATA
+                        </button>
+                    </div>
+                    <div class="settings-row settings-row-buttons">
+                        <button type="button" id="settings-btn-clear" class="btn btn-danger">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6" />
+                                <path
+                                    d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            </svg>
+                            CLEAR ALL DATA
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary modal-close">DONE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Picker Modal -->
+    <div id="modal-image" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">ADD IMAGE</h3>
+                <button type="button" class="modal-close" aria-label="Close modal">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="image-options">
+                    <button type="button" id="btn-image-url" class="image-option-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                        </svg>
+                        <span>FROM URL</span>
+                    </button>
+                    <button type="button" id="btn-image-local" class="image-option-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="17 8 12 3 7 8" />
+                            <line x1="12" y1="3" x2="12" y2="15" />
+                        </svg>
+                        <span>LOCAL FILE</span>
+                    </button>
+                </div>
+                <div id="image-url-input" class="image-input-section hidden">
+                    <input type="url" id="image-url-field" class="input-field"
+                        placeholder="https://example.com/image.png">
+                </div>
+                <input type="file" id="image-file-input" accept="image/*" class="hidden" aria-label="Select image file"
+                    title="Select an image file">
+                <div id="image-modal-preview" class="image-modal-preview hidden">
+                    <img id="image-modal-preview-img" src="" alt="Preview">
+                    <button type="button" id="btn-remove-image" class="btn-remove-preview" title="Remove image">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary modal-cancel">CANCEL</button>
+                <button type="button" class="btn btn-primary" id="btn-save-image">APPLY</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Save Indicator -->
+    <div id="save-indicator" class="save-indicator" aria-live="polite">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+            <polyline points="22 4 12 14.01 9 11.01" />
+        </svg>
+        <span>SAVED</span>
+    </div>
+
+    <!-- Audio elements - Using Web Audio API via JS is preferred, these are fallbacks -->
     <audio id="sound-tick" preload="auto">
         <source
-            src="data:audio/wav;base64,UklGRl4AAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YToAAAAgICAhIyUnKSsuMTQ2ODo8PT4+Pj08Ozo4NjQxLysnJSMhIB8eHRwcHB0eHyAiIyUnKCorLC0uLi4tLCspJyUjIR8="
+            src="data:audio/wav;base64,UklGRpYAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YXIAAAAEBggKDA4QEhQWGBocHh4eHh4cGhgWFBIQDgwKCAYEAgD+/Pz8/Pz8/v4AAgQGCAoMDhASFBYYGhweHh4eHhwaGBYUEhAODAoIBgQCAP7+/v7+/v7+AAICBAQGBggICgoMDA4ODg4ODgwMCgoICAYGBAQCAgAA"
             type="audio/wav">
     </audio>
     <audio id="sound-complete" preload="auto">
         <source
-            src="data:audio/wav;base64,UklGRqYAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YYIAAABMWGRwd4CIj5aalp+kqKqsrq6urKmmoZuVjYR7cWZaT0M4LiQbEwoDAP/8+/r5+fn6/P4BBAkPFRwhKjI7Q0xVXmd2foaOlJugpaqusLGxsK2qpqGblI2Ef3hxamReWlVRT05NTU1OT1FUWFxgZGhtc3h+hIqQlZqeoqWoqqutrq6u"
+            src="data:audio/wav;base64,UklGRqgBAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YYQBAAB4gIiQmKCosLC4uLi4sKigoJiQiIB4cGhgWFBQSEhAQDg4MDAwMDAwODhASEhQUFhgaHB4gIiQmKCosLi4wMDAwMDAuLCooJiQiIBwcGhgWFBISEBAODgwMCgoKCgoKCgwMDhAQEhIUFhgaHBwgIiQmKCosLC4uLi4uLCwqKCgmJCIgHhwcGhoYFhQUEhIQEA4ODAwLCwsLCwwMDA4OEBASEhQWFhgaGhwcHiAiJCYoKiwsLCwsLCwsLCwqKiooKCYmJCQiIiAgHh4cHBwcHBwcHBweHiAgIiIkJCYmKCgqKissLC0tLS0tLS0tLCwsKiopKSkoKCgnp6enp6enp6enp6goKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoJ6enp6enp6enp6enp6enp6enp6cnJycnJycnJycmpqampqampqYmJiYl5eXl5eXlpaWlpaWlpaWlpaWl5eXl5eYmJiYmJk="
             type="audio/wav">
     </audio>
     <audio id="sound-fanfare" preload="auto">
         <source
-            src="data:audio/wav;base64,UklGRgoCAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YeYBAABKVGBseYWQm6avt77Fys/T1tjZ2djX1dLOyMK8tKyknJSMhHx0bGReWFJNSUVCQD8/QEFDRkpPVFxkaXF5gYmRmJ+lq7C1ubzAw8XHyMnJyMfFw8C8uLOuqKOemJKMhoB6dG9qaWlqbG9zdnp+goaJjZCTlpmbnZ+goaGioqGhoJ+enZuZl5WTkY+NjIqJiIeHh4eHiImKjI6QkpSXmZyeoaOlp6mqq6ytrq6urq2tq6qopaOgn5ycm5qamZmZmpucnZ+ho6WnqKqrrq+wsrO0tbW1tbW0s7Kwrq2rqainpqWlpKSkpKSlpaanqKmrrK6vsLGys7S0tbW1tbS0s7Kxr62sq6qpqKenpqampaWlpaanqKmqq6ytra+wsrO0tba3t7i4uLi4t7a1tLKxr62sq6qpqKenpqampqampqenqKmqq6ytrq+wsrO0tba3uLm5urq6urm5uLe2tbSzsrGwrq2sq6qqqampqampqampqqqrrKytrq+wsrO0tba3uLm5urq7u7u7u7u6ubm4t7a1tLOysK+uraysq6urq6urq6usrK2ur7CxsrO0tba3uLm6u7y8vb29vb29vLy7urm4t7a1tLOysbCvrq6traysrKysrKytrq+wsLGys7S1tre4ubq7vL29vr6+vr6+vr29vLu6ubm4t7a1tLOysbCwr6+vrq6urq6vr7CxsrO0tba3uLm6u7y9vr+/wMDAv7+/v7++vr29vLu6ubm4t7a1tLSzs7Ozs7O0tLW2t7i5uru8vb6/wMHBwcHBwcHBwcDAv7++vby7urm4t7e2trW1tbW1tra3uLm6u7y9vr/AwcHCwsLCwsLCwcHAwL+/vr28u7q5ubi3t7e3t7e3uLi5uru8vb6/wMHCwsPDw8PDw8PCwsHBwMC/vr28u7q5ubm4uLi4uLm5urq7vL2+v8DBwcLDw8TExMTExMPDwsLBwMC/vr69vLu7u7q6urq6u7u8vL2+v8DBwsLDxMTFxcXFxcXExMPDwsHAwL++vr29vLy8u7u7u7u8vL2+vr/AwcLDxMXFxsbGxsbGxsXFxMTDwsHAwL+/vr69vb29vb29vb6+v8DAwcLDxMXGxsfHx8fHx8bGxcXEw8LBwcDAv7+/vr6+vr6+vr+/wMDBwsLDxMXGx8fIyMjIyMfHxsbFxMTDwsHBwMDAv7+/v7+/v8DAwMHCwsPExcbHyMjJycnJycjIx8bGxcTDw8LBwcDAwMDAwMDAwMHBwcLDxMXGx8jIycnKysrKycnIyMfGxcXEw8PCwsHBwcHBwcHBwcLCw8PExcbHyMnJysrLy8vKysnJyMfGxsXExMPDwsLCwsLCwsLCw8PDxMXGx8jJysrLy8zMzMvLysnJyMfGxsXFxMTDw8PDw8PDw8TExMXGx8jJysrLzMzNzc3My8vKycnIx8bGxcXExMREREREREREREVFRkZH"
+            src="data:audio/wav;base64,UklGRqoCAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YYYCAABwgJCgoLCwwMDAuLCooJCQgIBweHh4gICIkJigqLC4wMjIyMjAwLiwqKCYkIiAgHh4cHBweHiAgIiQmKCosLjAyMjQ0NDQyMjAuLCooJiQiICAdnZwcHR0eHx+goaIjJCUlpianJ6ennhweICAiJCYoKiwuMDIyNDY2NjY0MzIwLiwqKSckIyIf318eHZ2dnR0dnZ4fH6ChouOkpSWmZudo6OlpaqssLC4wMDIzMzQ0NTU1NTQ0MzIxMC8uLSwoJuXko6KhoR+fnx4dnh4eHx+goaIkJSYmqCkqK6ysrS2ur6+wsLExMTExMTExMC+vLq4tLCspqCYkIiAdnJ0dHR2dnh6fH6ChomMj5KUlpeam52foKGipKaoqqysrq6usLCurrCwsK6urq6urKqopp6WjIB2bnJwcHJ0dHZ4fICEhoqOkJKSmJyeo6aoq66wsbKzs7S0tLSzsrGvra2sq6mopaOenZqYlpSSjoyKhoKAenZ2dHR0dnZ4eHx+goaIi46QkpWYm5yeoaOkpqeop6ioqKiopqampKOhoJ6cmpmXlZSTkY6MioiGhIKAgH58enp4eHh4eHl6ent8fX5/gIGChIWGhoaGhoaEhIOCgYB/foB+fnx8fHt6enp4eHh2dnh4dnZ2dnd4eXp7fH1+f4CAgYKCgoKCgoKBgH9/f35+fn19fHx8fHx8fHx8fX5+fn9/f4CAgICAgICAgIB/f39+fn5+fn5+fn5+fn5+fn9/f39/gIB/f39/f39/f39/f39/f39+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fnx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8"
             type="audio/wav">
     </audio>
 
