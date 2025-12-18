@@ -2508,29 +2508,28 @@
         document.addEventListener('keydown', handleKeydown);
 
         // Image picker listeners
-        elements.btnAddImage.addEventListener('click', handleOpenImageModal);
-        elements.btnImageUrl.addEventListener('click', handleImageUrlOption);
-        elements.btnImageLocal.addEventListener('click', handleImageLocalOption);
-        elements.imageUrlField.addEventListener('input', handleImageUrlChange);
-        elements.imageFileInput.addEventListener('change', handleImageFileSelect);
-        elements.btnRemoveImage.addEventListener('click', handleRemovePreviewImage);
-        elements.btnSaveImage.addEventListener('click', handleSaveImage);
-        elements.modalImage.addEventListener('click', handleCloseModal);
+        if (elements.btnAddImage) elements.btnAddImage.addEventListener('click', handleOpenImageModal);
+        if (elements.btnImageUrl) elements.btnImageUrl.addEventListener('click', handleImageUrlOption);
+        if (elements.btnImageLocal) elements.btnImageLocal.addEventListener('click', handleImageLocalOption);
+        if (elements.imageUrlField) elements.imageUrlField.addEventListener('input', handleImageUrlChange);
+        if (elements.imageFileInput) elements.imageFileInput.addEventListener('change', handleImageFileSelect);
+        if (elements.btnRemoveImage) elements.btnRemoveImage.addEventListener('click', handleRemovePreviewImage);
+        if (elements.btnSaveImage) elements.btnSaveImage.addEventListener('click', handleSaveImage);
+        if (elements.modalImage) elements.modalImage.addEventListener('click', handleCloseModal);
 
         // Settings modal listeners
-        elements.btnSettings.addEventListener('click', handleOpenSettings);
-        elements.modalSettings.addEventListener('click', handleCloseModal);
-        elements.settingShiftAmount.addEventListener('change', handleSettingChange);
-        elements.settingCtrlAmount.addEventListener('change', handleSettingChange);
-        elements.settingSoundEnabled.addEventListener('change', handleSettingChange);
-        elements.settingAutoArchive.addEventListener('change', handleSettingChange);
-        elements.settingsBtnExport.addEventListener('click', handleExport);
-        elements.settingsBtnImport.addEventListener('click', handleImportClick);
-        elements.settingsBtnClear.addEventListener('click', handleClearAllData);
+        if (elements.btnSettings) elements.btnSettings.addEventListener('click', handleOpenSettings);
+        if (elements.modalSettings) elements.modalSettings.addEventListener('click', handleCloseModal);
+        if (elements.settingShiftAmount) elements.settingShiftAmount.addEventListener('change', handleSettingChange);
+        if (elements.settingCtrlAmount) elements.settingCtrlAmount.addEventListener('change', handleSettingChange);
+        if (elements.settingAutoArchive) elements.settingAutoArchive.addEventListener('change', handleSettingChange);
+        if (elements.settingsBtnExport) elements.settingsBtnExport.addEventListener('click', handleExport);
+        if (elements.settingsBtnImport) elements.settingsBtnImport.addEventListener('click', handleImportClick);
+        if (elements.settingsBtnClear) elements.settingsBtnClear.addEventListener('click', handleClearAllData);
 
         // Archive panel listeners
-        elements.archiveTrigger.addEventListener('click', handleArchiveToggle);
-        elements.archiveContainer.addEventListener('click', handleArchiveAction);
+        if (elements.archiveTrigger) elements.archiveTrigger.addEventListener('click', handleArchiveToggle);
+        if (elements.archiveContainer) elements.archiveContainer.addEventListener('click', handleArchiveAction);
 
         // Spaces sidebar listeners
         if (elements.btnAddSpace) {
