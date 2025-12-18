@@ -3210,6 +3210,41 @@ body.bulk-mode .quest-content {
   color: var(--clr-accent-danger);
 }
 
+/* Storage Usage Bar */
+.storage-usage {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: var(--border-subtle);
+}
+
+.storage-bar {
+  height: 6px;
+  background: var(--clr-bg-deep);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 0.35rem;
+}
+
+.storage-fill {
+  height: 100%;
+  background: var(--clr-accent-secondary);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.storage-fill.warning {
+  background: var(--clr-accent-primary);
+}
+
+.storage-fill.danger {
+  background: var(--clr-accent-danger);
+}
+
+.storage-text {
+  font-size: 0.65rem;
+  color: var(--clr-text-muted);
+}
+
 .dropdown-item {
   display: flex;
   align-items: center;

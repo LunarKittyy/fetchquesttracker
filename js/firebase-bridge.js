@@ -27,6 +27,14 @@ import {
     deleteDoc,
     writeBatch
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import {
+    getStorage,
+    ref,
+    uploadString,
+    getDownloadURL,
+    deleteObject,
+    listAll
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-storage.js";
 
 // Firebase Configuration - FetchQuest Project
 const firebaseConfig = {
@@ -49,6 +57,7 @@ const isFirebaseConfigured = () => {
 let app = null;
 let auth = null;
 let db = null;
+let storage = null;
 let googleProvider = null;
 
 if (isFirebaseConfigured()) {
@@ -56,6 +65,7 @@ if (isFirebaseConfigured()) {
         app = initializeApp(firebaseConfig);
         auth = getAuth(app);
         db = getFirestore(app);
+        storage = getStorage(app);
         googleProvider = new GoogleAuthProvider();
         console.log('🔥 Firebase initialized successfully');
     } catch (error) {
@@ -84,9 +94,64 @@ function getAuthErrorMessage(errorCode) {
     return errorMessages[errorCode] || 'An error occurred. Please try again.';
 }
 
+// Storage limits
+const USER_STORAGE_LIMIT_MB = 50;
+const USER_STORAGE_LIMIT_BYTES = USER_STORAGE_LIMIT_MB * 1024 * 1024;
+const MAX_IMAGE_DIMENSION = 800;
+const IMAGE_QUALITY = 0.7;
+
+// Compress and resize image
+async function compressImage(base64Data) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            // Calculate new dimensions
+            let width = img.width;
+            let height = img.height;
+            
+            if (width > MAX_IMAGE_DIMENSION || height > MAX_IMAGE_DIMENSION) {
+                if (width > height) {
+                    height = (height / width) * MAX_IMAGE_DIMENSION;
+                    width = MAX_IMAGE_DIMENSION;
+                } else {
+                    width = (width / height) * MAX_IMAGE_DIMENSION;
+                    height = MAX_IMAGE_DIMENSION;
+                }
+            }
+            
+            // Create canvas and draw resized image
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Convert to compressed JPEG
+            const compressed = canvas.toDataURL('image/jpeg', IMAGE_QUALITY);
+            resolve(compressed);
+        };
+        img.onerror = () => resolve(base64Data); // Return original if error
+        img.src = base64Data;
+    });
+}
+
+// Get base64 data size in bytes
+function getBase64Size(base64String) {
+    if (!base64String) return 0;
+    // Remove data URL prefix
+    const base64 = base64String.split(',')[1] || base64String;
+    // Calculate size (base64 is ~4/3 of original size)
+    return Math.ceil((base64.length * 3) / 4);
+}
+
 // Expose Firebase Bridge globally for app.js to use
 window.FirebaseBridge = {
     isConfigured: isFirebaseConfigured(),
+    
+    // Storage tracking
+    storageUsedBytes: 0,
+    storageLimitBytes: USER_STORAGE_LIMIT_BYTES,
+    storageLimitMB: USER_STORAGE_LIMIT_MB,
     
     // Auth state
     currentUser: null,
@@ -161,7 +226,94 @@ window.FirebaseBridge = {
         }
     },
     
-    // Firestore: Save state
+    // Helper: Check if string is a base64 data URL
+    isBase64Image(str) {
+        return str && typeof str === 'string' && str.startsWith('data:image');
+    },
+    
+    // Helper: Check if URL is a Firebase Storage URL (already uploaded)
+    isStorageUrl(str) {
+        return str && typeof str === 'string' && str.includes('firebasestorage.googleapis.com');
+    },
+    
+    // Get storage usage info
+    getStorageInfo() {
+        const usedMB = (this.storageUsedBytes / (1024 * 1024)).toFixed(1);
+        const percent = Math.min(100, (this.storageUsedBytes / this.storageLimitBytes) * 100).toFixed(0);
+        return {
+            usedBytes: this.storageUsedBytes,
+            usedMB: parseFloat(usedMB),
+            limitMB: this.storageLimitMB,
+            percent: parseInt(percent),
+            remaining: this.storageLimitBytes - this.storageUsedBytes
+        };
+    },
+    
+    // Helper: Upload a single base64 image to Storage (with compression)
+    async uploadImage(base64Data, path) {
+        if (!storage || !this.currentUser) return null;
+        
+        // Skip if already a storage URL
+        if (this.isStorageUrl(base64Data)) return base64Data;
+        
+        try {
+            // Compress image first
+            const compressed = await compressImage(base64Data);
+            const imageSize = getBase64Size(compressed);
+            
+            // Check storage limit
+            if (this.storageUsedBytes + imageSize > this.storageLimitBytes) {
+                console.warn('Storage limit exceeded, skipping image upload');
+                return null;
+            }
+            
+            const storageRef = ref(storage, `users/${this.currentUser.uid}/${path}`);
+            await uploadString(storageRef, compressed, 'data_url');
+            const url = await getDownloadURL(storageRef);
+            
+            // Track storage usage
+            this.storageUsedBytes += imageSize;
+            
+            return url;
+        } catch (error) {
+            console.error('Image upload error:', error);
+            return null;
+        }
+    },
+    
+    // Helper: Process items/spaces and upload images, returning modified data with URLs
+    async processItemsForUpload(items, spaceId, prefix = 'items') {
+        const processedItems = [];
+        for (const item of items) {
+            const processedItem = { ...item };
+            
+            // Upload main image if base64
+            if (this.isBase64Image(item.imageUrl)) {
+                const path = `${spaceId}/${prefix}/${item.id}/main.jpg`;
+                const url = await this.uploadImage(item.imageUrl, path);
+                if (url) processedItem.imageUrl = url;
+            }
+            
+            // Process objectives if they have images
+            if (item.objectives && item.objectives.length > 0) {
+                processedItem.objectives = [];
+                for (const obj of item.objectives) {
+                    const processedObj = { ...obj };
+                    if (this.isBase64Image(obj.imageUrl)) {
+                        const objPath = `${spaceId}/${prefix}/${item.id}/obj_${obj.id}.jpg`;
+                        const objUrl = await this.uploadImage(obj.imageUrl, objPath);
+                        if (objUrl) processedObj.imageUrl = objUrl;
+                    }
+                    processedItem.objectives.push(processedObj);
+                }
+            }
+            
+            processedItems.push(processedItem);
+        }
+        return processedItems;
+    },
+    
+    // Firestore: Save state (with image upload to Storage)
     async saveToCloud(state) {
         if (!db || !this.currentUser) return { success: false, error: 'Not logged in' };
         try {
@@ -176,18 +328,27 @@ window.FirebaseBridge = {
                     autoArchive: state.autoArchive
                 },
                 activeSpaceId: state.activeSpaceId,
+                storageUsedBytes: this.storageUsedBytes,
                 lastModified: serverTimestamp()
             }, { merge: true });
 
-            // Save spaces
+            // Save spaces with uploaded images
             const batch = writeBatch(db);
             for (const space of state.spaces) {
+                // Process items and upload base64 images to Storage
+                const processedItems = await this.processItemsForUpload(
+                    space.items || [], space.id, 'items'
+                );
+                const processedArchived = await this.processItemsForUpload(
+                    space.archivedItems || [], space.id, 'archived'
+                );
+                
                 const spaceRef = doc(db, 'users', this.currentUser.uid, 'spaces', space.id);
                 batch.set(spaceRef, {
                     name: space.name,
                     color: space.color,
-                    items: space.items || [],
-                    archivedItems: space.archivedItems || [],
+                    items: processedItems,
+                    archivedItems: processedArchived,
                     categories: space.categories || [],
                     lastModified: serverTimestamp()
                 });
@@ -212,6 +373,12 @@ window.FirebaseBridge = {
             }
             
             const userData = userSnap.data();
+            
+            // Restore storage usage tracking
+            if (userData.storageUsedBytes) {
+                this.storageUsedBytes = userData.storageUsedBytes;
+            }
+            
             const spacesRef = collection(db, 'users', this.currentUser.uid, 'spaces');
             const spacesSnap = await getDocs(spacesRef);
             

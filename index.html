@@ -120,6 +120,12 @@
                   <span id="sync-status" class="sync-status">
                     <span id="last-synced">Not synced yet</span>
                   </span>
+                  <div id="storage-usage" class="storage-usage">
+                    <div class="storage-bar">
+                      <div id="storage-fill" class="storage-fill" style="width: 0%"></div>
+                    </div>
+                    <span id="storage-text" class="storage-text">0 / 50 MB</span>
+                  </div>
                 </div>
                 <button id="btn-export-data" class="dropdown-item">
                   <svg
@@ -677,20 +683,6 @@
                   max="1000"
                   value="10"
                 />
-              </div>
-            </div>
-
-            <!-- Sound Settings -->
-            <div class="settings-section">
-              <h4 class="settings-section-title">SOUND</h4>
-              <div class="settings-row">
-                <label for="setting-sound-enabled" class="settings-label"
-                  >Sound Effects</label
-                >
-                <label class="toggle-switch">
-                  <input type="checkbox" id="setting-sound-enabled" />
-                  <span class="toggle-slider"></span>
-                </label>
               </div>
             </div>
 

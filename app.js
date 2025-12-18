@@ -138,7 +138,11 @@
         // Account management
         lastSynced: $('#last-synced'),
         btnExportData: $('#btn-export-data'),
-        btnDeleteAccount: $('#btn-delete-account')
+        btnDeleteAccount: $('#btn-delete-account'),
+        // Storage display
+        storageUsage: $('#storage-usage'),
+        storageFill: $('#storage-fill'),
+        storageText: $('#storage-text')
     };
 
     let currentType = 'item';
@@ -190,6 +194,26 @@
         if (elements.lastSynced && window.FirebaseBridge) {
             elements.lastSynced.textContent = window.FirebaseBridge.getRelativeSyncTime();
         }
+        updateStorageDisplay();
+    }
+
+    function updateStorageDisplay() {
+        if (!window.FirebaseBridge || !elements.storageFill || !elements.storageText) return;
+        const info = window.FirebaseBridge.getStorageInfo();
+        
+        // Update bar width
+        elements.storageFill.style.width = `${info.percent}%`;
+        
+        // Update bar color based on usage
+        elements.storageFill.className = 'storage-fill';
+        if (info.percent >= 90) {
+            elements.storageFill.classList.add('danger');
+        } else if (info.percent >= 70) {
+            elements.storageFill.classList.add('warning');
+        }
+        
+        // Update text
+        elements.storageText.textContent = `${info.usedMB} / ${info.limitMB} MB`;
     }
 
     function showSaveIndicator() {
@@ -2288,12 +2312,13 @@
         if (!elements.syncStatus) return;
         elements.syncStatus.className = 'sync-status';
         if (status === 'syncing') {
-            elements.syncStatus.textContent = 'Syncing...';
+            if (elements.lastSynced) elements.lastSynced.textContent = 'Syncing...';
             elements.syncStatus.classList.add('syncing');
         } else if (status === 'synced') {
-            elements.syncStatus.textContent = 'Synced';
+            // updateLastSyncedDisplay will set the time
+            updateLastSyncedDisplay();
         } else if (status === 'error') {
-            elements.syncStatus.textContent = 'Sync error';
+            if (elements.lastSynced) elements.lastSynced.textContent = 'Sync error';
             elements.syncStatus.classList.add('error');
         }
     }
