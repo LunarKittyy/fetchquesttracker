@@ -2255,6 +2255,12 @@ body.shake {
   height: 18px;
 }
 
+/* When .modal-close is used with .btn, keep button styling */
+.modal-footer .btn.modal-close {
+  width: auto;
+  height: auto;
+}
+
 .modal-body {
   padding: 1.25rem;
 }
