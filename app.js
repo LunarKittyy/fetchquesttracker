@@ -2381,13 +2381,15 @@
                 return;
             }
 
+            // Disable animations for entire sync process
+            document.body.classList.add('sync-update');
+
             // Get the active space from incoming data
             const incomingActiveSpace = data.spaces.find(s => s.id === state.activeSpaceId);
             const currentActiveSpace = state.spaces.find(s => s.id === state.activeSpaceId);
 
             if (!incomingActiveSpace || !currentActiveSpace) {
-                // Space mismatch - do full update (with animations disabled)
-                document.body.classList.add('sync-update');
+                // Space mismatch - do full update
                 state.spaces = data.spaces;
                 state.activeSpaceId = state.activeSpaceId || state.spaces[0]?.id;
                 syncActiveSpace();
@@ -2396,7 +2398,7 @@
                 render();
                 renderArchive();
                 renderSpaces();
-                requestAnimationFrame(() => document.body.classList.remove('sync-update'));
+                setTimeout(() => document.body.classList.remove('sync-update'), 500);
                 return;
             }
 
@@ -2419,13 +2421,11 @@
                 } else {
                     console.log('📡 No visible changes, skipping render');
                 }
+                setTimeout(() => document.body.classList.remove('sync-update'), 100);
                 return;
             }
 
             console.log('📡 Items changed, doing surgical update');
-
-            // Disable animations during sync
-            document.body.classList.add('sync-update');
 
             // Find changed items and update only those
             const oldItems = currentActiveSpace.items || [];
@@ -2468,8 +2468,8 @@
 
             renderSpaces();
 
-            // Re-enable animations after a frame
-            requestAnimationFrame(() => document.body.classList.remove('sync-update'));
+            // Re-enable animations after render completes
+            setTimeout(() => document.body.classList.remove('sync-update'), 500);
             console.log(`📡 Updated ${changesCount} items`);
         }
     }

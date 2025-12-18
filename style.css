@@ -1431,11 +1431,15 @@ body.shake {
   animation: fadeInUp 0.4s var(--ease-out-expo);
 }
 
-/* Disable animations during sync updates */
-body.sync-update .category-group,
-body.sync-update .quest-card {
+/* Disable ALL animations during sync updates */
+body.sync-update,
+body.sync-update *,
+body.sync-update *::before,
+body.sync-update *::after {
   animation: none !important;
+  animation-duration: 0s !important;
   transition: none !important;
+  transition-duration: 0s !important;
 }
 
 @keyframes fadeInUp {
