@@ -388,24 +388,40 @@
     }
 
     function syncActiveSpace() {
+        // Find the active space, or fallback to the first space
         activeSpace = state.spaces.find(s => s.id === state.activeSpaceId) || state.spaces[0];
+
+        // If no spaces exist at all, create a default one
+        if (!activeSpace) {
+            const defaultSpace = {
+                id: 'space-' + Date.now(),
+                name: 'MAIN',
+                color: '#4ecdb4',
+                items: [],
+                archivedItems: [],
+                categories: [...DEFAULT_CATEGORIES]
+            };
+            state.spaces = [defaultSpace];
+            activeSpace = defaultSpace;
+        }
+
         state.activeSpaceId = activeSpace.id;
 
         // Expose items/archivedItems/categories at top level of state for existing code compatibility
         // Using Object.defineProperty to keep them in sync with activeSpace
         Object.defineProperty(state, 'items', {
-            get: () => activeSpace.items,
-            set: (val) => { activeSpace.items = val; },
+            get: () => activeSpace ? activeSpace.items : [],
+            set: (val) => { if (activeSpace) activeSpace.items = val; },
             configurable: true
         });
         Object.defineProperty(state, 'archivedItems', {
-            get: () => activeSpace.archivedItems,
-            set: (val) => { activeSpace.archivedItems = val; },
+            get: () => activeSpace ? activeSpace.archivedItems : [],
+            set: (val) => { if (activeSpace) activeSpace.archivedItems = val; },
             configurable: true
         });
         Object.defineProperty(state, 'categories', {
-            get: () => activeSpace.categories,
-            set: (val) => { activeSpace.categories = val; },
+            get: () => activeSpace ? activeSpace.categories : [...DEFAULT_CATEGORIES],
+            set: (val) => { if (activeSpace) activeSpace.categories = val; },
             configurable: true
         });
     }
