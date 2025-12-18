@@ -2301,13 +2301,39 @@
         }
     }
 
-    function updateAuthUI(user) {
+    async function updateAuthUI(user) {
         if (user) {
             // User is logged in
             if (elements.btnLogin) elements.btnLogin.classList.add('hidden');
             if (elements.userMenu) elements.userMenu.classList.remove('hidden');
             if (elements.userEmail) elements.userEmail.textContent = user.email || user.displayName || 'User';
             closeAuthModal();
+            
+            // Load data from cloud
+            console.log('📥 Loading data from cloud...');
+            const result = await window.FirebaseBridge.loadFromCloud();
+            console.log('📥 Load result:', result);
+            if (result.success && result.state) {
+                // Cloud has data - use it
+                state.spaces = result.state.spaces;
+                state.activeSpaceId = result.state.activeSpaceId || state.spaces[0]?.id;
+                state.shiftAmount = result.state.shiftAmount;
+                state.ctrlAmount = result.state.ctrlAmount;
+                state.autoArchive = result.state.autoArchive;
+                
+                // Also save to localStorage for offline access
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+                
+                // Re-render with cloud data
+                sortItems();
+                render();
+                renderArchive();
+                renderSpaces();
+                updateStorageDisplay();
+                console.log('✅ Cloud data loaded and rendered');
+            } else {
+                console.log('ℹ️ No cloud data or error, using local data');
+            }
         } else {
             // User is logged out
             if (elements.btnLogin) elements.btnLogin.classList.remove('hidden');
