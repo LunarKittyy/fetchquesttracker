@@ -2266,14 +2266,23 @@
         }
     }
 
-    // Placeholder async auth functions (will be replaced when Firebase is configured)
+    // Auth handlers using FirebaseBridge
     async function handleSignIn(e) {
         e.preventDefault();
         const email = $('#signin-email').value;
         const password = $('#signin-password').value;
         
-        // For now, just show a message since Firebase isn't configured
-        showAuthError('signin', 'Firebase not configured. Please add your config to js/firebase-config.js');
+        if (!window.FirebaseBridge?.isConfigured) {
+            showAuthError('signin', 'Firebase not configured. Please add your config to js/firebase-config.js');
+            return;
+        }
+        
+        clearAuthErrors();
+        const result = await window.FirebaseBridge.signIn(email, password);
+        if (!result.success) {
+            showAuthError('signin', result.error);
+        }
+        // Auth state change listener will handle UI update
     }
 
     async function handleSignUp(e) {
@@ -2282,22 +2291,53 @@
         const email = $('#signup-email').value;
         const password = $('#signup-password').value;
         
-        showAuthError('signup', 'Firebase not configured. Please add your config to js/firebase-config.js');
+        if (!window.FirebaseBridge?.isConfigured) {
+            showAuthError('signup', 'Firebase not configured. Please add your config to js/firebase-config.js');
+            return;
+        }
+        
+        clearAuthErrors();
+        const result = await window.FirebaseBridge.signUp(email, password, name);
+        if (!result.success) {
+            showAuthError('signup', result.error);
+        }
     }
 
     async function handlePasswordReset(e) {
         e.preventDefault();
         const email = $('#reset-email').value;
         
-        showAuthError('reset', 'Firebase not configured. Please add your config to js/firebase-config.js');
+        if (!window.FirebaseBridge?.isConfigured) {
+            showAuthError('reset', 'Firebase not configured.');
+            return;
+        }
+        
+        clearAuthErrors();
+        const result = await window.FirebaseBridge.resetPassword(email);
+        if (result.success) {
+            showResetMessage('Password reset email sent! Check your inbox.');
+        } else {
+            showAuthError('reset', result.error);
+        }
     }
 
     async function handleGoogleSignIn() {
-        showAuthError('signin', 'Firebase not configured. Please add your config to js/firebase-config.js');
+        if (!window.FirebaseBridge?.isConfigured) {
+            showAuthError('signin', 'Firebase not configured.');
+            return;
+        }
+        
+        clearAuthErrors();
+        const result = await window.FirebaseBridge.signInWithGoogle();
+        if (!result.success) {
+            showAuthError('signin', result.error);
+        }
     }
 
     async function handleLogout() {
-        // For now, just update UI
+        if (window.FirebaseBridge?.isConfigured) {
+            await window.FirebaseBridge.signOut();
+        }
         updateAuthUI(null);
         if (elements.userDropdown) elements.userDropdown.classList.add('hidden');
     }
@@ -2598,7 +2638,13 @@
         renderArchive();
         renderSpaces();
 
-        console.log('FETCH QUEST v2.2 initialized. Local storage active.');
+        // Subscribe to Firebase auth state changes
+        if (window.FirebaseBridge?.isConfigured) {
+            window.FirebaseBridge.onAuthChange(updateAuthUI);
+            console.log('FETCH QUEST v2.2 initialized. Firebase active.');
+        } else {
+            console.log('FETCH QUEST v2.2 initialized. Local storage only.');
+        }
     }
 
     // Start the app
