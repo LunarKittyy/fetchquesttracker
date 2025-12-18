@@ -75,16 +75,26 @@ if (isFirebaseConfigured()) {
         storage = getStorage(app);
         googleProvider = new GoogleAuthProvider();
 
-        // Initialize App Check with reCAPTCHA v3
+        // 1. Initialize auth state listener IMMEDIATELY
+        onAuthStateChanged(auth, (user) => {
+            window.FirebaseBridge.currentUser = user;
+            console.log('Auth state changed:', user ? user.email : 'signed out');
+            window.FirebaseBridge.authStateListeners.forEach(cb => cb(user));
+        });
+
+        // 2. Initialize App Check
         initializeAppCheck(app, {
             provider: new ReCaptchaV3Provider('6Ld2ETAsAAAAALgMe6039Lu-9s2yl3xZ5I5yhT2e'),
             isTokenAutoRefreshEnabled: true
         });
 
-        // Handle Redirect Result
+        // 3. Handle Redirect Result AFTER listener is set
         getRedirectResult(auth).then((result) => {
             if (result && result.user) {
                 console.log('✅ Redirect sign-in success:', result.user.email);
+                // Explicitly update and notify in case listener didn't fire yet
+                window.FirebaseBridge.currentUser = result.user;
+                window.FirebaseBridge.authStateListeners.forEach(cb => cb(result.user));
             }
         }).catch((error) => {
             console.error('❌ Redirect sign-in error:', error);
@@ -645,12 +655,6 @@ window.FirebaseBridge = {
 };
 
 // Initialize auth state listener
-if (auth) {
-    onAuthStateChanged(auth, (user) => {
-        window.FirebaseBridge.currentUser = user;
-        console.log('Auth state changed:', user ? user.email : 'signed out');
-        window.FirebaseBridge.authStateListeners.forEach(cb => cb(user));
-    });
-}
+// Initialized above in the try/catch block for better control over timing
 
 console.log('🔌 Firebase Bridge loaded');
