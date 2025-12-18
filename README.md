@@ -1,6 +1,6 @@
-# FETCH QUEST v2.2
+# FETCH QUEST v2.3
 
-A stylish quest/item tracker web application with Firebase cloud sync support. Built with a NASA-punk/Cassette Punk aesthetic inspired by Arc Raiders.
+A stylish quest/item tracker web application with Firebase cloud sync support.
 
 ## Features
 
@@ -8,10 +8,11 @@ A stylish quest/item tracker web application with Firebase cloud sync support. B
 
 - **Spaces** - Organize quests into separate spaces with custom colors
 - **Quest Types** - Track items (count-based) or objectives (checkbox-based)
-- **Categories** - Group quests within spaces
+- **Categories** - Group quests within spaces, with category manager to remove unused ones
 - **Progress Tracking** - Visual progress bars, bulk increment with Shift/Ctrl+click
 - **Archive System** - Completed quests auto-archive, can be restored
 - **Search** - Search quests across all spaces
+- **Statistics Dashboard** - View overall progress and completion stats
 
 ### Cloud Features (Firebase)
 
@@ -19,30 +20,26 @@ A stylish quest/item tracker web application with Firebase cloud sync support. B
 - **Cloud Sync** - Automatic sync with 2-second debounce
 - **Real-time Updates** - Changes sync live across devices
 - **Image Storage** - Images compressed and stored in Firebase Storage
-- **50MB Per-user Limit** - Storage usage tracking and display
-- **GDPR Compliance** - Data export and account deletion
+- **10MB Per-user Limit** - Storage usage tracking, file manager UI
+- **Privacy in Mind** - Data export and account deletion
+- **Security First** - reCAPTCHA v3 protection for API security
 
 ### UI/UX
 
-- **Priority Labels** - High/Medium/Low with color coding
+- **Priority Labels** - High/Medium/Low with color coding and sorting
 - **Color Tagging** - Color-code individual quests
 - **Bulk Operations** - Select multiple quests for batch actions
+- **Custom Context Menus** - Right-click menus for spaces, categories, and quests
+- **Custom Popups** - Styled confirmation dialogs (no browser alerts)
 - **Dark Theme** - Post-apocalyptic aesthetic with subtle animations
 - **Responsive** - Works on desktop and mobile
+- **Smooth Animations** - Quest creation fly-in, progress updates
 
 ## Tech Stack
 
-- Vanilla HTML/CSS/JavaScript
-- Firebase (Auth, Firestore, Storage)
+- Vanilla HTML/CSS/JavaScript (modular architecture)
+- Firebase (Auth, Firestore, Storage, App Check)
 - No build step required
-
-## Setup
-
-### Local Development
-
-1. Clone the repo
-2. Open `index.html` in a browser (or use a local server)
-3. Works offline with localStorage
 
 ### Firebase Cloud Sync
 
@@ -50,18 +47,34 @@ A stylish quest/item tracker web application with Firebase cloud sync support. B
 2. Enable Authentication (Email/Password + Google)
 3. Enable Cloud Firestore (start in test mode)
 4. Enable Cloud Storage (start in test mode)
-5. Add your domain to authorized domains
-6. Update credentials in `js/firebase-bridge.js` (lines 32-40)
+5. Enable App Check with reCAPTCHA v3
+6. Add your domain to authorized domains (Auth + reCAPTCHA)
+7. Update credentials in `js/firebase-bridge.js` (lines 32-42)
 
 ## File Structure
 
 ```
-├── index.html          # Main HTML structure
-├── style.css           # All styles
-├── app.js              # Main application logic
+├── index.html              # Main HTML structure
+├── style.css               # All styles (74KB)
+├── app.js                  # Main application logic & initialization
 └── js/
-    ├── firebase-bridge.js   # Firebase integration module
-    └── firebase-config.js   # Firebase configuration (legacy)
+    ├── firebase-bridge.js  # Firebase SDK initialization & App Check
+    ├── firebase-config.js  # Firebase configuration (legacy)
+    ├── auth.js             # Authentication logic
+    ├── auth-ui.js          # Auth modal & user menu UI
+    ├── cloud-sync.js       # Firestore sync logic
+    ├── storage.js          # Firebase Storage for images
+    ├── file-manager.js     # Storage file manager UI
+    ├── state.js            # Application state management
+    ├── spaces.js           # Spaces functionality
+    ├── quests.js           # Quest CRUD operations
+    ├── archive.js          # Archive system
+    ├── bulk.js             # Bulk operations mode
+    ├── context-menu.js     # Custom right-click context menus
+    ├── popup.js            # Custom popup/alert system
+    ├── statistics.js       # Statistics dashboard
+    ├── particles.js        # Background particle effects
+    └── utils.js            # Utility functions
 ```
 
 ## Current Status
@@ -70,39 +83,36 @@ See [TASKS.md](TASKS.md) for detailed progress tracking.
 
 ### Recently Completed
 
-- Firebase Authentication (email, Google, password reset)
-- Cloud sync with Firestore
-- Firebase Storage for images (with compression)
-- Auto-sync with relative timestamps
-- Real-time sync across devices
-- Account deletion with double confirmation
-- GDPR data export
+- Custom right-click context menus for spaces, categories, quests
+- Statistics dashboard
+- Category manager (delete unused categories)
+- Custom popup system (replaces browser alerts)
+- File split refactor (modular architecture)
+- Firebase App Check integration
+- Optimized real-time sync (no flicker, hover protection)
+- New quest creation animations
+- Custom scrollbar styling
 
 ### Known Issues
 
-- Adblockers may block Firebase requests (ERR_BLOCKED_BY_CLIENT)
-- Real-time sync for quest items needs debugging
+- Adblockers may block some Firebase requests (ERR_BLOCKED_BY_CLIENT).
+- Multi-column layout is partially implemented
 
 ### Planned Features
 
-- Undo/redo system
-- Statistics dashboard
-- Quest templates
-- Collaborative spaces (multi-user)
-
-## Usage Notes
+- Collaborative spaces (multi-user with invite system)
+- Helper mode for collaborators
+- Contribution tracking
 
 ### Keyboard Shortcuts
 
 - `Shift + Click` on +/- buttons: Add/subtract 5 (configurable)
 - `Ctrl + Click` on +/- buttons: Add/subtract 10 (configurable)
+- `Right-click` on spaces/quests: Context menu with quick actions
 
 ### Storage Limits
 
-- Each user has 50MB of cloud storage
+- Each user has 10MB of cloud storage (around 150 images)
 - Images are automatically compressed (max 800px, 70% quality)
-- Local storage is unlimited (in localStorage)
-
-## License
-
-MIT
+- Local storage is unlimited™ (in localStorage)
+- Click storage bar in account menu to manage files
