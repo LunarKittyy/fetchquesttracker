@@ -34,6 +34,7 @@
         itemGoal: $('#item-goal'),
         itemImage: $('#item-image'),
         itemCategory: $('#item-category'),
+        addQuestForm: $('#add-quest-form'),
         questContainer: $('#quest-container'),
         emptyState: $('#empty-state'),
         fileImport: $('#file-import'),
@@ -142,7 +143,11 @@
         // Storage display
         storageUsage: $('#storage-usage'),
         storageFill: $('#storage-fill'),
-        storageText: $('#storage-text')
+        storageText: $('#storage-text'),
+        // File manager
+        modalFiles: $('#modal-files'),
+        filesList: $('#files-list'),
+        btnRefreshFiles: $('#btn-refresh-files')
     };
 
     let currentType = 'item';
@@ -973,14 +978,15 @@
         tempContainer.innerHTML = cardHTML;
         const newCard = tempContainer.firstElementChild;
 
-        // Add entrance animation
+        // Add entrance animation - fly down from above
         newCard.style.opacity = '0';
-        newCard.style.transform = 'translateY(-10px)';
+        newCard.style.transform = 'translateY(-40px) scale(0.95)';
 
         // Find the correct position (after any complete items if this is incomplete, etc.)
         const isComplete = isItemComplete(item);
         const cards = itemsContainer.querySelectorAll('.quest-card');
         let inserted = false;
+        let insertBeforeCard = null;
 
         for (const existingCard of cards) {
             const existingId = existingCard.dataset.id;
@@ -990,28 +996,56 @@
                 // Insert before first complete item if we're incomplete
                 // Or insert by date comparison
                 if (!isComplete && existingComplete) {
-                    itemsContainer.insertBefore(newCard, existingCard);
+                    insertBeforeCard = existingCard;
                     inserted = true;
                     break;
                 }
                 // Insert before older items of same completion status
                 if (isComplete === existingComplete && item.createdAt > (existingItem.createdAt || 0)) {
-                    itemsContainer.insertBefore(newCard, existingCard);
+                    insertBeforeCard = existingCard;
                     inserted = true;
                     break;
                 }
             }
         }
 
-        if (!inserted) {
+        // FLIP animation: capture old positions of cards that will move
+        const cardsToAnimate = [];
+        if (insertBeforeCard) {
+            let sibling = insertBeforeCard;
+            while (sibling) {
+                const rect = sibling.getBoundingClientRect();
+                cardsToAnimate.push({ el: sibling, oldTop: rect.top });
+                sibling = sibling.nextElementSibling;
+            }
+        }
+
+        // Insert the new card
+        if (inserted && insertBeforeCard) {
+            itemsContainer.insertBefore(newCard, insertBeforeCard);
+        } else {
             itemsContainer.appendChild(newCard);
         }
 
-        // Animate in
+        // Animate existing cards from old position to new position (push down effect)
+        cardsToAnimate.forEach(({ el, oldTop }) => {
+            const newTop = el.getBoundingClientRect().top;
+            const deltaY = oldTop - newTop;
+            if (deltaY !== 0) {
+                el.style.transform = `translateY(${deltaY}px)`;
+                el.style.transition = 'none';
+                requestAnimationFrame(() => {
+                    el.style.transition = 'transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)';
+                    el.style.transform = 'translateY(0)';
+                });
+            }
+        });
+
+        // Animate in with a smooth fly-down effect
         requestAnimationFrame(() => {
-            newCard.style.transition = 'all 0.3s ease-out';
+            newCard.style.transition = 'opacity 0.4s ease-out, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
             newCard.style.opacity = '1';
-            newCard.style.transform = 'translateY(0)';
+            newCard.style.transform = 'translateY(0) scale(1)';
         });
 
         // Update category count and progress
@@ -1598,6 +1632,12 @@
         };
 
         addItem(data);
+
+        // Keep form expanded briefly to prevent jarring collapse when moving mouse down
+        elements.addQuestForm.classList.add('keep-open');
+        setTimeout(() => {
+            elements.addQuestForm.classList.remove('keep-open');
+        }, 1500);
 
         // Reset form
         elements.itemName.value = '';
@@ -2549,6 +2589,61 @@
         }
     }
 
+    // --- File Manager ---
+    function openFileManager() {
+        if (!elements.modalFiles) return;
+        elements.modalFiles.classList.remove('hidden');
+        loadStorageFiles();
+    }
+
+    async function loadStorageFiles() {
+        if (!elements.filesList) return;
+        elements.filesList.innerHTML = '<div class="files-loading">Loading files...</div>';
+
+        if (!window.FirebaseBridge?.currentUser) {
+            elements.filesList.innerHTML = '<div class="files-empty">Sign in to view cloud storage files.</div>';
+            return;
+        }
+
+        const result = await window.FirebaseBridge.listStorageFiles();
+
+        if (!result.success || result.files.length === 0) {
+            elements.filesList.innerHTML = '<div class="files-empty">No files in storage.</div>';
+            return;
+        }
+
+        elements.filesList.innerHTML = result.files.map(file => `
+            <div class="file-item" data-path="${file.fullPath}" title="${file.path}">
+                <img src="${file.url}" alt="${file.name}" loading="lazy">
+            </div>
+        `).join('');
+    }
+
+    async function handleFileClick(e) {
+        const item = e.target.closest('.file-item');
+        if (!item) return;
+
+        const path = item.dataset.path;
+        if (!path) return;
+
+        if (!confirm('Delete this file? If it belongs to a quest, the image will be removed.')) {
+            return;
+        }
+
+        item.style.opacity = '0.5';
+        const result = await window.FirebaseBridge.deleteStorageFile(path);
+
+        if (result.success) {
+            item.remove();
+            // Reset storage tracking (we'll recalculate on next sync)
+            window.FirebaseBridge.storageUsedBytes = 0;
+            updateStorageDisplay();
+        } else {
+            item.style.opacity = '1';
+            alert('Failed to delete file: ' + (result.error || 'Unknown error'));
+        }
+    }
+
     // Auth handlers using FirebaseBridge
     async function handleSignIn(e) {
         e.preventDefault();
@@ -2993,6 +3088,17 @@
         // Delete account handler
         if (elements.btnDeleteAccount) {
             elements.btnDeleteAccount.addEventListener('click', handleDeleteAccount);
+        }
+
+        // Storage usage click -> open file manager
+        if (elements.storageUsage) {
+            elements.storageUsage.addEventListener('click', openFileManager);
+        }
+        if (elements.btnRefreshFiles) {
+            elements.btnRefreshFiles.addEventListener('click', loadStorageFiles);
+        }
+        if (elements.filesList) {
+            elements.filesList.addEventListener('click', handleFileClick);
         }
 
         // Render archive and spaces on load

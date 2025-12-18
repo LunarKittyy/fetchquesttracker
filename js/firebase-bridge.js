@@ -547,6 +547,68 @@ window.FirebaseBridge = {
             }
             return { success: false, error: error.message };
         }
+    },
+
+    // List all files in user's storage
+    async listStorageFiles() {
+        if (!storage || !this.currentUser) return { success: false, files: [] };
+        try {
+            const userRef = ref(storage, `users/${this.currentUser.uid}`);
+            const result = await listAll(userRef);
+
+            // Recursively list all files
+            const files = [];
+
+            async function listFolder(folderRef, path = '') {
+                const contents = await listAll(folderRef);
+                for (const item of contents.items) {
+                    try {
+                        const url = await getDownloadURL(item);
+                        files.push({
+                            name: item.name,
+                            fullPath: item.fullPath,
+                            path: path + '/' + item.name,
+                            url: url
+                        });
+                    } catch (e) {
+                        console.warn('Could not get URL for', item.fullPath);
+                    }
+                }
+                for (const prefix of contents.prefixes) {
+                    await listFolder(prefix, path + '/' + prefix.name);
+                }
+            }
+
+            await listFolder(userRef);
+            return { success: true, files };
+        } catch (error) {
+            console.error('List files error:', error);
+            return { success: false, files: [], error: error.message };
+        }
+    },
+
+    // Delete a file from storage
+    async deleteStorageFile(fullPath) {
+        if (!storage || !this.currentUser) return { success: false };
+        try {
+            const fileRef = ref(storage, fullPath);
+            await deleteObject(fileRef);
+            return { success: true };
+        } catch (error) {
+            console.error('Delete file error:', error);
+            return { success: false, error: error.message };
+        }
+    },
+
+    // Recalculate storage used (call after deleting files)
+    async recalculateStorage() {
+        const result = await this.listStorageFiles();
+        if (result.success) {
+            // Estimate size from file count (rough estimate)
+            // We can't get exact sizes without downloading, so we track on upload instead
+            return { success: true, fileCount: result.files.length };
+        }
+        return { success: false };
     }
 };
 

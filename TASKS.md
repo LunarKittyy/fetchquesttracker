@@ -39,9 +39,11 @@
     - [x] Image compression (max 800px, quality 0.7)
     - [x] 50MB per-user storage limit
     - [x] Storage usage display in user dropdown
-    - [/] Test image upload flow
+    - [x] Test image upload flow
   - [x] Real-time sync across devices (onSnapshot listeners)
+  - [x] Storage file manager (click storage bar to manage files)
 - [x] Remove sound option from settings
+- [x] Optimized real-time sync (no animation flicker, hover protection, race condition fix)
 - [ ] Undo/redo system
 - [ ] Statistics dashboard
 - [ ] Quest templates
@@ -86,12 +88,12 @@
 
 ## Active Issues
 
-### Real-time Sync Partial
+### Resolved
 
-- Spaces and their settings update in real-time ✓
-- Quest items and counts NOT syncing (page flashes, data received but not rendered)
-- Added debug logging to trace the issue
-- Check console for: `📡 Space "Name": X items, Y archived`
+- [x] Real-time sync rendering - fixed syncActiveSpace binding
+- [x] Animation flicker on sync - removed fadeInUp animation
+- [x] Hover interruption on sync - sync waits for mouseleave
+- [x] State reversion race - pendingLocalChange flag blocks stale syncs
 
 ### Adblocker Interference
 
