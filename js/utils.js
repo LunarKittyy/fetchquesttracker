@@ -7,6 +7,43 @@
 export const $ = (sel) => document.querySelector(sel);
 export const $$ = (sel) => document.querySelectorAll(sel);
 
+// --- Valid field values for security validation ---
+const VALID_COLORS = [
+    '',           // none
+    '#e8b84a',    // amber
+    '#4ecdb4',    // teal
+    '#d45454',    // red
+    '#5cb572',    // green
+    '#6366f1',    // indigo
+    '#a855f7',    // purple
+    '#ec4899',    // pink
+    '#f97316'     // orange
+];
+
+const VALID_PRIORITIES = ['', 'low', 'medium', 'high'];
+
+/**
+ * Validate and sanitize color value
+ * @param {string} color - Color value to validate
+ * @returns {string|null} Valid color or null
+ */
+export function validateColor(color) {
+    if (!color || typeof color !== 'string') return null;
+    const normalized = color.toLowerCase().trim();
+    return VALID_COLORS.includes(normalized) ? normalized : null;
+}
+
+/**
+ * Validate and sanitize priority value
+ * @param {string} priority - Priority value to validate
+ * @returns {string|null} Valid priority or null
+ */
+export function validatePriority(priority) {
+    if (!priority || typeof priority !== 'string') return null;
+    const normalized = priority.toLowerCase().trim();
+    return VALID_PRIORITIES.includes(normalized) ? normalized : null;
+}
+
 /**
  * Generate a unique ID
  * @returns {string} Unique identifier
@@ -164,8 +201,8 @@ export function normalizeItem(item, idGenerator = generateId) {
         })),
         createdAt: item.createdAt || Date.now(),
         completedAt: item.completedAt || null,
-        color: item.color || null,
-        priority: item.priority || null,
+        color: validateColor(item.color),
+        priority: validatePriority(item.priority),
         notes: item.notes || ''
     };
 }

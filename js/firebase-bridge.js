@@ -36,6 +36,10 @@ import {
     deleteObject,
     listAll
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-storage.js";
+import {
+    initializeAppCheck,
+    ReCaptchaV3Provider
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app-check.js";
 
 // Firebase Configuration - FetchQuest Project
 const firebaseConfig = {
@@ -68,6 +72,13 @@ if (isFirebaseConfigured()) {
         db = getFirestore(app);
         storage = getStorage(app);
         googleProvider = new GoogleAuthProvider();
+
+        // Initialize App Check with reCAPTCHA v3
+        initializeAppCheck(app, {
+            provider: new ReCaptchaV3Provider('6Ld2ETAsAAAAALgMe6039Lu-9s2yJ3xZ5I5yhT2e'),
+            isTokenAutoRefreshEnabled: true
+        });
+
         console.log('🔥 Firebase initialized successfully');
     } catch (error) {
         console.error('Firebase initialization failed:', error);
@@ -522,6 +533,15 @@ window.FirebaseBridge = {
     async deleteAccount() {
         if (!db || !auth || !this.currentUser) return { success: false, error: 'Not logged in' };
         try {
+            // Delete all storage files first
+            const storageResult = await this.listStorageFiles();
+            if (storageResult.success && storageResult.files.length > 0) {
+                console.log(`🗑️ Deleting ${storageResult.files.length} storage files...`);
+                for (const file of storageResult.files) {
+                    await this.deleteStorageFile(file.fullPath);
+                }
+            }
+
             // Delete all spaces
             const spacesRef = collection(db, 'users', this.currentUser.uid, 'spaces');
             const spacesSnap = await getDocs(spacesRef);
