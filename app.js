@@ -2354,6 +2354,11 @@
     function handleRealtimeUpdate(data) {
         console.log('📡 Received real-time update:', data);
         if (data.spaces) {
+            // Debug: log what's in the spaces
+            data.spaces.forEach(s => {
+                console.log(`📡 Space "${s.name}": ${s.items?.length || 0} items, ${s.archivedItems?.length || 0} archived`);
+            });
+            
             state.spaces = data.spaces;
             state.activeSpaceId = state.activeSpaceId || state.spaces[0]?.id;
             localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
