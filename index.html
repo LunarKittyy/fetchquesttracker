@@ -450,6 +450,13 @@
           <!-- Display Settings -->
           <div class="settings-section">
             <h4 class="settings-section-title">DISPLAY</h4>
+            <div class="settings-row">
+              <label for="setting-multi-column" class="settings-label">Multi-Column Layout</label>
+              <label class="toggle-switch">
+                <input type="checkbox" id="setting-multi-column" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
             <div class="settings-row settings-row-buttons">
               <button type="button" id="btn-manage-categories" class="btn btn-secondary">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -464,6 +471,16 @@
                   <line x1="12" y1="2" x2="12" y2="15" />
                 </svg>
                 SHARE PROGRESS
+              </button>
+            </div>
+            <div class="settings-row settings-row-buttons" style="margin-top: 0.5rem;">
+              <button type="button" id="btn-statistics" class="btn btn-secondary" style="flex: 1;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="20" x2="18" y2="10" />
+                  <line x1="12" y1="20" x2="12" y2="4" />
+                  <line x1="6" y1="20" x2="6" y2="14" />
+                </svg>
+                VIEW STATISTICS
               </button>
             </div>
           </div>
@@ -712,6 +729,75 @@
       </div>
     </div>
 
+    <!-- Custom Popup Modal (replaces browser confirm/alert/prompt) -->
+    <div id="modal-popup" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content modal-popup">
+        <div class="modal-header">
+          <h3 class="modal-title" id="popup-title">CONFIRM</h3>
+        </div>
+        <div class="modal-body">
+          <p id="popup-message" class="popup-message"></p>
+          <input type="text" id="popup-input" class="input-field popup-input hidden" placeholder="Enter value..." />
+        </div>
+        <div class="modal-footer" id="popup-footer">
+          <!-- Buttons injected dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Statistics Dashboard Modal -->
+    <div id="modal-statistics" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content modal-statistics">
+        <div class="modal-header">
+          <h3 class="modal-title">STATISTICS</h3>
+          <button type="button" class="modal-close" aria-label="Close modal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <!-- Overview Stats -->
+          <div class="stats-overview">
+            <div class="stat-card">
+              <span class="stat-value" id="stat-total">0</span>
+              <span class="stat-label">Total Items</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-value" id="stat-completed">0</span>
+              <span class="stat-label">Completed</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-value" id="stat-active">0</span>
+              <span class="stat-label">Active</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-value" id="stat-rate">0%</span>
+              <span class="stat-label">Completion Rate</span>
+            </div>
+          </div>
+
+          <!-- Category Breakdown -->
+          <div class="stats-section">
+            <h4 class="stats-section-title">BY CATEGORY</h4>
+            <div id="stats-categories" class="stats-bars"></div>
+          </div>
+
+          <!-- Space Breakdown -->
+          <div class="stats-section">
+            <h4 class="stats-section-title">BY SPACE</h4>
+            <div id="stats-spaces" class="stats-bars"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-cancel">CLOSE</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Audio elements - Using Web Audio API via JS is preferred, these are fallbacks -->
     <audio id="sound-tick" preload="auto">
       <source
@@ -762,6 +848,13 @@
       <button type="button" class="priority-option priority-high" data-priority="high" title="High">
         HIGH
       </button>
+    </div>
+  </div>
+
+  <!-- Context Menu (positioned via JS) -->
+  <div id="context-menu" class="context-menu hidden">
+    <div class="context-menu-items">
+      <!-- Items populated dynamically based on target -->
     </div>
   </div>
 

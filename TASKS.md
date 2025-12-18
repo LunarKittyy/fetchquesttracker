@@ -7,6 +7,7 @@
 - [x] Fix quest image aspect ratio (move to right side)
 - [x] Fix X button in settings and edit space modals
 - [x] Fix Storage Files modal X/Done buttons
+- [ ] Quite often quests dissapear (when new created)/revert (when value changed) to previous state on sync after interacted with for the first time after page load
 
 ## Features
 
@@ -51,18 +52,14 @@
 - [x] Archive trigger button animation (rounded when closed, attached when open)
 - [x] Share progress (copy to clipboard)
 - [x] Category manager (delete unused custom categories)
-- [ ] Undo/redo system
+- [ ] Custom popups instead of using browser native ones (like delete confirmations and other features) 
 - [ ] Statistics dashboard
-- [ ] Quest templates
-- [ ] Daily/weekly reset timers
-- [ ] Dark/light theme toggle
-- [ ] Source grouping
-- [ ] Multi-column layout
-- [ ] Custom right-click context menus (spaces, categories, quests)
+- [ ] Multi-column layout (optional, can be switched in settings)
+- [ ] Custom right-click context menus (spaces, categories, quests) with proper z index
 
 ## Deferred
 
-- [ ] File split refactor
+- [ ] File split refactor (separate the thousands of lines into smaller files for easier maintenance)
 
 ## Future Considerations
 

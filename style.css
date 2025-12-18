@@ -3623,3 +3623,229 @@ body.bulk-mode .quest-content {
   padding: 2rem;
   font-size: 0.85rem;
 }
+
+/* --- Custom Popup Modal --- */
+.modal-popup {
+  max-width: 400px;
+  animation: popupIn 0.2s var(--ease-out-back);
+}
+
+@keyframes popupIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.popup-message {
+  font-size: 0.9rem;
+  color: var(--clr-text-secondary);
+  line-height: 1.5;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.popup-input {
+  margin-top: 1rem;
+}
+
+#popup-footer {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+#popup-footer .btn {
+  min-width: 100px;
+}
+
+/* --- Statistics Dashboard --- */
+.modal-statistics {
+  max-width: 500px;
+}
+
+.stats-overview {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-card {
+  background: var(--clr-bg-tertiary);
+  border: var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.stat-value {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--clr-accent-secondary);
+}
+
+.stat-label {
+  font-size: 0.7rem;
+  color: var(--clr-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.stats-section {
+  margin-bottom: 1.5rem;
+}
+
+.stats-section:last-child {
+  margin-bottom: 0;
+}
+
+.stats-section-title {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--clr-accent-primary);
+  letter-spacing: 0.15em;
+  margin-bottom: 0.75rem;
+}
+
+.stats-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.stats-bar-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.stats-bar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stats-bar-name {
+  font-size: 0.8rem;
+  color: var(--clr-text-secondary);
+}
+
+.stats-bar-value {
+  font-size: 0.75rem;
+  color: var(--clr-text-muted);
+}
+
+.stats-bar-track {
+  height: 8px;
+  background: var(--clr-bg-deep);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.stats-bar-fill {
+  height: 100%;
+  background: var(--clr-accent-secondary);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.stats-bar-fill.primary {
+  background: var(--clr-accent-primary);
+}
+
+.stats-empty {
+  text-align: center;
+  color: var(--clr-text-muted);
+  padding: 1rem;
+  font-size: 0.85rem;
+}
+
+/* --- Multi-Column Layout --- */
+.quest-container.multi-column .category-group .quest-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.quest-container.multi-column .quest-card {
+  margin-bottom: 0;
+}
+
+@media (min-width: 768px) {
+  .quest-container.multi-column .category-group .quest-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1200px) {
+  .quest-container.multi-column .category-group .quest-cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* --- Context Menu --- */
+.context-menu {
+  position: fixed;
+  z-index: 10000;
+  min-width: 160px;
+  background: var(--clr-bg-secondary);
+  border: var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  padding: 0.5rem 0;
+  animation: popupFadeIn 0.15s ease-out;
+}
+
+.context-menu-items {
+  display: flex;
+  flex-direction: column;
+}
+
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 1rem;
+  background: none;
+  border: none;
+  color: var(--clr-text-secondary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.context-menu-item:hover {
+  background: var(--clr-bg-elevated);
+  color: var(--clr-text-primary);
+}
+
+.context-menu-item svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.context-menu-item.danger {
+  color: var(--clr-danger);
+}
+
+.context-menu-item.danger:hover {
+  background: rgba(212, 84, 84, 0.15);
+}
+
+.context-menu-divider {
+  height: 1px;
+  background: var(--clr-bg-elevated);
+  margin: 0.375rem 0;
+}

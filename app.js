@@ -18,7 +18,8 @@
         soundEnabled: false,
         shiftAmount: 5,
         ctrlAmount: 10,
-        autoArchive: true
+        autoArchive: true,
+        multiColumn: false
     };
 
     // Pointers for active space data (to minimize changes to existing code)
@@ -82,6 +83,7 @@
         settingsBtnImport: $('#settings-btn-import'),
         settingsBtnClear: $('#settings-btn-clear'),
         settingAutoArchive: $('#setting-auto-archive'),
+        settingMultiColumn: $('#setting-multi-column'),
         btnManageCategories: $('#btn-manage-categories'),
         btnShareProgress: $('#btn-share-progress'),
         modalCategories: $('#modal-categories'),
@@ -151,7 +153,24 @@
         // File manager
         modalFiles: $('#modal-files'),
         filesList: $('#files-list'),
-        btnRefreshFiles: $('#btn-refresh-files')
+        btnRefreshFiles: $('#btn-refresh-files'),
+        // Popup modal
+        modalPopup: $('#modal-popup'),
+        popupTitle: $('#popup-title'),
+        popupMessage: $('#popup-message'),
+        popupInput: $('#popup-input'),
+        popupFooter: $('#popup-footer'),
+        // Statistics modal
+        modalStatistics: $('#modal-statistics'),
+        btnStatistics: $('#btn-statistics'),
+        statTotal: $('#stat-total'),
+        statCompleted: $('#stat-completed'),
+        statActive: $('#stat-active'),
+        statRate: $('#stat-rate'),
+        statsCategories: $('#stats-categories'),
+        statsSpaces: $('#stats-spaces'),
+        // Context menu
+        contextMenu: $('#context-menu')
     };
 
     let currentType = 'item';
@@ -225,13 +244,13 @@
 
                     // Notify non-logged-in users about storage limits
                     if (!window.FirebaseBridge?.currentUser) {
-                        alert('⚠️ Storage limit reached!\n\nYour browser storage is full. Images have been removed to save your data.\n\nSign in to get cloud storage and keep your images safe!');
+                        showAlert('⚠️ Storage limit reached!\n\nYour browser storage is full. Images have been removed to save your data.\n\nSign in to get cloud storage and keep your images safe!', 'STORAGE WARNING');
                     }
                 } catch (e2) {
                     console.error('Still failed to save:', e2);
                     // Critical error - notify user
                     if (!window.FirebaseBridge?.currentUser) {
-                        alert('❌ Storage full!\n\nUnable to save your data. Please sign in for cloud storage, or export your data and clear some quests.');
+                        showAlert('❌ Storage full!\n\nUnable to save your data. Please sign in for cloud storage, or export your data and clear some quests.', 'STORAGE ERROR');
                     }
                 }
             }
@@ -500,9 +519,8 @@
 
         const spaceId = tab.dataset.id;
 
-        // Double-click or click on active space = open edit modal
+        // If already active space, do nothing (use right-click to edit)
         if (spaceId === state.activeSpaceId) {
-            openSpaceEditModal(spaceId);
             return;
         }
 
@@ -630,7 +648,7 @@
         playSound('tick');
     }
 
-    function handleDeleteSpace() {
+    async function handleDeleteSpace() {
         const spaceId = $('#edit-space-id').value;
         if (!spaceId) return;
 
@@ -638,13 +656,12 @@
         if (!space) return;
 
         if (state.spaces.length <= 1) {
-            alert('Cannot delete the last remaining space.');
+            await showAlert('Cannot delete the last remaining space.', 'ERROR');
             return;
         }
 
-        if (!confirm(`Permanently delete "${space.name}" and all its quests? This cannot be undone.`)) {
-            return;
-        }
+        const confirmed = await showConfirm(`Permanently delete "${space.name}" and all its quests? This cannot be undone.`, 'DELETE SPACE', true);
+        if (!confirmed) return;
 
         state.spaces = state.spaces.filter(s => s.id !== spaceId);
         state.activeSpaceId = state.spaces[0].id;
@@ -669,6 +686,111 @@
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    // --- Custom Popup System (replaces browser confirm/alert/prompt) ---
+    let popupResolve = null;
+
+    function showPopup({ type = 'alert', title = 'ALERT', message = '', input = false, inputDefault = '', confirmText = 'OK', cancelText = 'CANCEL', danger = false }) {
+        return new Promise((resolve) => {
+            popupResolve = resolve;
+
+            elements.popupTitle.textContent = title;
+            elements.popupMessage.textContent = message;
+
+            // Handle input field
+            if (input) {
+                elements.popupInput.classList.remove('hidden');
+                elements.popupInput.value = inputDefault;
+            } else {
+                elements.popupInput.classList.add('hidden');
+            }
+
+            // Build footer buttons
+            let footerHtml = '';
+            if (type === 'confirm' || type === 'prompt') {
+                footerHtml += `<button type="button" class="btn btn-secondary popup-cancel">${cancelText}</button>`;
+            }
+            footerHtml += `<button type="button" class="btn ${danger ? 'btn-danger' : 'btn-primary'} popup-confirm">${confirmText}</button>`;
+            elements.popupFooter.innerHTML = footerHtml;
+
+            // Event handlers
+            const confirmBtn = elements.popupFooter.querySelector('.popup-confirm');
+            const cancelBtn = elements.popupFooter.querySelector('.popup-cancel');
+
+            const handleConfirm = () => {
+                closePopup();
+                if (type === 'prompt') {
+                    resolve(elements.popupInput.value);
+                } else if (type === 'confirm') {
+                    resolve(true);
+                } else {
+                    resolve();
+                }
+            };
+
+            const handleCancel = () => {
+                closePopup();
+                if (type === 'prompt') {
+                    resolve(null);
+                } else {
+                    resolve(false);
+                }
+            };
+
+            confirmBtn.addEventListener('click', handleConfirm);
+            if (cancelBtn) cancelBtn.addEventListener('click', handleCancel);
+
+            // Handle backdrop click and Escape key
+            const backdrop = elements.modalPopup.querySelector('.modal-backdrop');
+            const handleBackdropClick = (e) => {
+                if (e.target === backdrop) handleCancel();
+            };
+            const handleKeydown = (e) => {
+                if (e.key === 'Escape') handleCancel();
+                if (e.key === 'Enter' && type !== 'prompt') handleConfirm();
+                if (e.key === 'Enter' && type === 'prompt' && document.activeElement === elements.popupInput) handleConfirm();
+            };
+
+            backdrop.addEventListener('click', handleBackdropClick);
+            document.addEventListener('keydown', handleKeydown);
+
+            // Store cleanup function
+            elements.modalPopup._cleanup = () => {
+                confirmBtn.removeEventListener('click', handleConfirm);
+                if (cancelBtn) cancelBtn.removeEventListener('click', handleCancel);
+                backdrop.removeEventListener('click', handleBackdropClick);
+                document.removeEventListener('keydown', handleKeydown);
+            };
+
+            // Show modal
+            elements.modalPopup.classList.remove('hidden');
+            if (input) {
+                elements.popupInput.focus();
+                elements.popupInput.select();
+            } else {
+                confirmBtn.focus();
+            }
+        });
+    }
+
+    function closePopup() {
+        if (elements.modalPopup._cleanup) {
+            elements.modalPopup._cleanup();
+        }
+        elements.modalPopup.classList.add('hidden');
+    }
+
+    function showConfirm(message, title = 'CONFIRM', danger = false) {
+        return showPopup({ type: 'confirm', title, message, danger, confirmText: 'YES', cancelText: 'NO' });
+    }
+
+    function showAlert(message, title = 'ALERT') {
+        return showPopup({ type: 'alert', title, message });
+    }
+
+    function showPrompt(message, title = 'INPUT', defaultValue = '') {
+        return showPopup({ type: 'prompt', title, message, input: true, inputDefault: defaultValue, confirmText: 'OK', cancelText: 'CANCEL' });
     }
 
     function isItemComplete(item) {
@@ -1366,7 +1488,7 @@
 
             } catch (err) {
                 console.error('Import failed:', err);
-                alert('Failed to import data. Please ensure the file is valid JSON.');
+                showAlert('Failed to import data. Please ensure the file is valid JSON.', 'IMPORT ERROR');
             }
         };
         reader.readAsText(file);
@@ -1558,6 +1680,11 @@
         updateCategoryDropdown();
         updateStatusBar();
         renderSpaces();
+
+        // Apply multi-column layout if enabled
+        if (elements.questContainer) {
+            elements.questContainer.classList.toggle('multi-column', state.multiColumn);
+        }
 
         // Clear existing groups
         const existingGroups = elements.questContainer.querySelectorAll('.category-group');
@@ -1833,9 +1960,9 @@
                 break;
 
             case 'delete':
-                if (confirm('Remove this target?')) {
-                    deleteItem(itemId);
-                }
+                showConfirm('Remove this target?', 'DELETE ITEM', true).then(confirmed => {
+                    if (confirmed) deleteItem(itemId);
+                });
                 break;
 
             case 'edit-name':
@@ -1999,6 +2126,7 @@
         if (elements.settingCtrlAmount) elements.settingCtrlAmount.value = state.ctrlAmount;
         if (elements.settingSoundEnabled) elements.settingSoundEnabled.checked = state.soundEnabled;
         if (elements.settingAutoArchive) elements.settingAutoArchive.checked = state.autoArchive;
+        if (elements.settingMultiColumn) elements.settingMultiColumn.checked = state.multiColumn;
         if (elements.modalSettings) elements.modalSettings.classList.remove('hidden');
     }
 
@@ -2007,27 +2135,36 @@
         state.ctrlAmount = parseInt(elements.settingCtrlAmount.value) || 10;
         state.soundEnabled = elements.settingSoundEnabled?.checked ?? false;
         state.autoArchive = elements.settingAutoArchive?.checked ?? true;
+        state.multiColumn = elements.settingMultiColumn?.checked ?? false;
 
         // Sync header toggle
         if (elements.toggleSound) {
             elements.toggleSound.checked = state.soundEnabled;
         }
+
+        // Toggle multi-column class on quest container
+        if (elements.questContainer) {
+            elements.questContainer.classList.toggle('multi-column', state.multiColumn);
+        }
+
         saveState();
     }
 
-    function handleClearAllData() {
-        if (confirm('Are you sure you want to delete ALL data? This cannot be undone!')) {
-            if (confirm('Really? This will permanently remove all your tracked items.')) {
-                state.items = [];
-                state.archivedItems = [];
-                state.categories = [...DEFAULT_CATEGORIES];
-                saveState();
-                render();
-                renderArchive();
-                updateCategoryDropdown();
-                elements.modalSettings.classList.add('hidden');
-            }
-        }
+    async function handleClearAllData() {
+        const confirmed1 = await showConfirm('Are you sure you want to delete ALL data? This cannot be undone!', 'CLEAR DATA', true);
+        if (!confirmed1) return;
+
+        const confirmed2 = await showConfirm('Really? This will permanently remove all your tracked items.', 'FINAL WARNING', true);
+        if (!confirmed2) return;
+
+        state.items = [];
+        state.archivedItems = [];
+        state.categories = [...DEFAULT_CATEGORIES];
+        saveState();
+        render();
+        renderArchive();
+        updateCategoryDropdown();
+        elements.modalSettings.classList.add('hidden');
     }
 
     // --- Archive Panel Handlers ---
@@ -2096,9 +2233,11 @@
         renderArchive();
     }
 
-    function deleteAllArchived() {
+    async function deleteAllArchived() {
         if (state.archivedItems.length === 0) return;
-        if (!confirm(`Delete all ${state.archivedItems.length} archived items? This cannot be undone.`)) return;
+
+        const confirmed = await showConfirm(`Delete all ${state.archivedItems.length} archived items? This cannot be undone.`, 'CLEAR ARCHIVE', true);
+        if (!confirmed) return;
 
         state.archivedItems = [];
         saveState();
@@ -2699,10 +2838,277 @@
             `(${totalItems > 0 ? Math.round(completedItems / totalItems * 100) : 0}%)`;
 
         navigator.clipboard.writeText(text).then(() => {
-            alert('Progress copied to clipboard!');
+            showAlert('Progress copied to clipboard!', 'SUCCESS');
         }).catch(() => {
-            alert('Could not copy to clipboard.');
+            showAlert('Could not copy to clipboard.', 'ERROR');
         });
+    }
+
+    // --- Statistics Dashboard ---
+    function openStatistics() {
+        if (!elements.modalStatistics) return;
+
+        // Close settings modal first
+        if (elements.modalSettings) {
+            elements.modalSettings.classList.add('hidden');
+        }
+
+        // Calculate and render statistics
+        renderStatistics();
+        elements.modalStatistics.classList.remove('hidden');
+    }
+
+    function calculateStatistics() {
+        const stats = {
+            total: 0,
+            completed: 0,
+            active: 0,
+            byCategory: {},
+            bySpace: []
+        };
+
+        // Calculate across all spaces
+        state.spaces.forEach(space => {
+            const items = space.items || [];
+            const archived = space.archivedItems || [];
+            const allItems = [...items, ...archived];
+
+            const spaceTotal = allItems.length;
+            const spaceCompleted = archived.length + items.filter(i => isItemComplete(i)).length;
+
+            stats.total += spaceTotal;
+            stats.completed += spaceCompleted;
+
+            // Space stats
+            stats.bySpace.push({
+                name: space.name,
+                color: space.color,
+                total: spaceTotal,
+                completed: spaceCompleted,
+                percent: spaceTotal > 0 ? (spaceCompleted / spaceTotal) * 100 : 0
+            });
+
+            // Category stats (from active space items only)
+            if (space.id === state.activeSpaceId) {
+                allItems.forEach(item => {
+                    const cat = item.category || 'Misc';
+                    if (!stats.byCategory[cat]) {
+                        stats.byCategory[cat] = { total: 0, completed: 0 };
+                    }
+                    stats.byCategory[cat].total++;
+                    if (archived.includes(item) || isItemComplete(item)) {
+                        stats.byCategory[cat].completed++;
+                    }
+                });
+            }
+        });
+
+        stats.active = stats.total - stats.completed;
+        stats.rate = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
+
+        return stats;
+    }
+
+    function renderStatistics() {
+        const stats = calculateStatistics();
+
+        // Update overview cards
+        if (elements.statTotal) elements.statTotal.textContent = stats.total;
+        if (elements.statCompleted) elements.statCompleted.textContent = stats.completed;
+        if (elements.statActive) elements.statActive.textContent = stats.active;
+        if (elements.statRate) elements.statRate.textContent = stats.rate + '%';
+
+        // Render category breakdown
+        if (elements.statsCategories) {
+            const categories = Object.entries(stats.byCategory);
+            if (categories.length === 0) {
+                elements.statsCategories.innerHTML = '<div class="stats-empty">No items in current space</div>';
+            } else {
+                elements.statsCategories.innerHTML = categories.map(([name, data]) => {
+                    const percent = data.total > 0 ? (data.completed / data.total) * 100 : 0;
+                    return `
+                        <div class="stats-bar-item">
+                            <div class="stats-bar-header">
+                                <span class="stats-bar-name">${escapeHtml(name)}</span>
+                                <span class="stats-bar-value">${data.completed}/${data.total}</span>
+                            </div>
+                            <div class="stats-bar-track">
+                                <div class="stats-bar-fill" style="width: ${percent}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        // Render space breakdown
+        if (elements.statsSpaces) {
+            if (stats.bySpace.length === 0) {
+                elements.statsSpaces.innerHTML = '<div class="stats-empty">No spaces</div>';
+            } else {
+                elements.statsSpaces.innerHTML = stats.bySpace.map(space => `
+                    <div class="stats-bar-item">
+                        <div class="stats-bar-header">
+                            <span class="stats-bar-name">${escapeHtml(space.name)}</span>
+                            <span class="stats-bar-value">${space.completed}/${space.total}</span>
+                        </div>
+                        <div class="stats-bar-track">
+                            <div class="stats-bar-fill primary" style="width: ${space.percent}%"></div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+    }
+
+    // --- Context Menu ---
+    let contextMenuTarget = null; // Store the target element/data
+
+    function showContextMenu(e, menuItems) {
+        e.preventDefault();
+        if (!elements.contextMenu) return;
+
+        // Build menu HTML
+        const menuContainer = elements.contextMenu.querySelector('.context-menu-items');
+        menuContainer.innerHTML = menuItems.map(item => {
+            if (item.divider) return '<div class="context-menu-divider"></div>';
+            return `
+                <button class="context-menu-item ${item.danger ? 'danger' : ''}" data-action="${item.action}">
+                    ${item.icon || ''}
+                    <span>${item.label}</span>
+                </button>
+            `;
+        }).join('');
+
+        // Position menu
+        const x = e.clientX;
+        const y = e.clientY;
+
+        elements.contextMenu.style.left = x + 'px';
+        elements.contextMenu.style.top = y + 'px';
+        elements.contextMenu.classList.remove('hidden');
+
+        // Adjust if menu goes off screen
+        const rect = elements.contextMenu.getBoundingClientRect();
+        if (rect.right > window.innerWidth) {
+            elements.contextMenu.style.left = (x - rect.width) + 'px';
+        }
+        if (rect.bottom > window.innerHeight) {
+            elements.contextMenu.style.top = (y - rect.height) + 'px';
+        }
+    }
+
+    function hideContextMenu() {
+        if (elements.contextMenu) {
+            elements.contextMenu.classList.add('hidden');
+        }
+        contextMenuTarget = null;
+    }
+
+    function handleSpaceContextMenu(e) {
+        const spaceTab = e.target.closest('.space-tab');
+        if (!spaceTab) return;
+
+        const spaceId = spaceTab.dataset.id;
+        const space = state.spaces.find(s => s.id === spaceId);
+        if (!space) return;
+
+        contextMenuTarget = { type: 'space', id: spaceId, data: space };
+
+        const menuItems = [
+            {
+                label: 'Edit Space',
+                action: 'edit-space',
+                icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'
+            },
+            { divider: true },
+            {
+                label: 'Delete Space',
+                action: 'delete-space',
+                danger: true,
+                icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>'
+            }
+        ];
+
+        showContextMenu(e, menuItems);
+    }
+
+    function handleQuestContextMenu(e) {
+        const card = e.target.closest('.quest-card');
+        if (!card) return;
+
+        const itemId = card.dataset.id;
+        const item = state.items.find(i => i.id === itemId);
+        if (!item) return;
+
+        contextMenuTarget = { type: 'quest', id: itemId, data: item };
+
+        const menuItems = [
+            {
+                label: 'Edit Name',
+                action: 'edit-name',
+                icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'
+            },
+            {
+                label: 'Archive',
+                action: 'archive-quest',
+                icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>'
+            },
+            { divider: true },
+            {
+                label: 'Delete',
+                action: 'delete-quest',
+                danger: true,
+                icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>'
+            }
+        ];
+
+        showContextMenu(e, menuItems);
+    }
+
+    function handleContextMenuAction(e) {
+        const item = e.target.closest('.context-menu-item');
+        if (!item) return;
+
+        const action = item.dataset.action;
+        if (!contextMenuTarget) return;
+
+        // Save target before hiding (hideContextMenu sets contextMenuTarget to null)
+        const target = contextMenuTarget;
+        hideContextMenu();
+
+        switch (action) {
+            case 'edit-space':
+                if (target.type === 'space') {
+                    openSpaceEditModal(target.id);
+                }
+                break;
+            case 'delete-space':
+                if (target.type === 'space') {
+                    $('#edit-space-id').value = target.id;
+                    handleDeleteSpace();
+                }
+                break;
+            case 'edit-name':
+                if (target.type === 'quest') {
+                    const card = $(`.quest-card[data-id="${target.id}"]`);
+                    const nameEl = card?.querySelector('.quest-name-text');
+                    if (nameEl) nameEl.click();
+                }
+                break;
+            case 'archive-quest':
+                if (target.type === 'quest') {
+                    archiveItem(target.id);
+                }
+                break;
+            case 'delete-quest':
+                if (target.type === 'quest') {
+                    showConfirm('Remove this target?', 'DELETE ITEM', true).then(confirmed => {
+                        if (confirmed) deleteItem(target.id);
+                    });
+                }
+                break;
+        }
     }
 
     // --- File Manager ---
@@ -2742,9 +3148,8 @@
         const path = item.dataset.path;
         if (!path) return;
 
-        if (!confirm('Delete this file? If it belongs to a quest, the image will be removed.')) {
-            return;
-        }
+        const confirmed = await showConfirm('Delete this file? If it belongs to a quest, the image will be removed.', 'DELETE FILE', true);
+        if (!confirmed) return;
 
         item.style.opacity = '0.5';
         const result = await window.FirebaseBridge.deleteStorageFile(path);
@@ -2756,7 +3161,7 @@
             updateStorageDisplay();
         } else {
             item.style.opacity = '1';
-            alert('Failed to delete file: ' + (result.error || 'Unknown error'));
+            await showAlert('Failed to delete file: ' + (result.error || 'Unknown error'), 'ERROR');
         }
     }
 
@@ -2843,7 +3248,7 @@
 
     async function handleExportData() {
         if (!window.FirebaseBridge?.currentUser) {
-            alert('Not logged in');
+            await showAlert('Not logged in', 'ERROR');
             return;
         }
 
@@ -2860,48 +3265,50 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         } else {
-            alert('Export failed: ' + result.error);
+            await showAlert('Export failed: ' + result.error, 'ERROR');
         }
         if (elements.userDropdown) elements.userDropdown.classList.add('hidden');
     }
 
     async function handleDeleteAccount() {
         if (!window.FirebaseBridge?.currentUser) {
-            alert('Not logged in');
+            await showAlert('Not logged in', 'ERROR');
             return;
         }
 
         // First confirmation
-        const confirm1 = confirm(
+        const confirm1 = await showConfirm(
             '⚠️ DELETE ACCOUNT\n\n' +
             'This will permanently delete:\n' +
             '• Your account\n' +
             '• All your cloud-saved data\n' +
             '• All spaces and quests stored online\n\n' +
             'Your local data will NOT be deleted.\n\n' +
-            'Are you sure you want to continue?'
+            'Are you sure you want to continue?',
+            'DELETE ACCOUNT',
+            true
         );
 
         if (!confirm1) return;
 
         // Second confirmation - type to confirm
         const userEmail = window.FirebaseBridge.currentUser.email;
-        const confirm2 = prompt(
-            '🚨 FINAL CONFIRMATION\n\n' +
-            `Type your email (${userEmail}) to confirm deletion:`
+        const confirm2 = await showPrompt(
+            `🚨 FINAL CONFIRMATION\n\nType your email (${userEmail}) to confirm deletion:`,
+            'CONFIRM DELETION'
         );
 
         if (confirm2 !== userEmail) {
-            alert('Email did not match. Account NOT deleted.');
+            await showAlert('Email did not match. Account NOT deleted.', 'CANCELLED');
             return;
         }
 
         const result = await window.FirebaseBridge.deleteAccount();
         if (result.success) {
-            alert('Account deleted successfully.');
+            await showAlert('Account deleted successfully.', 'SUCCESS');
             updateAuthUI(null);
         } else {
-            alert('Delete failed: ' + result.error);
+            await showAlert('Delete failed: ' + result.error, 'ERROR');
         }
         if (elements.userDropdown) elements.userDropdown.classList.add('hidden');
     }
@@ -2960,9 +3367,12 @@
         if (elements.settingShiftAmount) elements.settingShiftAmount.addEventListener('change', handleSettingChange);
         if (elements.settingCtrlAmount) elements.settingCtrlAmount.addEventListener('change', handleSettingChange);
         if (elements.settingAutoArchive) elements.settingAutoArchive.addEventListener('change', handleSettingChange);
+        if (elements.settingMultiColumn) elements.settingMultiColumn.addEventListener('change', handleSettingChange);
         if (elements.settingsBtnExport) elements.settingsBtnExport.addEventListener('click', handleExport);
         if (elements.settingsBtnImport) elements.settingsBtnImport.addEventListener('click', handleImportClick);
         if (elements.settingsBtnClear) elements.settingsBtnClear.addEventListener('click', handleClearAllData);
+        if (elements.btnStatistics) elements.btnStatistics.addEventListener('click', openStatistics);
+        if (elements.modalStatistics) elements.modalStatistics.addEventListener('click', handleCloseModal);
 
         // Archive panel listeners
         if (elements.archiveTrigger) elements.archiveTrigger.addEventListener('click', handleArchiveToggle);
@@ -2976,9 +3386,25 @@
         }
         if (elements.spacesList) {
             elements.spacesList.addEventListener('click', handleSpaceAction);
+            elements.spacesList.addEventListener('contextmenu', handleSpaceContextMenu);
         } else {
             console.warn('spacesList element not found');
         }
+
+        // Context menu listeners
+        if (elements.contextMenu) {
+            elements.contextMenu.addEventListener('click', handleContextMenuAction);
+        }
+        if (elements.questContainer) {
+            elements.questContainer.addEventListener('contextmenu', handleQuestContextMenu);
+        }
+        document.addEventListener('click', hideContextMenu);
+        document.addEventListener('contextmenu', (e) => {
+            // Only prevent if not handled by our context menu handlers
+            if (!e.target.closest('.space-tab') && !e.target.closest('.quest-card')) {
+                hideContextMenu();
+            }
+        });
 
         // Space modal listeners
         const modalSpace = $('#modal-space');
@@ -3135,9 +3561,10 @@
             });
         }
         if (elements.bulkDelete) {
-            elements.bulkDelete.addEventListener('click', () => {
+            elements.bulkDelete.addEventListener('click', async () => {
                 if (selectedItems.size === 0) return;
-                if (confirm(`Delete ${selectedItems.size} items permanently?`)) {
+                const confirmed = await showConfirm(`Delete ${selectedItems.size} items permanently?`, 'BULK DELETE', true);
+                if (confirmed) {
                     bulkDeleteItems();
                 }
             });
