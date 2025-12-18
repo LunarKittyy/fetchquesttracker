@@ -5,7 +5,7 @@
  */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { 
+import {
     getAuth,
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
@@ -16,11 +16,11 @@ import {
     onAuthStateChanged,
     updateProfile
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-import { 
+import {
     getFirestore,
-    doc, 
-    setDoc, 
-    getDoc, 
+    doc,
+    setDoc,
+    getDoc,
     serverTimestamp,
     collection,
     getDocs,
@@ -50,8 +50,8 @@ const firebaseConfig = {
 
 // Check if Firebase is configured
 const isFirebaseConfigured = () => {
-    return firebaseConfig.apiKey !== "YOUR_API_KEY" && 
-           firebaseConfig.projectId !== "YOUR_PROJECT_ID";
+    return firebaseConfig.apiKey !== "YOUR_API_KEY" &&
+        firebaseConfig.projectId !== "YOUR_PROJECT_ID";
 };
 
 // Initialize Firebase
@@ -96,7 +96,7 @@ function getAuthErrorMessage(errorCode) {
 }
 
 // Storage limits
-const USER_STORAGE_LIMIT_MB = 50;
+const USER_STORAGE_LIMIT_MB = 20;
 const USER_STORAGE_LIMIT_BYTES = USER_STORAGE_LIMIT_MB * 1024 * 1024;
 const MAX_IMAGE_DIMENSION = 800;
 const IMAGE_QUALITY = 0.7;
@@ -109,7 +109,7 @@ async function compressImage(base64Data) {
             // Calculate new dimensions
             let width = img.width;
             let height = img.height;
-            
+
             if (width > MAX_IMAGE_DIMENSION || height > MAX_IMAGE_DIMENSION) {
                 if (width > height) {
                     height = (height / width) * MAX_IMAGE_DIMENSION;
@@ -119,14 +119,14 @@ async function compressImage(base64Data) {
                     height = MAX_IMAGE_DIMENSION;
                 }
             }
-            
+
             // Create canvas and draw resized image
             const canvas = document.createElement('canvas');
             canvas.width = width;
             canvas.height = height;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
-            
+
             // Convert to compressed JPEG
             const compressed = canvas.toDataURL('image/jpeg', IMAGE_QUALITY);
             resolve(compressed);
@@ -148,16 +148,16 @@ function getBase64Size(base64String) {
 // Expose Firebase Bridge globally for app.js to use
 window.FirebaseBridge = {
     isConfigured: isFirebaseConfigured(),
-    
+
     // Storage tracking
     storageUsedBytes: 0,
     storageLimitBytes: USER_STORAGE_LIMIT_BYTES,
     storageLimitMB: USER_STORAGE_LIMIT_MB,
-    
+
     // Auth state
     currentUser: null,
     authStateListeners: [],
-    
+
     // Subscribe to auth changes
     onAuthChange(callback) {
         this.authStateListeners.push(callback);
@@ -167,12 +167,12 @@ window.FirebaseBridge = {
             this.authStateListeners = this.authStateListeners.filter(cb => cb !== callback);
         };
     },
-    
+
     // Real-time sync listeners
     realtimeUnsubscribers: [],
     dataChangeListeners: [],
     isLocalChange: false, // Flag to prevent re-sync loop
-    
+
     // Subscribe to data changes callback
     onDataChange(callback) {
         this.dataChangeListeners.push(callback);
@@ -180,7 +180,7 @@ window.FirebaseBridge = {
             this.dataChangeListeners = this.dataChangeListeners.filter(cb => cb !== callback);
         };
     },
-    
+
     // Notify all data change listeners
     notifyDataChange(state) {
         if (this.isLocalChange) {
@@ -190,16 +190,16 @@ window.FirebaseBridge = {
         console.log('📡 Notifying data change listeners');
         this.dataChangeListeners.forEach(cb => cb(state));
     },
-    
+
     // Start real-time sync (call after login)
     startRealtimeSync() {
         if (!db || !this.currentUser) return;
-        
+
         // Unsubscribe from previous listeners
         this.stopRealtimeSync();
-        
+
         console.log('📡 Starting real-time sync...');
-        
+
         // Listen to spaces collection changes
         const spacesRef = collection(db, 'users', this.currentUser.uid, 'spaces');
         const unsubSpaces = onSnapshot(spacesRef, (snapshot) => {
@@ -216,11 +216,11 @@ window.FirebaseBridge = {
         }, (error) => {
             console.error('Real-time sync error:', error);
         });
-        
+
         this.realtimeUnsubscribers.push(unsubSpaces);
         console.log('📡 Real-time sync active');
     },
-    
+
     // Stop real-time sync (call on logout)
     stopRealtimeSync() {
         this.realtimeUnsubscribers.forEach(unsub => unsub());
@@ -228,7 +228,7 @@ window.FirebaseBridge = {
         console.log('📡 Real-time sync stopped');
     },
 
-    
+
     // Sign up with email/password
     async signUp(email, password, displayName = '') {
         if (!auth) return { success: false, error: 'Firebase not configured' };
@@ -242,7 +242,7 @@ window.FirebaseBridge = {
             return { success: false, error: getAuthErrorMessage(error.code) };
         }
     },
-    
+
     // Sign in with email/password
     async signIn(email, password) {
         if (!auth) return { success: false, error: 'Firebase not configured' };
@@ -253,7 +253,7 @@ window.FirebaseBridge = {
             return { success: false, error: getAuthErrorMessage(error.code) };
         }
     },
-    
+
     // Sign in with Google
     async signInWithGoogle() {
         if (!auth || !googleProvider) return { success: false, error: 'Firebase not configured' };
@@ -265,7 +265,7 @@ window.FirebaseBridge = {
             return { success: false, error: getAuthErrorMessage(error.code) };
         }
     },
-    
+
     // Sign out
     async signOut() {
         if (!auth) return { success: false, error: 'Firebase not configured' };
@@ -276,7 +276,7 @@ window.FirebaseBridge = {
             return { success: false, error: error.message };
         }
     },
-    
+
     // Password reset
     async resetPassword(email) {
         if (!auth) return { success: false, error: 'Firebase not configured' };
@@ -287,21 +287,21 @@ window.FirebaseBridge = {
             return { success: false, error: getAuthErrorMessage(error.code) };
         }
     },
-    
+
     // Helper: Check if string is a base64 data URL
     isBase64Image(str) {
         return str && typeof str === 'string' && str.startsWith('data:image');
     },
-    
+
     // Helper: Check if URL is a Firebase Storage URL (already uploaded)
     isStorageUrl(str) {
         return str && typeof str === 'string' && str.includes('firebasestorage.googleapis.com');
     },
-    
+
     // Get storage usage info
     getStorageInfo() {
-        const usedMB = (this.storageUsedBytes / (1024 * 1024)).toFixed(1);
-        const percent = Math.min(100, (this.storageUsedBytes / this.storageLimitBytes) * 100).toFixed(0);
+        const usedMB = (this.storageUsedBytes / (1024 * 1024)).toFixed(2);
+        const percent = Math.min(100, (this.storageUsedBytes / this.storageLimitBytes) * 100).toFixed(1);
         return {
             usedBytes: this.storageUsedBytes,
             usedMB: parseFloat(usedMB),
@@ -310,52 +310,52 @@ window.FirebaseBridge = {
             remaining: this.storageLimitBytes - this.storageUsedBytes
         };
     },
-    
+
     // Helper: Upload a single base64 image to Storage (with compression)
     async uploadImage(base64Data, path) {
         if (!storage || !this.currentUser) return null;
-        
+
         // Skip if already a storage URL
         if (this.isStorageUrl(base64Data)) return base64Data;
-        
+
         try {
             // Compress image first
             const compressed = await compressImage(base64Data);
             const imageSize = getBase64Size(compressed);
-            
+
             // Check storage limit
             if (this.storageUsedBytes + imageSize > this.storageLimitBytes) {
                 console.warn('Storage limit exceeded, skipping image upload');
                 return null;
             }
-            
+
             const storageRef = ref(storage, `users/${this.currentUser.uid}/${path}`);
             await uploadString(storageRef, compressed, 'data_url');
             const url = await getDownloadURL(storageRef);
-            
+
             // Track storage usage
             this.storageUsedBytes += imageSize;
-            
+
             return url;
         } catch (error) {
             console.error('Image upload error:', error);
             return null;
         }
     },
-    
+
     // Helper: Process items/spaces and upload images, returning modified data with URLs
     async processItemsForUpload(items, spaceId, prefix = 'items') {
         const processedItems = [];
         for (const item of items) {
             const processedItem = { ...item };
-            
+
             // Upload main image if base64
             if (this.isBase64Image(item.imageUrl)) {
                 const path = `${spaceId}/${prefix}/${item.id}/main.jpg`;
                 const url = await this.uploadImage(item.imageUrl, path);
                 if (url) processedItem.imageUrl = url;
             }
-            
+
             // Process objectives if they have images
             if (item.objectives && item.objectives.length > 0) {
                 processedItem.objectives = [];
@@ -369,12 +369,12 @@ window.FirebaseBridge = {
                     processedItem.objectives.push(processedObj);
                 }
             }
-            
+
             processedItems.push(processedItem);
         }
         return processedItems;
     },
-    
+
     // Firestore: Save state (with image upload to Storage)
     async saveToCloud(state) {
         if (!db || !this.currentUser) return { success: false, error: 'Not logged in' };
@@ -404,7 +404,7 @@ window.FirebaseBridge = {
                 const processedArchived = await this.processItemsForUpload(
                     space.archivedItems || [], space.id, 'archived'
                 );
-                
+
                 const spaceRef = doc(db, 'users', this.currentUser.uid, 'spaces', space.id);
                 batch.set(spaceRef, {
                     name: space.name,
@@ -422,28 +422,28 @@ window.FirebaseBridge = {
             return { success: false, error: error.message };
         }
     },
-    
+
     // Firestore: Load state
     async loadFromCloud() {
         if (!db || !this.currentUser) return { success: false, error: 'Not logged in' };
         try {
             const userRef = doc(db, 'users', this.currentUser.uid);
             const userSnap = await getDoc(userRef);
-            
+
             if (!userSnap.exists()) {
                 return { success: true, state: null }; // New user
             }
-            
+
             const userData = userSnap.data();
-            
+
             // Restore storage usage tracking
             if (userData.storageUsedBytes) {
                 this.storageUsedBytes = userData.storageUsedBytes;
             }
-            
+
             const spacesRef = collection(db, 'users', this.currentUser.uid, 'spaces');
             const spacesSnap = await getDocs(spacesRef);
-            
+
             const spaces = [];
             spacesSnap.forEach(doc => {
                 spaces.push({ id: doc.id, ...doc.data() });
@@ -465,10 +465,10 @@ window.FirebaseBridge = {
             return { success: false, error: error.message };
         }
     },
-    
+
     // Track last sync time
     lastSyncTime: null,
-    
+
     // Get relative time string
     getRelativeSyncTime() {
         if (!this.lastSyncTime) return 'Not synced yet';
@@ -482,12 +482,12 @@ window.FirebaseBridge = {
         const days = Math.floor(hours / 24);
         return `${days}d ago`;
     },
-    
+
     // Update last sync time
     updateLastSyncTime() {
         this.lastSyncTime = Date.now();
     },
-    
+
     // Export user data (GDPR)
     async exportUserData() {
         if (!db || !this.currentUser) return { success: false, error: 'Not logged in' };
@@ -496,12 +496,12 @@ window.FirebaseBridge = {
             const userSnap = await getDoc(userRef);
             const spacesRef = collection(db, 'users', this.currentUser.uid, 'spaces');
             const spacesSnap = await getDocs(spacesRef);
-            
+
             const spaces = [];
             spacesSnap.forEach(doc => {
                 spaces.push({ id: doc.id, ...doc.data() });
             });
-            
+
             const exportData = {
                 exportDate: new Date().toISOString(),
                 user: {
@@ -511,13 +511,13 @@ window.FirebaseBridge = {
                 userData: userSnap.exists() ? userSnap.data() : {},
                 spaces: spaces
             };
-            
+
             return { success: true, data: exportData };
         } catch (error) {
             return { success: false, error: error.message };
         }
     },
-    
+
     // Delete account and all data (GDPR)
     async deleteAccount() {
         if (!db || !auth || !this.currentUser) return { success: false, error: 'Not logged in' };
@@ -530,14 +530,14 @@ window.FirebaseBridge = {
                 batch.delete(doc(db, 'users', this.currentUser.uid, 'spaces', docRef.id));
             });
             await batch.commit();
-            
+
             // Delete user document
             const userRef = doc(db, 'users', this.currentUser.uid);
             await deleteDoc(userRef);
-            
+
             // Delete the Firebase auth account
             await this.currentUser.delete();
-            
+
             return { success: true };
         } catch (error) {
             console.error('Delete account error:', error);

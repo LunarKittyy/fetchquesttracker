@@ -187,6 +187,18 @@
                 console.log('❌ No user, skipping sync');
                 return;
             }
+
+            // Check if user is hovering on a quest card - delay sync to prevent hover interruption
+            const hoveredCard = document.querySelector('.quest-card:hover');
+            if (hoveredCard) {
+                console.log('🔄 Delaying sync (user hovering)');
+                // Wait for hover to end, then retry
+                hoveredCard.addEventListener('mouseleave', () => {
+                    debouncedCloudSync();
+                }, { once: true });
+                return;
+            }
+
             console.log('🔄 Starting cloud sync...');
             updateSyncStatusUI('syncing');
             const result = await window.FirebaseBridge.saveToCloud(state);
@@ -2359,12 +2371,23 @@
     function handleRealtimeUpdate(data) {
         console.log('📡 Received real-time update');
         if (data.spaces) {
+            // Check if user is hovering on a quest card - delay update to prevent hover interruption
+            const hoveredCard = document.querySelector('.quest-card:hover');
+            if (hoveredCard) {
+                console.log('📡 Delaying update (user hovering)');
+                hoveredCard.addEventListener('mouseleave', () => {
+                    handleRealtimeUpdate(data);
+                }, { once: true });
+                return;
+            }
+
             // Get the active space from incoming data
             const incomingActiveSpace = data.spaces.find(s => s.id === state.activeSpaceId);
             const currentActiveSpace = state.spaces.find(s => s.id === state.activeSpaceId);
 
             if (!incomingActiveSpace || !currentActiveSpace) {
-                // Space mismatch - do full update
+                // Space mismatch - do full update (with animations disabled)
+                document.body.classList.add('sync-update');
                 state.spaces = data.spaces;
                 state.activeSpaceId = state.activeSpaceId || state.spaces[0]?.id;
                 syncActiveSpace();
@@ -2373,6 +2396,7 @@
                 render();
                 renderArchive();
                 renderSpaces();
+                requestAnimationFrame(() => document.body.classList.remove('sync-update'));
                 return;
             }
 
@@ -2399,6 +2423,9 @@
             }
 
             console.log('📡 Items changed, doing surgical update');
+
+            // Disable animations during sync
+            document.body.classList.add('sync-update');
 
             // Find changed items and update only those
             const oldItems = currentActiveSpace.items || [];
@@ -2440,6 +2467,9 @@
             }
 
             renderSpaces();
+
+            // Re-enable animations after a frame
+            requestAnimationFrame(() => document.body.classList.remove('sync-update'));
             console.log(`📡 Updated ${changesCount} items`);
         }
     }

@@ -82,13 +82,11 @@ body {
   inset: 0;
   pointer-events: none;
   z-index: 1000;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0, 0, 0, 0.08) 2px,
-    rgba(0, 0, 0, 0.08) 4px
-  );
+  background: repeating-linear-gradient(0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.08) 2px,
+      rgba(0, 0, 0, 0.08) 4px);
 }
 
 .noise {
@@ -113,11 +111,9 @@ body {
   pointer-events: none;
   z-index: 997;
   opacity: 0;
-  background: radial-gradient(
-    circle at center,
-    rgba(255, 214, 102, 0.15),
-    transparent 70%
-  );
+  background: radial-gradient(circle at center,
+      rgba(255, 214, 102, 0.15),
+      transparent 70%);
   transition: opacity 0.3s ease;
 }
 
@@ -143,6 +139,7 @@ body {
 
 /* Screen shake for big completions */
 @keyframes screenShake {
+
   0%,
   100% {
     transform: translateX(0);
@@ -362,11 +359,9 @@ body.shake {
 .logo-container {
   width: 52px;
   height: 52px;
-  background: linear-gradient(
-    145deg,
-    var(--clr-bg-tertiary),
-    var(--clr-bg-secondary)
-  );
+  background: linear-gradient(145deg,
+      var(--clr-bg-tertiary),
+      var(--clr-bg-secondary));
   border: var(--border-strong);
   border-radius: var(--radius-md);
   display: flex;
@@ -505,7 +500,7 @@ body.shake {
   transition: color 0.15s ease;
 }
 
-.search-all-toggle input:checked + .toggle-text {
+.search-all-toggle input:checked+.toggle-text {
   color: var(--clr-accent-secondary);
 }
 
@@ -573,7 +568,7 @@ body.shake {
   height: 18px;
 }
 
-.toggle-container input:checked + .toggle-label {
+.toggle-container input:checked+.toggle-label {
   color: var(--clr-accent-secondary);
   border-color: var(--clr-accent-secondary);
   box-shadow: var(--glow-teal);
@@ -720,12 +715,10 @@ body.shake {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--clr-accent-secondary),
-    transparent
-  );
+  background: linear-gradient(90deg,
+      transparent,
+      var(--clr-accent-secondary),
+      transparent);
 }
 
 .form-header {
@@ -1405,11 +1398,9 @@ body.shake {
   padding: 5rem 2rem;
   border: 2px dashed var(--clr-bg-elevated);
   border-radius: var(--radius-lg);
-  background: linear-gradient(
-    180deg,
-    var(--clr-bg-primary),
-    var(--clr-bg-deep)
-  );
+  background: linear-gradient(180deg,
+      var(--clr-bg-primary),
+      var(--clr-bg-deep));
   text-align: center;
 }
 
@@ -1438,6 +1429,13 @@ body.shake {
 /* --- Category Group --- */
 .category-group {
   animation: fadeInUp 0.4s var(--ease-out-expo);
+}
+
+/* Disable animations during sync updates */
+body.sync-update .category-group,
+body.sync-update .quest-card {
+  animation: none !important;
+  transition: none !important;
 }
 
 @keyframes fadeInUp {
@@ -1514,12 +1512,10 @@ body.shake {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.3),
-    transparent
-  );
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 255, 255, 0.3),
+      transparent);
   animation: shimmer 2s infinite;
 }
 
@@ -1583,20 +1579,16 @@ body.shake {
 
 /* Complete state */
 .quest-card.complete {
-  background: linear-gradient(
-    145deg,
-    var(--clr-bg-secondary),
-    rgba(232, 184, 74, 0.08)
-  );
+  background: linear-gradient(145deg,
+      var(--clr-bg-secondary),
+      rgba(232, 184, 74, 0.08));
   border-color: rgba(232, 184, 74, 0.4);
 }
 
 .quest-card.complete::before {
-  background: linear-gradient(
-    180deg,
-    var(--clr-accent-complete),
-    var(--clr-accent-primary)
-  );
+  background: linear-gradient(180deg,
+      var(--clr-accent-complete),
+      var(--clr-accent-primary));
   opacity: 1;
   box-shadow: var(--glow-amber);
 }
@@ -1633,12 +1625,10 @@ body.shake {
   position: absolute;
   inset: -2px;
   border-radius: var(--radius-lg);
-  background: linear-gradient(
-    45deg,
-    var(--clr-accent-complete),
-    var(--clr-accent-primary),
-    var(--clr-accent-complete)
-  );
+  background: linear-gradient(45deg,
+      var(--clr-accent-complete),
+      var(--clr-accent-primary),
+      var(--clr-accent-complete));
   z-index: -1;
   animation: glowPulse 0.6s ease-out;
 }
@@ -1743,6 +1733,7 @@ body.shake {
 }
 
 @keyframes completeTagPulse {
+
   0%,
   100% {
     opacity: 1;
@@ -1837,24 +1828,20 @@ body.shake {
 }
 
 .quest-card.complete .progress-fill {
-  background: linear-gradient(
-    90deg,
-    var(--clr-accent-complete),
-    var(--clr-accent-primary)
-  );
+  background: linear-gradient(90deg,
+      var(--clr-accent-complete),
+      var(--clr-accent-primary));
 }
 
 .progress-fill::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: repeating-linear-gradient(
-    -45deg,
-    transparent,
-    transparent 5px,
-    rgba(0, 0, 0, 0.1) 5px,
-    rgba(0, 0, 0, 0.1) 10px
-  );
+  background: repeating-linear-gradient(-45deg,
+      transparent,
+      transparent 5px,
+      rgba(0, 0, 0, 0.1) 5px,
+      rgba(0, 0, 0, 0.1) 10px);
 }
 
 .progress-fill::after {
@@ -1874,12 +1861,10 @@ body.shake {
 
 @keyframes progressShimmer {
   0% {
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(255, 255, 255, 0.4),
-      transparent
-    );
+    background: linear-gradient(90deg,
+        transparent,
+        rgba(255, 255, 255, 0.4),
+        transparent);
     background-size: 200% 100%;
     background-position: -100% 0;
   }
@@ -1935,11 +1920,9 @@ body.shake {
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(
-    circle at center,
-    currentColor 0%,
-    transparent 70%
-  );
+  background: radial-gradient(circle at center,
+      currentColor 0%,
+      transparent 70%);
   opacity: 0;
   transition: opacity 0.2s ease;
 }
@@ -2323,6 +2306,7 @@ body.shake {
 }
 
 @keyframes statusPulse {
+
   0%,
   100% {
     opacity: 1;
@@ -2469,6 +2453,7 @@ body.shake {
 
 /* --- Print styles --- */
 @media print {
+
   .scanlines,
   .noise,
   #particles-canvas,
@@ -2824,12 +2809,12 @@ body.shake {
   transition: all 0.2s ease;
 }
 
-.toggle-switch input:checked + .toggle-slider {
+.toggle-switch input:checked+.toggle-slider {
   background: rgba(78, 205, 180, 0.2);
   border-color: var(--clr-accent-secondary);
 }
 
-.toggle-switch input:checked + .toggle-slider::before {
+.toggle-switch input:checked+.toggle-slider::before {
   transform: translateX(22px);
   background: var(--clr-accent-secondary);
 }
