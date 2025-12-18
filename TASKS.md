@@ -6,6 +6,7 @@
 - [x] Make space progress bar live-update
 - [x] Fix quest image aspect ratio (move to right side)
 - [x] Fix X button in settings and edit space modals
+- [x] Fix Storage Files modal X/Done buttons
 
 ## Features
 
@@ -44,15 +45,19 @@
   - [x] Storage file manager (click storage bar to manage files)
 - [x] Remove sound option from settings
 - [x] Optimized real-time sync (no animation flicker, hover protection, race condition fix)
+- [x] New quest creation animations (fly-down + push-down for existing)
+- [x] Form collapse delay after quest creation (1.5s)
+- [x] Custom scrollbar styling to match theme
+- [x] Archive trigger button animation (rounded when closed, attached when open)
+- [x] Share progress (copy to clipboard)
+- [x] Category manager (delete unused custom categories)
 - [ ] Undo/redo system
 - [ ] Statistics dashboard
 - [ ] Quest templates
 - [ ] Daily/weekly reset timers
-- [ ] Share progress as image
 - [ ] Dark/light theme toggle
 - [ ] Source grouping
 - [ ] Multi-column layout
-- [ ] Remove categories option
 - [ ] Custom right-click context menus (spaces, categories, quests)
 
 ## Deferred
@@ -94,25 +99,9 @@
 - [x] Animation flicker on sync - removed fadeInUp animation
 - [x] Hover interruption on sync - sync waits for mouseleave
 - [x] State reversion race - pendingLocalChange flag blocks stale syncs
+- [x] Scrollbar layout shift - always show scrollbar with custom styling
 
 ### Adblocker Interference
 
 - `ERR_BLOCKED_BY_CLIENT` errors when adblocker is enabled
 - Disable adblocker or whitelist the site for full functionality
-- May also be DNS-level blocking (Pi-hole, router settings)
-
-## Session Notes
-
-### Firebase Configuration
-
-- Project: fetchquesttracker
-- Auth: Email/Password + Google enabled
-- Firestore: Test mode (need security rules for production)
-- Storage: Enabled, test mode
-
-### Key Files
-
-- `js/firebase-bridge.js` - All Firebase logic (auth, sync, storage)
-- `app.js` - Main app, lines 2304+ for auth UI, 2354+ for realtime handler
-- `index.html` - User dropdown at lines ~117-170
-- `style.css` - Storage bar styles at ~3210

@@ -82,6 +82,10 @@
         settingsBtnImport: $('#settings-btn-import'),
         settingsBtnClear: $('#settings-btn-clear'),
         settingAutoArchive: $('#setting-auto-archive'),
+        btnManageCategories: $('#btn-manage-categories'),
+        btnShareProgress: $('#btn-share-progress'),
+        modalCategories: $('#modal-categories'),
+        categoriesList: $('#categories-list'),
         // Archive panel elements
         archivePanel: $('#archive-panel'),
         archiveTrigger: $('#archive-trigger'),
@@ -1985,8 +1989,9 @@
     function handleSettingChange() {
         state.shiftAmount = parseInt(elements.settingShiftAmount.value) || 5;
         state.ctrlAmount = parseInt(elements.settingCtrlAmount.value) || 10;
-        state.soundEnabled = elements.settingSoundEnabled.checked;
-        state.autoArchive = elements.settingAutoArchive.checked;
+        state.soundEnabled = elements.settingSoundEnabled?.checked ?? false;
+        state.autoArchive = elements.settingAutoArchive?.checked ?? true;
+
         // Sync header toggle
         if (elements.toggleSound) {
             elements.toggleSound.checked = state.soundEnabled;
@@ -2589,6 +2594,101 @@
         }
     }
 
+    // --- Category Manager ---
+    function openCategoryManager() {
+        if (!elements.modalCategories) return;
+        // Close settings modal first
+        if (elements.modalSettings) {
+            elements.modalSettings.classList.add('hidden');
+        }
+        elements.modalCategories.classList.remove('hidden');
+        renderCategoryList();
+    }
+
+    function renderCategoryList() {
+        if (!elements.categoriesList) return;
+
+        // Get all categories in the active space
+        const categories = state.categories || [];
+
+        if (categories.length === 0) {
+            elements.categoriesList.innerHTML = '<div class="categories-empty">No custom categories.</div>';
+            return;
+        }
+
+        // Count how many items use each category
+        const countByCategory = {};
+        state.items.forEach(item => {
+            const cat = item.category || 'Uncategorized';
+            countByCategory[cat] = (countByCategory[cat] || 0) + 1;
+        });
+
+        elements.categoriesList.innerHTML = categories.map(cat => {
+            const count = countByCategory[cat] || 0;
+            const isDefault = DEFAULT_CATEGORIES.includes(cat);
+            return `
+                <div class="category-item" data-category="${cat}">
+                    <div>
+                        <span class="category-item-name">${cat}</span>
+                        <span class="category-item-count">(${count} items)</span>
+                    </div>
+                    <button class="category-item-delete" ${isDefault || count > 0 ? 'disabled' : ''} 
+                            title="${isDefault ? 'Default category' : count > 0 ? 'Category in use' : 'Delete category'}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                    </button>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function handleCategoryClick(e) {
+        const deleteBtn = e.target.closest('.category-item-delete');
+        if (!deleteBtn || deleteBtn.disabled) return;
+
+        const item = deleteBtn.closest('.category-item');
+        const category = item?.dataset.category;
+        if (!category) return;
+
+        // Remove from categories
+        const idx = state.categories.indexOf(category);
+        if (idx !== -1) {
+            state.categories.splice(idx, 1);
+            saveState();
+            updateCategoryDropdown();
+            renderCategoryList();
+        }
+    }
+
+    // --- Share Progress ---
+    function shareProgress() {
+        // Close settings modal first
+        if (elements.modalSettings) {
+            elements.modalSettings.classList.add('hidden');
+        }
+
+        // Copy progress summary to clipboard
+        const space = state.spaces.find(s => s.id === state.activeSpaceId);
+        if (!space) return;
+
+        const items = space.items || [];
+        const archived = space.archivedItems || [];
+        const totalItems = items.length + archived.length;
+        const completedItems = archived.length + items.filter(i => isItemComplete(i)).length;
+
+        const text = `📦 ${space.name}\n` +
+            `Progress: ${completedItems}/${totalItems} items complete\n` +
+            `(${totalItems > 0 ? Math.round(completedItems / totalItems * 100) : 0}%)`;
+
+        navigator.clipboard.writeText(text).then(() => {
+            alert('Progress copied to clipboard!');
+        }).catch(() => {
+            alert('Could not copy to clipboard.');
+        });
+    }
+
     // --- File Manager ---
     function openFileManager() {
         if (!elements.modalFiles) return;
@@ -3094,11 +3194,28 @@
         if (elements.storageUsage) {
             elements.storageUsage.addEventListener('click', openFileManager);
         }
+        if (elements.modalFiles) {
+            elements.modalFiles.addEventListener('click', handleCloseModal);
+        }
         if (elements.btnRefreshFiles) {
             elements.btnRefreshFiles.addEventListener('click', loadStorageFiles);
         }
         if (elements.filesList) {
             elements.filesList.addEventListener('click', handleFileClick);
+        }
+
+        // Category manager handlers
+        if (elements.btnManageCategories) {
+            elements.btnManageCategories.addEventListener('click', openCategoryManager);
+        }
+        if (elements.modalCategories) {
+            elements.modalCategories.addEventListener('click', handleCloseModal);
+        }
+        if (elements.categoriesList) {
+            elements.categoriesList.addEventListener('click', handleCategoryClick);
+        }
+        if (elements.btnShareProgress) {
+            elements.btnShareProgress.addEventListener('click', shareProgress);
         }
 
         // Render archive and spaces on load
