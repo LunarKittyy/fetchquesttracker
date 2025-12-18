@@ -1315,6 +1315,46 @@ body.shake {
     width: 100%;
 }
 
+/* Archive and Delete buttons */
+.quest-actions {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+}
+
+.btn-archive,
+.btn-delete {
+    background: none;
+    border: none;
+    padding: 0.25rem;
+    cursor: pointer;
+    color: var(--clr-text-muted);
+    border-radius: var(--radius-sm);
+    transition: all 0.15s ease;
+    opacity: 0;
+}
+
+.quest-card:hover .btn-archive,
+.quest-card:hover .btn-delete {
+    opacity: 1;
+}
+
+.btn-archive svg,
+.btn-delete svg {
+    width: 16px;
+    height: 16px;
+}
+
+.btn-archive:hover {
+    color: var(--clr-accent-secondary);
+    background: rgba(78, 205, 180, 0.1);
+}
+
+.btn-delete:hover {
+    color: var(--clr-accent-danger);
+    background: rgba(212, 84, 84, 0.1);
+}
+
 /* Hide qty field when in quest mode */
 .form-group-inline.hidden {
     display: none;
@@ -2979,4 +3019,95 @@ body.shake {
 .archive-card-delete svg {
     width: 16px;
     height: 16px;
+}
+
+/* --- Bulk Mode --- */
+.bulk-actions-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--clr-bg-secondary);
+    border-top: var(--border-strong);
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 1000;
+    animation: slideUp 0.2s ease;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
+
+.bulk-info {
+    font-size: 0.9rem;
+    color: var(--clr-text-secondary);
+    font-weight: 600;
+}
+
+.bulk-info span {
+    color: var(--clr-accent-secondary);
+}
+
+.bulk-buttons {
+    display: flex;
+    gap: 0.75rem;
+}
+
+/* Bulk mode active state */
+body.bulk-mode .quest-card {
+    cursor: pointer;
+}
+
+body.bulk-mode .quest-card::after {
+    content: '';
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--clr-text-muted);
+    border-radius: var(--radius-sm);
+    background: var(--clr-bg-tertiary);
+    transition: all 0.15s ease;
+}
+
+body.bulk-mode .quest-card.selected::after {
+    background: var(--clr-accent-secondary);
+    border-color: var(--clr-accent-secondary);
+}
+
+body.bulk-mode .quest-card.selected::before {
+    content: '✓';
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--clr-bg-primary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    z-index: 1;
+}
+
+body.bulk-mode .quest-content {
+    padding-left: 2rem;
+}
+
+/* Bulk mode button active state */
+#btn-bulk-mode.active {
+    background: var(--clr-accent-secondary);
+    color: var(--clr-bg-primary);
+    border-color: var(--clr-accent-secondary);
 }

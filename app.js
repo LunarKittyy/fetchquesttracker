@@ -98,7 +98,15 @@
         btnPriorityPicker: $('#btn-priority-picker'),
         priorityDropdown: $('#priority-dropdown'),
         priorityIndicator: $('#priority-indicator'),
-        itemPriority: $('#item-priority')
+        itemPriority: $('#item-priority'),
+        // Bulk mode
+        btnBulkMode: $('#btn-bulk-mode'),
+        bulkActionsBar: $('#bulk-actions-bar'),
+        bulkCount: $('#bulk-count'),
+        bulkSelectAll: $('#bulk-select-all'),
+        bulkArchive: $('#bulk-archive'),
+        bulkDelete: $('#bulk-delete'),
+        bulkCancel: $('#bulk-cancel')
     };
 
     let currentType = 'item';
@@ -109,6 +117,8 @@
     let animationsPaused = false;
     let saveIndicatorTimeout = null;
     let searchQuery = '';
+    let bulkMode = false;
+    let selectedItems = new Set();
 
     // --- LocalStorage Functions ---
     function saveState() {
@@ -282,12 +292,15 @@
 
     function calculateSpaceProgress(space) {
         const items = space.items || [];
-        if (items.length === 0) return 0;
+        const archivedItems = space.archivedItems || [];
+        const allItems = [...items, ...archivedItems];
+
+        if (allItems.length === 0) return 0;
 
         let totalCurrent = 0;
         let totalTarget = 0;
 
-        items.forEach(item => {
+        allItems.forEach(item => {
             const prog = getItemProgress(item);
             totalCurrent += prog.current;
             totalTarget += prog.total;
@@ -1221,12 +1234,21 @@
                                     <span class="quest-name-text" data-action="edit-name">${escapeHtml(item.name)}</span>
                                 </h3>
                             </div>
-                            <button class="btn-delete" data-action="delete" title="Delete">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="3 6 5 6 21 6"/>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                                </svg>
-                            </button>
+                            <div class="quest-actions">
+                                <button class="btn-archive" data-action="archive" title="Archive">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="21 8 21 21 3 21 3 8"/>
+                                        <rect x="1" y="3" width="22" height="5"/>
+                                        <line x1="10" y1="12" x2="14" y2="12"/>
+                                    </svg>
+                                </button>
+                                <button class="btn-delete" data-action="delete" title="Delete">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="3 6 5 6 21 6"/>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                         
                         <div class="progress-container">
@@ -1515,11 +1537,21 @@
     }
 
     function handleQuestAction(e) {
+        const card = e.target.closest('.quest-card');
+
+        // In bulk mode, clicking anywhere on card toggles selection
+        if (bulkMode && card) {
+            e.preventDefault();
+            e.stopPropagation();
+            handleBulkCardClick(card);
+            return;
+        }
+
         const btn = e.target.closest('[data-action]');
         if (!btn) return;
 
         const action = btn.dataset.action;
-        const card = btn.closest('.quest-card');
+        // card already defined above for bulk mode check
         const objItem = btn.closest('.objective-item');
 
         if (!card) return;
@@ -1624,6 +1656,27 @@
                 }
                 break;
 
+            case 'archive':
+                // Move item to archive
+                const itemIndex = state.items.findIndex(i => i.id === itemId);
+                if (itemIndex !== -1) {
+                    const [archivedItem] = state.items.splice(itemIndex, 1);
+                    archivedItem.archivedAt = Date.now();
+                    state.archivedItems.push(archivedItem);
+                    saveState();
+
+                    // Remove card from DOM
+                    card.style.transition = 'all 0.3s ease';
+                    card.style.transform = 'scale(0.9)';
+                    card.style.opacity = '0';
+                    setTimeout(() => {
+                        card.remove();
+                        cleanupEmptyCategory(item.category);
+                        renderArchive();
+                    }, 300);
+                }
+                break;
+
             case 'update-notes':
                 // Handled by blur event below
                 break;
@@ -1672,9 +1725,10 @@
     }
 
     function handleCloseModal(e) {
+        // Use closest() to handle clicks on child elements (like SVG inside X button)
         if (e.target.classList.contains('modal-backdrop') ||
-            e.target.classList.contains('modal-close') ||
-            e.target.classList.contains('modal-cancel')) {
+            e.target.closest('.modal-close') ||
+            e.target.closest('.modal-cancel')) {
             // Find the closest modal and hide it
             const modal = e.target.closest('.modal');
             if (modal) {
@@ -1997,6 +2051,79 @@
         updateFormContentState();
     }
 
+    // --- Bulk Mode Functions ---
+    function toggleBulkMode() {
+        bulkMode = !bulkMode;
+        document.body.classList.toggle('bulk-mode', bulkMode);
+        elements.btnBulkMode.classList.toggle('active', bulkMode);
+        elements.bulkActionsBar.classList.toggle('hidden', !bulkMode);
+
+        if (!bulkMode) {
+            exitBulkMode();
+        } else {
+            selectedItems.clear();
+            updateBulkCount();
+        }
+    }
+
+    function exitBulkMode() {
+        bulkMode = false;
+        document.body.classList.remove('bulk-mode');
+        elements.btnBulkMode.classList.remove('active');
+        elements.bulkActionsBar.classList.add('hidden');
+        selectedItems.clear();
+        $$('.quest-card.selected').forEach(card => card.classList.remove('selected'));
+    }
+
+    function updateBulkCount() {
+        elements.bulkCount.textContent = selectedItems.size;
+    }
+
+    function handleBulkCardClick(card) {
+        const itemId = card.dataset.id;
+        if (selectedItems.has(itemId)) {
+            selectedItems.delete(itemId);
+            card.classList.remove('selected');
+        } else {
+            selectedItems.add(itemId);
+            card.classList.add('selected');
+        }
+        updateBulkCount();
+    }
+
+    function bulkArchiveItems() {
+        const itemsToArchive = [...selectedItems];
+
+        itemsToArchive.forEach(itemId => {
+            const itemIndex = state.items.findIndex(i => i.id === itemId);
+            if (itemIndex !== -1) {
+                const [archivedItem] = state.items.splice(itemIndex, 1);
+                archivedItem.archivedAt = Date.now();
+                state.archivedItems.push(archivedItem);
+            }
+        });
+
+        saveState();
+        exitBulkMode();
+        render();
+        renderArchive();
+    }
+
+    function bulkDeleteItems() {
+        const itemsToDelete = [...selectedItems];
+
+        itemsToDelete.forEach(itemId => {
+            const itemIndex = state.items.findIndex(i => i.id === itemId);
+            if (itemIndex !== -1) {
+                state.items.splice(itemIndex, 1);
+            }
+        });
+
+        saveState();
+        exitBulkMode();
+        render();
+    }
+
     // --- Animation Pause on Blur ---
     function handleWindowFocus() {
         animationsPaused = false;
@@ -2204,6 +2331,38 @@
             elements.searchAllSpaces.addEventListener('change', () => {
                 if (searchQuery) render();
             });
+        }
+
+        // Bulk mode handlers
+        if (elements.btnBulkMode) {
+            elements.btnBulkMode.addEventListener('click', toggleBulkMode);
+        }
+        if (elements.bulkSelectAll) {
+            elements.bulkSelectAll.addEventListener('click', () => {
+                const cards = $$('.quest-card');
+                cards.forEach(card => {
+                    card.classList.add('selected');
+                    selectedItems.add(card.dataset.id);
+                });
+                updateBulkCount();
+            });
+        }
+        if (elements.bulkArchive) {
+            elements.bulkArchive.addEventListener('click', () => {
+                if (selectedItems.size === 0) return;
+                bulkArchiveItems();
+            });
+        }
+        if (elements.bulkDelete) {
+            elements.bulkDelete.addEventListener('click', () => {
+                if (selectedItems.size === 0) return;
+                if (confirm(`Delete ${selectedItems.size} items permanently?`)) {
+                    bulkDeleteItems();
+                }
+            });
+        }
+        if (elements.bulkCancel) {
+            elements.bulkCancel.addEventListener('click', exitBulkMode);
         }
 
         // Render archive and spaces on load

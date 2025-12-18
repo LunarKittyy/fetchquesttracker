@@ -60,6 +60,14 @@
                     </button>
                 </div>
                 <div class="header-actions">
+                    <button id="btn-bulk-mode" class="btn btn-secondary btn-icon-only" title="Bulk Mode">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <rect x="3" y="3" width="7" height="7" />
+                            <rect x="14" y="3" width="7" height="7" />
+                            <rect x="3" y="14" width="7" height="7" />
+                            <rect x="14" y="14" width="7" height="7" />
+                        </svg>
+                    </button>
                     <button id="btn-settings" class="btn btn-secondary btn-icon-only" title="Settings">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                             <circle cx="12" cy="12" r="3" />
@@ -511,6 +519,19 @@
             <button type="button" class="priority-option priority-medium" data-priority="medium"
                 title="Medium">MEDIUM</button>
             <button type="button" class="priority-option priority-high" data-priority="high" title="High">HIGH</button>
+        </div>
+    </div>
+
+    <!-- Bulk Actions Bar -->
+    <div id="bulk-actions-bar" class="bulk-actions-bar hidden">
+        <div class="bulk-info">
+            <span id="bulk-count">0</span> selected
+        </div>
+        <div class="bulk-buttons">
+            <button type="button" id="bulk-select-all" class="btn btn-secondary">Select All</button>
+            <button type="button" id="bulk-archive" class="btn btn-primary">Archive Selected</button>
+            <button type="button" id="bulk-delete" class="btn btn-danger">Delete Selected</button>
+            <button type="button" id="bulk-cancel" class="btn btn-secondary">Cancel</button>
         </div>
     </div>
 
