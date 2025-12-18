@@ -2334,11 +2334,34 @@
             } else {
                 console.log('ℹ️ No cloud data or error, using local data');
             }
+            
+            // Start real-time sync
+            window.FirebaseBridge.startRealtimeSync();
+            window.FirebaseBridge.onDataChange(handleRealtimeUpdate);
         } else {
             // User is logged out
             if (elements.btnLogin) elements.btnLogin.classList.remove('hidden');
             if (elements.userMenu) elements.userMenu.classList.add('hidden');
             if (elements.userDropdown) elements.userDropdown.classList.add('hidden');
+            
+            // Stop real-time sync
+            if (window.FirebaseBridge) {
+                window.FirebaseBridge.stopRealtimeSync();
+            }
+        }
+    }
+    
+    function handleRealtimeUpdate(data) {
+        console.log('📡 Received real-time update:', data);
+        if (data.spaces) {
+            state.spaces = data.spaces;
+            state.activeSpaceId = state.activeSpaceId || state.spaces[0]?.id;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            sortItems();
+            render();
+            renderArchive();
+            renderSpaces();
+            console.log('📡 UI updated with real-time data');
         }
     }
 

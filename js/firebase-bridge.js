@@ -25,7 +25,8 @@ import {
     collection,
     getDocs,
     deleteDoc,
-    writeBatch
+    writeBatch,
+    onSnapshot
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 import {
     getStorage,
@@ -166,6 +167,67 @@ window.FirebaseBridge = {
             this.authStateListeners = this.authStateListeners.filter(cb => cb !== callback);
         };
     },
+    
+    // Real-time sync listeners
+    realtimeUnsubscribers: [],
+    dataChangeListeners: [],
+    isLocalChange: false, // Flag to prevent re-sync loop
+    
+    // Subscribe to data changes callback
+    onDataChange(callback) {
+        this.dataChangeListeners.push(callback);
+        return () => {
+            this.dataChangeListeners = this.dataChangeListeners.filter(cb => cb !== callback);
+        };
+    },
+    
+    // Notify all data change listeners
+    notifyDataChange(state) {
+        if (this.isLocalChange) {
+            console.log('🔄 Skipping notification (local change)');
+            return;
+        }
+        console.log('📡 Notifying data change listeners');
+        this.dataChangeListeners.forEach(cb => cb(state));
+    },
+    
+    // Start real-time sync (call after login)
+    startRealtimeSync() {
+        if (!db || !this.currentUser) return;
+        
+        // Unsubscribe from previous listeners
+        this.stopRealtimeSync();
+        
+        console.log('📡 Starting real-time sync...');
+        
+        // Listen to spaces collection changes
+        const spacesRef = collection(db, 'users', this.currentUser.uid, 'spaces');
+        const unsubSpaces = onSnapshot(spacesRef, (snapshot) => {
+            if (snapshot.metadata.hasPendingWrites) {
+                // Local change, skip
+                return;
+            }
+            console.log('📡 Spaces changed from server');
+            const spaces = [];
+            snapshot.forEach(doc => {
+                spaces.push({ id: doc.id, ...doc.data() });
+            });
+            this.notifyDataChange({ spaces });
+        }, (error) => {
+            console.error('Real-time sync error:', error);
+        });
+        
+        this.realtimeUnsubscribers.push(unsubSpaces);
+        console.log('📡 Real-time sync active');
+    },
+    
+    // Stop real-time sync (call on logout)
+    stopRealtimeSync() {
+        this.realtimeUnsubscribers.forEach(unsub => unsub());
+        this.realtimeUnsubscribers = [];
+        console.log('📡 Real-time sync stopped');
+    },
+
     
     // Sign up with email/password
     async signUp(email, password, displayName = '') {
