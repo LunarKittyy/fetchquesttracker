@@ -88,6 +88,7 @@ export let searchQuery = '';
 export let bulkMode = false;
 export let selectedItems = new Set();
 export let pendingLocalChange = false;
+export let isInitialSyncInProgress = false;
 
 // Setters for mutable UI state
 export function setCurrentType(type) { currentType = type; }
@@ -99,3 +100,4 @@ export function clearSelectedItems() { selectedItems.clear(); }
 export function addSelectedItem(id) { selectedItems.add(id); }
 export function removeSelectedItem(id) { selectedItems.delete(id); }
 export function setPendingLocalChange(val) { pendingLocalChange = val; }
+export function setInitialSyncInProgress(val) { isInitialSyncInProgress = val; }

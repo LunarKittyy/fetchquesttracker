@@ -3,7 +3,7 @@
  * Authentication UI handlers and state management
  */
 
-import { state, STORAGE_KEY, syncActiveSpace } from './state.js';
+import { state, STORAGE_KEY, syncActiveSpace, pendingLocalChange, isInitialSyncInProgress, setInitialSyncInProgress } from './state.js';
 import { $, $$ } from './utils.js';
 import { saveState, loadState, updateLastSyncedDisplay, updateStorageDisplay, startSyncTimeInterval } from './storage.js';
 import { sortItems } from './utils.js';
@@ -131,10 +131,29 @@ export async function updateAuthUI(user) {
         closeAuthModal();
 
         console.log('📥 Loading data from cloud...');
+        setInitialSyncInProgress(true);
         const result = await window.FirebaseBridge.loadFromCloud();
         console.log('📥 Load result:', result);
 
-        if (result.success && result.state) {
+        // Check if user made local changes during the async load
+        if (pendingLocalChange) {
+            console.log('⚠️ User made local changes during initial load - preserving local state and syncing to cloud');
+            setInitialSyncInProgress(false);
+            // User's local changes take priority - sync them to cloud instead
+            window.FirebaseBridge.startRealtimeSync();
+            // Register callback for realtime updates from other devices
+            window.FirebaseBridge.onDataChange((data) => {
+                handleRealtimeUpdate(data, pendingLocalChange, {
+                    render: renderCallback,
+                    renderArchive: renderArchiveCallback,
+                    renderSpaces: renderSpacesCallback
+                });
+            });
+            startSyncTimeInterval();
+            // Force sync local changes to cloud now
+            saveState();
+        } else if (result.success && result.state) {
+            setInitialSyncInProgress(false);
             state.spaces = result.state.spaces;
             state.activeSpaceId = result.state.activeSpaceId || state.spaces[0]?.id;
             state.shiftAmount = result.state.shiftAmount;
@@ -150,7 +169,17 @@ export async function updateAuthUI(user) {
             if (renderSpacesCallback) renderSpacesCallback();
 
             window.FirebaseBridge.startRealtimeSync();
+            // Register callback for realtime updates from other devices
+            window.FirebaseBridge.onDataChange((data) => {
+                handleRealtimeUpdate(data, pendingLocalChange, {
+                    render: renderCallback,
+                    renderArchive: renderArchiveCallback,
+                    renderSpaces: renderSpacesCallback
+                });
+            });
             startSyncTimeInterval();
+        } else {
+            setInitialSyncInProgress(false);
         }
 
         updateLastSyncedDisplay();
@@ -315,6 +344,11 @@ export async function handleDeleteAccount() {
 export function handleRealtimeUpdate(data, pendingLocalChange, callbacks) {
     if (pendingLocalChange) {
         console.log('🔄 Realtime update ignored (pending local change)');
+        return;
+    }
+
+    if (isInitialSyncInProgress) {
+        console.log('🔄 Realtime update ignored (initial sync in progress)');
         return;
     }
 
