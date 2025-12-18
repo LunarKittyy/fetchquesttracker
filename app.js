@@ -2361,6 +2361,10 @@
             
             state.spaces = data.spaces;
             state.activeSpaceId = state.activeSpaceId || state.spaces[0]?.id;
+            
+            // Re-bind state.items to the new active space object
+            syncActiveSpace();
+            
             localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
             sortItems();
             render();
