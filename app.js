@@ -2352,12 +2352,32 @@
     }
     
     function handleRealtimeUpdate(data) {
-        console.log('📡 Received real-time update:', data);
+        console.log('📡 Received real-time update');
         if (data.spaces) {
-            // Debug: log what's in the spaces
-            data.spaces.forEach(s => {
-                console.log(`📡 Space "${s.name}": ${s.items?.length || 0} items, ${s.archivedItems?.length || 0} archived`);
-            });
+            // Compare incoming data with current data (ignoring lastModified timestamps)
+            const incomingData = JSON.stringify(data.spaces.map(s => ({
+                id: s.id,
+                name: s.name,
+                color: s.color,
+                items: s.items,
+                archivedItems: s.archivedItems,
+                categories: s.categories
+            })));
+            const currentData = JSON.stringify(state.spaces.map(s => ({
+                id: s.id,
+                name: s.name,
+                color: s.color,
+                items: s.items,
+                archivedItems: s.archivedItems,
+                categories: s.categories
+            })));
+            
+            if (incomingData === currentData) {
+                console.log('📡 No changes detected, skipping render');
+                return;
+            }
+            
+            console.log('📡 Changes detected, updating UI');
             
             state.spaces = data.spaces;
             state.activeSpaceId = state.activeSpaceId || state.spaces[0]?.id;
@@ -2370,7 +2390,6 @@
             render();
             renderArchive();
             renderSpaces();
-            console.log('📡 UI updated with real-time data');
         }
     }
 
