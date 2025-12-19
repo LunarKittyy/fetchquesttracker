@@ -223,7 +223,8 @@ function setupMobileMenu() {
 
     // Menu item clicks (delegated)
     document.getElementById('mobile-menu-overlay')?.addEventListener('click', (e) => {
-        const btn = e.target.closest('.mobile-menu-item');
+        // Check for menu item or storage button
+        const btn = e.target.closest('.mobile-menu-item, .mobile-menu-storage');
         if (!btn) return;
 
         const id = btn.id;
@@ -252,8 +253,13 @@ function setupMobileMenu() {
                 document.getElementById('btn-delete-account')?.click();
                 break;
             case 'mobile-menu-storage':
-                // Open the storage file manager modal
-                document.getElementById('storage-usage')?.click();
+                // Open the storage file manager modal directly
+                document.getElementById('modal-files')?.classList.remove('hidden');
+                // Trigger file loading if FirebaseBridge has the method
+                if (window.FirebaseBridge?.currentUser) {
+                    // The modal has a refresh button that triggers loadStorageFiles
+                    document.getElementById('btn-refresh-files')?.click();
+                }
                 break;
         }
     });
