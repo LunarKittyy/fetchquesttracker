@@ -1,4 +1,4 @@
-# FETCH QUEST v2.3
+# FETCH QUEST v4.1
 
 A stylish quest/item tracker web application with Firebase cloud sync support.
 
