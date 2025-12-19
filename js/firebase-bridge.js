@@ -184,6 +184,7 @@ function getBase64Size(base64String) {
 // Expose Firebase Bridge globally for app.js to use
 window.FirebaseBridge = {
     isConfigured: isFirebaseConfigured(),
+    isMobile: isMobileDevice(), // Expose mobile detection
 
     // Storage tracking
     storageUsedBytes: 0,
