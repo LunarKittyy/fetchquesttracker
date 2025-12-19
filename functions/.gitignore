@@ -1,0 +1,8 @@
+# Dependencies
+node_modules/
+
+# Local firebase emulator data
+.firebase/
+
+# Logs
+*.log

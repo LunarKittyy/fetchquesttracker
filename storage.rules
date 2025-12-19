@@ -1,0 +1,26 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Users can only access their own files with 10MB total limit
+    match /users/{userId}/{allPaths=**} {
+      // Helper function to get user's total storage from Firestore
+      function getUserStorageUsed() {
+        let doc = firestore.get(/databases/(default)/documents/userStorage/$(userId));
+        return doc != null && doc.data != null ? doc.data.bytesUsed : 0;
+      }
+      
+      // 10MB limit = 10485760 bytes
+      function underStorageLimit() {
+        return getUserStorageUsed() + request.resource.size < 10485760;
+      }
+      
+      allow read: if request.auth != null && request.auth.uid == userId;
+      
+      allow write: if request.auth != null 
+                   && request.auth.uid == userId
+                   && underStorageLimit();
+      
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
