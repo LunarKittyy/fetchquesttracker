@@ -277,6 +277,14 @@ export async function handleGoogleSignIn() {
 
     clearAuthErrors();
     const result = await window.FirebaseBridge.signInWithGoogle();
+    
+    // On mobile, signInWithRedirect navigates away from the page
+    // The result will be handled by getRedirectResult on page reload
+    if (result.redirect) {
+        // Page is redirecting to Google - nothing more to do here
+        return;
+    }
+    
     if (!result.success) {
         showAuthError('signin', result.error);
     }

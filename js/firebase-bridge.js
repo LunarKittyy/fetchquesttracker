@@ -10,6 +10,8 @@ import {
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
     signInWithPopup,
+    signInWithRedirect,
+    getRedirectResult,
     GoogleAuthProvider,
     signOut as firebaseSignOut,
     sendPasswordResetEmail,
@@ -64,6 +66,13 @@ let auth = null;
 let db = null;
 let storage = null;
 let googleProvider = null;
+let pendingRedirectResult = null; // Store redirect result promise
+
+// Mobile detection - used to determine auth method
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+           (navigator.maxTouchPoints && navigator.maxTouchPoints > 2);
+}
 
 if (isFirebaseConfigured()) {
     try {
@@ -78,6 +87,22 @@ if (isFirebaseConfigured()) {
             provider: new ReCaptchaV3Provider('6Ld2ETAsAAAAALgMe6039Lu-9s2yl3xZ5I5yhT2e'),
             isTokenAutoRefreshEnabled: true
         });
+
+        // CRITICAL: Check for redirect result IMMEDIATELY on page load
+        // This must happen before onAuthStateChanged to properly handle mobile OAuth
+        pendingRedirectResult = getRedirectResult(auth)
+            .then((result) => {
+                if (result && result.user) {
+                    console.log('🔄 Redirect sign-in successful:', result.user.email);
+                    // The onAuthStateChanged will fire automatically after this
+                }
+                return result;
+            })
+            .catch((error) => {
+                console.error('Redirect result error:', error);
+                // Don't throw - let the app continue even if redirect failed
+                return null;
+            });
 
         console.log('🔥 Firebase initialized successfully');
     } catch (error) {
@@ -265,9 +290,26 @@ window.FirebaseBridge = {
         }
     },
 
-    // Sign in with Google
+    // Sign in with Google (uses redirect on mobile for better compatibility)
     async signInWithGoogle() {
         if (!auth || !googleProvider) return { success: false, error: 'Firebase not configured' };
+        
+        // Use redirect on mobile devices (especially needed for Firefox)
+        if (isMobileDevice()) {
+            try {
+                console.log('📱 Mobile detected, using redirect auth...');
+                // signInWithRedirect will navigate away from the page
+                // The result is handled by getRedirectResult on page reload
+                await signInWithRedirect(auth, googleProvider);
+                // This line won't execute - page redirects to Google
+                return { success: true, redirect: true };
+            } catch (error) {
+                console.error('Redirect auth error:', error);
+                return { success: false, error: getAuthErrorMessage(error.code) };
+            }
+        }
+        
+        // Use popup on desktop
         try {
             const result = await signInWithPopup(auth, googleProvider);
             const isNewUser = result._tokenResponse?.isNewUser || false;
