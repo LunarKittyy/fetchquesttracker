@@ -176,16 +176,24 @@
 
     function debouncedCloudSync() {
         if (cloudSyncTimeout) clearTimeout(cloudSyncTimeout);
+        console.log('🔄 Cloud sync queued (2s debounce)');
         cloudSyncTimeout = setTimeout(async () => {
-            if (!window.FirebaseBridge?.currentUser) return;
+            if (!window.FirebaseBridge?.currentUser) {
+                console.log('❌ No user, skipping sync');
+                return;
+            }
+            console.log('🔄 Starting cloud sync...');
             updateSyncStatusUI('syncing');
             const result = await window.FirebaseBridge.saveToCloud(state);
+            console.log('🔄 Sync result:', result);
             if (result.success) {
                 window.FirebaseBridge.updateLastSyncTime();
                 updateSyncStatusUI('synced');
                 updateLastSyncedDisplay();
+                console.log('✅ Cloud sync complete');
             } else {
                 updateSyncStatusUI('error');
+                console.error('❌ Cloud sync failed:', result.error);
             }
         }, 2000); // 2 second debounce
     }
