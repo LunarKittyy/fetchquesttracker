@@ -1,8 +1,7 @@
-# FETCH QUEST v4.1
+# FetchQuest Tracker
 
 A stylish quest/item tracker web application with Firebase cloud sync support.
 ### [Try it here!](https://lumikitten.github.io/fetchquesttracker/)
-
 ## Features
 
 ### Core Functionality
@@ -100,3 +99,6 @@ See [TASKS.md](TASKS.md) for detailed progress tracking.
 - `Shift + Click` on +/- buttons: Add/subtract 5 (configurable)
 - `Ctrl + Click` on +/- buttons: Add/subtract 10 (configurable)
 - `Right-click` on spaces/quests: Context menu with quick actions
+
+
+v4.1
