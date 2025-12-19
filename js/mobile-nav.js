@@ -150,9 +150,42 @@ function updateMobileMenuAuth() {
     const user = window.FirebaseBridge?.currentUser;
 
     if (user) {
+        // Get sync and storage info
+        const syncTime = window.FirebaseBridge?.getRelativeSyncTime?.() || 'Not synced';
+        const storageInfo = window.FirebaseBridge?.getStorageInfo?.() || { usedMB: '0', limitMB: '50', percent: 0 };
+        
         authSection.innerHTML = `
             <div class="mobile-menu-user">
                 <span class="mobile-menu-user-email">${user.email || user.displayName || 'User'}</span>
+                <div class="mobile-menu-sync-status">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                        <polyline points="23 4 23 10 17 10"/>
+                        <polyline points="1 20 1 14 7 14"/>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                    </svg>
+                    <span id="mobile-sync-time">${syncTime}</span>
+                </div>
+                <div class="mobile-menu-storage">
+                    <div class="mobile-storage-bar">
+                        <div class="mobile-storage-fill ${storageInfo.percent >= 90 ? 'danger' : storageInfo.percent >= 70 ? 'warning' : ''}" style="width: ${storageInfo.percent}%"></div>
+                    </div>
+                    <span class="mobile-storage-text">${storageInfo.usedMB} / ${storageInfo.limitMB} MB</span>
+                </div>
+                <button id="mobile-menu-export" class="mobile-menu-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    <span>Export My Data</span>
+                </button>
+                <button id="mobile-menu-delete-account" class="mobile-menu-item mobile-menu-item-danger">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    </svg>
+                    <span>Delete Account</span>
+                </button>
                 <button id="mobile-menu-logout" class="mobile-menu-item mobile-menu-item-danger">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -211,6 +244,12 @@ function setupMobileMenu() {
                 break;
             case 'mobile-menu-logout':
                 document.getElementById('btn-logout')?.click();
+                break;
+            case 'mobile-menu-export':
+                document.getElementById('btn-export-data')?.click();
+                break;
+            case 'mobile-menu-delete-account':
+                document.getElementById('btn-delete-account')?.click();
                 break;
         }
     });

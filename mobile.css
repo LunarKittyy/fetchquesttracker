@@ -503,6 +503,56 @@ body.is-mobile .mobile-menu-overlay.hidden {
     font-weight: 600;
 }
 
+.mobile-menu-sync-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--clr-text-muted);
+    padding: 0.25rem 0;
+}
+
+.mobile-menu-sync-status svg {
+    flex-shrink: 0;
+    color: var(--clr-accent-secondary);
+}
+
+.mobile-menu-storage {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.5rem 0;
+}
+
+.mobile-storage-bar {
+    height: 6px;
+    background: var(--clr-bg-elevated);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.mobile-storage-fill {
+    height: 100%;
+    background: var(--clr-accent-secondary);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.mobile-storage-fill.warning {
+    background: var(--clr-accent-warning, #e8b84a);
+}
+
+.mobile-storage-fill.danger {
+    background: var(--clr-accent-danger);
+}
+
+.mobile-storage-text {
+    font-size: 0.7rem;
+    color: var(--clr-text-muted);
+    text-align: right;
+}
+
+
 /* ===========================================
    MODALS - FULL SCREEN ON MOBILE
    =========================================== */
@@ -546,7 +596,51 @@ body.is-mobile .space-tab:hover {
     transform: none;
 }
 
-/* Active states for touch feedback */
+/* Comprehensive hover reset for touch devices */
+@media (hover: none) {
+    /* Reset all hover visual effects */
+    .btn:hover,
+    .btn-control:hover,
+    .btn-count:hover,
+    .btn-icon:hover,
+    .btn-icon-only:hover {
+        background: inherit;
+        color: inherit;
+        transform: none;
+        box-shadow: none;
+    }
+    
+    .quest-card:hover {
+        transform: none;
+        box-shadow: none;
+    }
+    
+    .space-tab:hover,
+    .space-tab-button:hover {
+        background: inherit;
+        transform: none;
+    }
+    
+    .mobile-menu-item:hover,
+    .mobile-nav-btn:hover {
+        background: inherit;
+        color: inherit;
+    }
+    
+    /* Prevent any lingering visual states */
+    .btn-archive:hover,
+    .btn-delete:hover {
+        background: inherit;
+        opacity: 1;
+    }
+    
+    .objective-btn:hover {
+        background: inherit;
+        transform: none;
+    }
+}
+
+/* Active states for touch feedback - immediate and clear */
 body.is-mobile .btn:active {
     transform: scale(0.97);
     opacity: 0.9;
@@ -560,6 +654,16 @@ body.is-mobile .space-tab:active {
     transform: scale(0.98);
 }
 
+/* Ensure active state clears immediately on touchend */
+body.is-mobile .btn,
+body.is-mobile .mobile-nav-btn,
+body.is-mobile .mobile-menu-item,
+body.is-mobile .btn-control,
+body.is-mobile .objective-btn {
+    transition: transform 0.1s ease, opacity 0.1s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
 /* Disable text selection on interactive elements */
 body.is-mobile .mobile-nav,
 body.is-mobile .mobile-menu-item,
@@ -567,6 +671,7 @@ body.is-mobile .btn {
     user-select: none;
     -webkit-user-select: none;
 }
+
 
 /* ===========================================
    CONTEXT MENU - MOBILE POSITIONING

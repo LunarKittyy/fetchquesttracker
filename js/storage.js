@@ -122,14 +122,17 @@ export function debouncedCloudSync() {
         }
 
         // Check if user is hovering on a quest card - delay sync to prevent hover interruption
-        const hoveredCard = document.querySelector('.quest-card:hover');
-        if (hoveredCard) {
-            console.log('🔄 Delaying sync (user hovering)');
-            // Wait for hover to end, then retry
-            hoveredCard.addEventListener('mouseleave', () => {
-                debouncedCloudSync();
-            }, { once: true });
-            return;
+        // Skip this check on mobile since :hover doesn't work reliably and mouseleave never fires
+        if (!window.FirebaseBridge?.isMobile) {
+            const hoveredCard = document.querySelector('.quest-card:hover');
+            if (hoveredCard) {
+                console.log('🔄 Delaying sync (user hovering)');
+                // Wait for hover to end, then retry
+                hoveredCard.addEventListener('mouseleave', () => {
+                    debouncedCloudSync();
+                }, { once: true });
+                return;
+            }
         }
 
         console.log('🔄 Starting cloud sync...');

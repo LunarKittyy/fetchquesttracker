@@ -468,7 +468,7 @@ export function updateCardProgress(id, archiveItemCallback) {
 
         if (state.autoArchive && archiveItemCallback) {
             card.classList.add('pending-archive');
-            const handleMouseLeave = () => {
+            const handleArchiveTrigger = () => {
                 if (card.classList.contains('pending-archive')) {
                     setTimeout(() => {
                         const stillItem = state.items.find(i => i.id === item.id);
@@ -478,7 +478,14 @@ export function updateCardProgress(id, archiveItemCallback) {
                     }, 800);
                 }
             };
-            card.addEventListener('mouseleave', handleMouseLeave, { once: true });
+            
+            // On mobile, use touchend since mouseleave doesn't fire properly
+            if (window.FirebaseBridge?.isMobile) {
+                // Use a short delay to let touch sequence complete
+                setTimeout(handleArchiveTrigger, 100);
+            } else {
+                card.addEventListener('mouseleave', handleArchiveTrigger, { once: true });
+            }
         }
     } else if (!isComplete && card.classList.contains('complete')) {
         card.classList.remove('complete', 'pending-archive');
