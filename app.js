@@ -493,7 +493,7 @@ function handleNotesBlur(e) {
 
 // --- Modal Handlers ---
 function handleCloseModal(e) {
-    if (e.target.classList.contains('modal-backdrop') || e.target.closest('.modal-close')) {
+    if (e.target.classList.contains('modal-backdrop') || e.target.closest('.modal-close') || e.target.closest('.modal-cancel')) {
         e.target.closest('.modal')?.classList.add('hidden');
     }
 }
