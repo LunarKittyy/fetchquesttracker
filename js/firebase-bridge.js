@@ -337,6 +337,28 @@ window.FirebaseBridge = {
         return str && typeof str === 'string' && str.includes('firebasestorage.googleapis.com');
     },
 
+    // Fetch storage usage from Firestore (authoritative source tracked by Cloud Functions)
+    async fetchStorageUsage() {
+        if (!db || !this.currentUser) return { success: false };
+        try {
+            const storageDocRef = doc(db, 'userStorage', this.currentUser.uid);
+            const storageSnap = await getDoc(storageDocRef);
+            
+            if (storageSnap.exists()) {
+                const data = storageSnap.data();
+                this.storageUsedBytes = data.bytesUsed || 0;
+                console.log(`📊 Storage usage loaded: ${(this.storageUsedBytes / (1024 * 1024)).toFixed(2)} MB`);
+            } else {
+                // New user, no storage used yet
+                this.storageUsedBytes = 0;
+            }
+            return { success: true, bytesUsed: this.storageUsedBytes };
+        } catch (error) {
+            console.error('Error fetching storage usage:', error);
+            return { success: false, error: error.message };
+        }
+    },
+
     // Get storage usage info
     getStorageInfo() {
         const usedMB = (this.storageUsedBytes / (1024 * 1024)).toFixed(2);

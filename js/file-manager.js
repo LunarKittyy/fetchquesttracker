@@ -80,8 +80,12 @@ export async function handleFileClick(e) {
 
     if (result.success) {
         item.remove();
-        // Reset storage tracking (we'll recalculate on next sync)
-        window.FirebaseBridge.storageUsedBytes = 0;
+        // Fetch updated storage usage from Firestore after a brief delay
+        // (allows Cloud Functions to update the userStorage document)
+        setTimeout(async () => {
+            await window.FirebaseBridge.fetchStorageUsage();
+            updateStorageDisplay();
+        }, 1500);
         updateStorageDisplay();
     } else {
         item.style.opacity = '1';

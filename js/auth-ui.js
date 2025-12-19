@@ -207,6 +207,8 @@ export async function updateAuthUI(user) {
             setInitialSyncInProgress(false);
         }
 
+        // Fetch authoritative storage usage from Firestore before updating display
+        await window.FirebaseBridge.fetchStorageUsage();
         updateLastSyncedDisplay();
         updateStorageDisplay();
     } else {

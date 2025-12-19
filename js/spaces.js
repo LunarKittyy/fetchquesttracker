@@ -262,8 +262,32 @@ export async function handleDeleteSpace() {
     const confirmed = await showConfirm(`Permanently delete "${space.name}" and all its quests? This cannot be undone.`, 'DELETE SPACE', true);
     if (!confirmed) return;
 
-    // Delete from Firestore first (so it won't get restored on sync)
+    // Delete images from Firebase Storage for all items in this space
     if (window.FirebaseBridge?.currentUser) {
+        // Collect all items with storage images (both active and archived)
+        const allItems = [...(space.items || []), ...(space.archivedItems || [])];
+        const itemsWithStorageImages = allItems.filter(
+            item => item.imageUrl && window.FirebaseBridge.isStorageUrl(item.imageUrl)
+        );
+        
+        if (itemsWithStorageImages.length > 0) {
+            console.log(`🗑️ Deleting ${itemsWithStorageImages.length} items' images from space ${space.name}...`);
+            try {
+                const results = await Promise.all(
+                    itemsWithStorageImages.map(item => {
+                        // Determine if item is archived or active
+                        const isArchived = space.archivedItems?.some(ai => ai.id === item.id);
+                        return window.FirebaseBridge.deleteItemImages(spaceId, item.id, isArchived ? 'archived' : 'items');
+                    })
+                );
+                const totalDeleted = results.reduce((sum, r) => sum + (r.deletedCount || 0), 0);
+                console.log(`🗑️ Cleaned up ${totalDeleted} storage file(s) from deleted space`);
+            } catch (err) {
+                console.warn('Could not cleanup storage files for space:', err);
+            }
+        }
+        
+        // Delete space from Firestore
         await window.FirebaseBridge.deleteSpace(spaceId);
     }
 
