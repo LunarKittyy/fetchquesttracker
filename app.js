@@ -562,19 +562,65 @@ function handleFileChange(e) {
 }
 
 async function handleClearAllData() {
-    const confirmed1 = await showConfirm('Delete ALL data? This cannot be undone!', 'CLEAR DATA', true);
+    const isLoggedIn = window.FirebaseBridge?.currentUser;
+    const warningMsg = isLoggedIn 
+        ? 'Delete ALL data including cloud data? This cannot be undone!' 
+        : 'Delete ALL local data? This cannot be undone!';
+    
+    const confirmed1 = await showConfirm(warningMsg, 'CLEAR DATA', true);
     if (!confirmed1) return;
     const confirmed2 = await showConfirm('Really? This will permanently remove everything.', 'FINAL WARNING', true);
     if (!confirmed2) return;
 
-    state.items.length = 0;
-    state.archivedItems.length = 0;
-    state.categories = [...DEFAULT_CATEGORIES];
-    saveState();
-    render();
-    renderArchive();
-    updateCategoryDropdown();
+    // Show loading state
     elements.modalSettings?.classList.add('hidden');
+
+    try {
+        // 1. If logged in, delete all cloud data first
+        if (isLoggedIn && window.FirebaseBridge) {
+            console.log('🗑️ Clearing cloud data...');
+            
+            // Delete all storage files
+            const storageResult = await window.FirebaseBridge.listStorageFiles();
+            if (storageResult.success && storageResult.files.length > 0) {
+                console.log(`🗑️ Deleting ${storageResult.files.length} storage files...`);
+                for (const file of storageResult.files) {
+                    await window.FirebaseBridge.deleteStorageFile(file.fullPath);
+                }
+            }
+            
+            // Delete all spaces from Firestore
+            for (const space of state.spaces) {
+                await window.FirebaseBridge.deleteSpace(space.id);
+            }
+            
+            // Reset storage usage counter
+            window.FirebaseBridge.storageUsedBytes = 0;
+            
+            console.log('✅ Cloud data cleared');
+        }
+
+        // 2. Clear all local state
+        state.spaces.length = 0;
+        state.activeSpaceId = null;
+        
+        // 3. Clear localStorage completely
+        localStorage.removeItem(STORAGE_KEY);
+        
+        // 4. Re-initialize with a fresh default space
+        syncActiveSpace(); // This creates a default space if none exist
+        
+        // 5. Re-render everything
+        render();
+        renderArchive();
+        renderSpaces();
+        updateCategoryDropdown();
+        
+        showAlert('All data has been cleared.', 'SUCCESS');
+    } catch (error) {
+        console.error('Error clearing data:', error);
+        showAlert('Error clearing data: ' + error.message, 'ERROR');
+    }
 }
 
 // --- Image Handlers ---
