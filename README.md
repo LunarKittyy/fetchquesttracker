@@ -1,7 +1,9 @@
 # FetchQuest Tracker
 
 A stylish quest/item tracker web application with Firebase cloud sync support.
+
 ### [Try it here!](https://lumikitten.github.io/fetchquesttracker/)
+
 ## Features
 
 ### Core Functionality
@@ -20,9 +22,9 @@ A stylish quest/item tracker web application with Firebase cloud sync support.
 - **Cloud Sync** - Automatic sync with 2-second debounce
 - **Real-time Updates** - Changes sync live across devices
 - **Image Storage** - Images compressed and stored in Firebase Storage
-- **10MB Per-user Limit** - Storage usage tracking, file manager UI
+- **10MB Per-user Limit** - SERVER-SIDE enforcement via Cloud Functions
 - **Privacy in Mind** - Data export and account deletion
-- **Security First** - reCAPTCHA v3 protection for API security
+- **Security First** - reCAPTCHA v3 and backend validation
 
 ### UI/UX
 
@@ -35,18 +37,82 @@ A stylish quest/item tracker web application with Firebase cloud sync support.
 - **Responsive** - Works on desktop and mobile
 - **Smooth Animations** - Quest creation fly-in, progress updates
 
+### Storage Quotas
+
+Instead of relying on client-side checks (which can be bypassed), we enforce storage limits on the backend:
+
+1.  **Cloud Functions (`onFileUpload`, `onFileDelete`)**: Automatically track total storage usage in a secure Firestore document (`userStorage/{userId}`).
+2.  **Storage Rules**: Reject any upload that would exceed the 10MB quota based on the backend counter.
+3.  **Firestore Rules**: The `userStorage` collection is read-only for users; only the trusted Cloud Functions can update the counters.
+
+### Authentication & Authorization
+
+- **Firebase Auth**: handles identity verification.
+- **Firestore Rules**: Strict owner-only access. Users can only read/write their own documents.
+
+## Installation & Setup
+
+### Prerequisites
+
+- Node.js (v20 recommended)
+- Firebase CLI (`npm install -g firebase-tools`)
+
+### Setup
+
+1.  **Clone the repository**
+    ```bash
+    git clone https://github.com/lumikitten/fetchquesttracker.git
+    cd fetchquesttracker
+    ```
+2.  **Initialize Firebase**
+    ```bash
+    firebase init
+    # Select: Firestore, Functions, Storage
+    # Use existing project: fetchquesttracker
+    ```
+3.  **Install Function Dependencies**
+    ```bash
+    cd functions
+    npm install
+    cd ..
+    ```
+
+## Deployment
+
+### Backend (Firebase)
+
+Deploy the security rules and cloud functions:
+
+```bash
+firebase deploy --only functions,storage,firestore
+```
+
+_Note: This project uses Firebase Functions v1 (Node 20) for simplified IAM permission management._
+
+### Frontend
+
+The frontend is a static site (HTML/JS/CSS).
+
+- **GitHub Pages**: Pushing to the `main` branch will auto-deploy (if configured).
+- **Manual**: Upload the root directory to any static host.
+
 ## Tech Stack
 
-- Vanilla HTML/CSS/JavaScript (modular architecture)
-- Firebase (Auth, Firestore, Storage, App Check)
-- No build step required
+- **Frontend**: Vanilla HTML/CSS/JavaScript (modular architecture)
+- **Backend**: Firebase (Auth, Firestore, Storage, App Check)
+- **Compute**: Firebase Cloud Functions (Node.js 20)
+- **No build step required** for the frontend
 
 ## File Structure
 
 ```
 ├── index.html              # Main HTML structure
-├── style.css               # All styles (74KB)
+├── style.css               # All styles
 ├── app.js                  # Main application logic & initialization
+├── storage.rules           # Firebase Storage security rules
+├── functions/              # Cloud Functions (Backend logic)
+│   ├── index.js            # Storage trigger implementations
+│   └── package.json        # Function dependencies
 └── js/
     ├── firebase-bridge.js  # Firebase SDK initialization & App Check
     ├── firebase-config.js  # Firebase configuration (legacy)
@@ -73,32 +139,14 @@ See [TASKS.md](TASKS.md) for detailed progress tracking.
 
 ### Recently Completed
 
-- Custom right-click context menus for spaces, categories, quests
+- **Server-side Storage Enforcement**: Implemented Cloud Functions and Storage Rules to strictly enforce 10MB limit.
+- **Security Hardening**: Mitigated CWE-602 vulnerability.
+- Custom right-click context menus
 - Statistics dashboard
-- Category manager (delete unused categories)
-- Custom popup system (replaces browser alerts)
-- File split refactor (modular architecture)
-- Firebase App Check integration
-- Optimized real-time sync (no flicker, hover protection)
-- New quest creation animations
-- Custom scrollbar styling
+- Category manager
+- Custom popup system
 
 ### Known Issues
 
-- Adblockers may block some Firebase requests (ERR_BLOCKED_BY_CLIENT).
-- Multi-column layout is partially implemented
-
-### Planned Features
-
-- Collaborative spaces (multi-user with invite system)
-- Helper mode for collaborators
-- Contribution tracking
-
-### Keyboard Shortcuts
-
-- `Shift + Click` on +/- buttons: Add/subtract 5 (configurable)
-- `Ctrl + Click` on +/- buttons: Add/subtract 10 (configurable)
-- `Right-click` on spaces/quests: Context menu with quick actions
-
-
-v4.1
+- Adblockers may block some Firebase requests.
+- Multi-column layout is partially implemented.
