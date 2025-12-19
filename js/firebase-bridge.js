@@ -434,6 +434,46 @@ window.FirebaseBridge = {
         }
     },
 
+    // Delete space from cloud (Firestore + Storage)
+    async deleteSpace(spaceId) {
+        if (!db || !this.currentUser) return { success: false, error: 'Not logged in' };
+        
+        try {
+            console.log(`🗑️ Deleting space ${spaceId} from cloud...`);
+
+            // 1. Delete Firestore document
+            const spaceRef = doc(db, 'users', this.currentUser.uid, 'spaces', spaceId);
+            await deleteDoc(spaceRef);
+
+            // 2. Delete all files in Storage under this space
+            if (storage) {
+                const spaceStorageRef = ref(storage, `users/${this.currentUser.uid}/${spaceId}`);
+                
+                // Recursive delete helper
+                const deleteFolder = async (folderRef) => {
+                    const contents = await listAll(folderRef);
+                    
+                    // Delete files
+                    const deleteFilePromises = contents.items.map(item => deleteObject(item));
+                    await Promise.all(deleteFilePromises);
+
+                    // Recurse into subfolders
+                    for (const prefix of contents.prefixes) {
+                        await deleteFolder(prefix);
+                    }
+                };
+
+                await deleteFolder(spaceStorageRef);
+            }
+
+            console.log(`✅ Space ${spaceId} deleted successfully`);
+            return { success: true };
+        } catch (error) {
+            console.error('Cloud delete error:', error);
+            return { success: false, error: error.message };
+        }
+    },
+
     // Firestore: Load state
     async loadFromCloud() {
         if (!db || !this.currentUser) return { success: false, error: 'Not logged in' };
