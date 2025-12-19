@@ -262,10 +262,24 @@ body.is-mobile .add-form {
     margin-bottom: 0;
 }
 
+/* CRITICAL: Disable hover expansion on mobile */
+body.is-mobile .add-form:hover .form-body {
+    max-height: 0;
+    padding: 0 1.25rem;
+    opacity: 0;
+}
+
+/* Only expand when explicitly opened via mobile nav button */
 body.is-mobile .add-form.mobile-add-open {
     transform: translateY(0);
     max-height: 80vh;
     overflow-y: auto;
+}
+
+body.is-mobile .add-form.mobile-add-open .form-body {
+    max-height: 600px;
+    padding: 1.25rem;
+    opacity: 1;
 }
 
 body.is-mobile.mobile-add-active::before {

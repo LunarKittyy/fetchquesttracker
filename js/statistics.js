@@ -31,10 +31,10 @@ export function initStatistics(domElements) {
 export function openStatistics() {
     if (!elements.modalStatistics) return;
 
-    // Close settings modal first
-    if (elements.modalSettings) {
-        elements.modalSettings.classList.add('hidden');
-    }
+    // Close all other modals first
+    document.querySelectorAll('.modal:not(.hidden)').forEach(modal => {
+        modal.classList.add('hidden');
+    });
 
     // Calculate and render statistics
     renderStatistics();

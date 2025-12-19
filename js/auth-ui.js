@@ -30,6 +30,11 @@ export function initAuthUI(domElements, callbacks) {
  * Open auth modal
  */
 export function openAuthModal() {
+    // Close all other modals first
+    document.querySelectorAll('.modal:not(.hidden)').forEach(modal => {
+        modal.classList.add('hidden');
+    });
+    
     if (elements.modalAuth) {
         elements.modalAuth.classList.remove('hidden');
         switchAuthTab('signin');

@@ -114,6 +114,11 @@ export function switchSpace(spaceId) {
  * Handle adding a new space
  */
 export function handleAddSpace() {
+    // Close all other modals first
+    document.querySelectorAll('.modal:not(.hidden)').forEach(modal => {
+        modal.classList.add('hidden');
+    });
+
     const colors = ['#e8b84a', '#4ecdb4', '#d45454', '#5cb572', '#6366f1', '#a855f7', '#ec4899'];
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
 
@@ -141,6 +146,11 @@ export function handleAddSpace() {
  * @param {string} spaceId - ID of space to edit
  */
 export function openSpaceEditModal(spaceId) {
+    // Close all other modals first
+    document.querySelectorAll('.modal:not(.hidden)').forEach(modal => {
+        modal.classList.add('hidden');
+    });
+
     const space = state.spaces.find(s => s.id === spaceId);
     if (!space) return;
 

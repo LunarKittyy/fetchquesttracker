@@ -25,6 +25,12 @@ export function initFileManager(domElements) {
  */
 export function openFileManager() {
     if (!elements.modalFiles) return;
+    
+    // Close all other modals first
+    document.querySelectorAll('.modal:not(.hidden)').forEach(modal => {
+        modal.classList.add('hidden');
+    });
+    
     elements.modalFiles.classList.remove('hidden');
     loadStorageFiles();
 }

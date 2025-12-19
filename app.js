@@ -498,7 +498,15 @@ function handleCloseModal(e) {
     }
 }
 
+// Close all open modals
+function closeAllModals() {
+    document.querySelectorAll('.modal:not(.hidden)').forEach(modal => {
+        modal.classList.add('hidden');
+    });
+}
+
 function handleAddCategory() {
+    closeAllModals();
     elements.categoryInput.value = '';
     elements.modalCategory?.classList.remove('hidden');
     elements.categoryInput.focus();
@@ -517,6 +525,7 @@ function handleSaveCategory() {
 
 // --- Settings Handlers ---
 function handleOpenSettings() {
+    closeAllModals();
     if (elements.settingShiftAmount) elements.settingShiftAmount.value = state.shiftAmount;
     if (elements.settingCtrlAmount) elements.settingCtrlAmount.value = state.ctrlAmount;
     if (elements.settingAutoArchive) elements.settingAutoArchive.checked = state.autoArchive;
@@ -570,6 +579,7 @@ async function handleClearAllData() {
 
 // --- Image Handlers ---
 function handleOpenImageModal() {
+    closeAllModals();
     elements.modalImage?.classList.remove('hidden');
     elements.imageUrlInput?.classList.add('hidden');
     elements.imageModalPreview?.classList.add('hidden');
