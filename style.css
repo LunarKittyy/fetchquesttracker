@@ -204,6 +204,12 @@ body.shake {
   display: none !important;
 }
 
+/* --- Mobile-only elements (hidden on desktop) --- */
+.mobile-nav,
+.mobile-menu-overlay {
+  display: none;
+}
+
 /* --- App Layout & Spaces Sidebar --- */
 .app-layout {
   display: flex;
