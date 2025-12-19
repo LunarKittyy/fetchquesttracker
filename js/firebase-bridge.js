@@ -99,7 +99,8 @@ if (isFirebaseConfigured()) {
 }
 
 // Error message mapping
-function getAuthErrorMessage(errorCode) {
+function getAuthErrorMessage(error) {
+    const errorCode = error.code;
     const errorMessages = {
         'auth/email-already-in-use': 'This email is already registered. Try signing in instead.',
         'auth/invalid-email': 'Please enter a valid email address.',
@@ -114,7 +115,7 @@ function getAuthErrorMessage(errorCode) {
         'auth/cancelled-popup-request': 'Sign-in was cancelled.',
         'auth/network-request-failed': 'Network error. Check your connection.'
     };
-    return errorMessages[errorCode] || 'An error occurred. Please try again.';
+    return errorMessages[errorCode] || `An error occurred: ${error.message || errorCode}`;
 }
 
 // Storage limits
@@ -261,7 +262,7 @@ window.FirebaseBridge = {
             }
             return { success: true, user: userCredential.user };
         } catch (error) {
-            return { success: false, error: getAuthErrorMessage(error.code) };
+            return { success: false, error: getAuthErrorMessage(error) };
         }
     },
 
@@ -272,7 +273,7 @@ window.FirebaseBridge = {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             return { success: true, user: userCredential.user };
         } catch (error) {
-            return { success: false, error: getAuthErrorMessage(error.code) };
+            return { success: false, error: getAuthErrorMessage(error) };
         }
     },
 
@@ -284,7 +285,7 @@ window.FirebaseBridge = {
             await signInWithRedirect(auth, googleProvider);
             return { success: true }; 
         } catch (error) {
-            return { success: false, error: getAuthErrorMessage(error.code) };
+            return { success: false, error: getAuthErrorMessage(error) };
         }
     },
 
@@ -306,7 +307,7 @@ window.FirebaseBridge = {
             await sendPasswordResetEmail(auth, email);
             return { success: true };
         } catch (error) {
-            return { success: false, error: getAuthErrorMessage(error.code) };
+            return { success: false, error: getAuthErrorMessage(error) };
         }
     },
 
