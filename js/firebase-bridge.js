@@ -629,6 +629,20 @@ window.FirebaseBridge = {
             return { success: true, fileCount: result.files.length };
         }
         return { success: false };
+    },
+
+    // Delete a space from Firestore
+    async deleteSpace(spaceId) {
+        if (!db || !this.currentUser) return { success: false, error: 'Not logged in' };
+        try {
+            const spaceRef = doc(db, 'users', this.currentUser.uid, 'spaces', spaceId);
+            await deleteDoc(spaceRef);
+            console.log('🗑️ Space deleted from cloud:', spaceId);
+            return { success: true };
+        } catch (error) {
+            console.error('Delete space error:', error);
+            return { success: false, error: error.message };
+        }
     }
 };
 

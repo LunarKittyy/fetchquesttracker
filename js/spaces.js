@@ -252,6 +252,11 @@ export async function handleDeleteSpace() {
     const confirmed = await showConfirm(`Permanently delete "${space.name}" and all its quests? This cannot be undone.`, 'DELETE SPACE', true);
     if (!confirmed) return;
 
+    // Delete from Firestore first (so it won't get restored on sync)
+    if (window.FirebaseBridge?.currentUser) {
+        await window.FirebaseBridge.deleteSpace(spaceId);
+    }
+
     state.spaces = state.spaces.filter(s => s.id !== spaceId);
     state.activeSpaceId = state.spaces[0].id;
     syncActiveSpace();
