@@ -165,12 +165,12 @@ function updateMobileMenuAuth() {
                     </svg>
                     <span id="mobile-sync-time">${syncTime}</span>
                 </div>
-                <div class="mobile-menu-storage">
+                <button id="mobile-menu-storage" class="mobile-menu-storage" title="Manage Storage Files">
                     <div class="mobile-storage-bar">
                         <div class="mobile-storage-fill ${storageInfo.percent >= 90 ? 'danger' : storageInfo.percent >= 70 ? 'warning' : ''}" style="width: ${storageInfo.percent}%"></div>
                     </div>
                     <span class="mobile-storage-text">${storageInfo.usedMB} / ${storageInfo.limitMB} MB</span>
-                </div>
+                </button>
                 <button id="mobile-menu-export" class="mobile-menu-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -250,6 +250,10 @@ function setupMobileMenu() {
                 break;
             case 'mobile-menu-delete-account':
                 document.getElementById('btn-delete-account')?.click();
+                break;
+            case 'mobile-menu-storage':
+                // Open the storage file manager modal
+                document.getElementById('storage-usage')?.click();
                 break;
         }
     });

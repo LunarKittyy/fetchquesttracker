@@ -521,7 +521,21 @@ body.is-mobile .mobile-menu-overlay.hidden {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
-    padding: 0.5rem 0;
+    padding: 0.75rem;
+    margin: 0.25rem 0;
+    background: var(--clr-bg-tertiary);
+    border: 1px solid var(--clr-bg-elevated);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+    width: 100%;
+    text-align: left;
+}
+
+.mobile-menu-storage:active {
+    background: var(--clr-bg-elevated);
+    transform: scale(0.98);
 }
 
 .mobile-storage-bar {
@@ -551,6 +565,7 @@ body.is-mobile .mobile-menu-overlay.hidden {
     color: var(--clr-text-muted);
     text-align: right;
 }
+
 
 
 /* ===========================================
