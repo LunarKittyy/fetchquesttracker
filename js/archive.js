@@ -109,6 +109,21 @@ export function deleteArchivedItem(itemId) {
     const itemIndex = state.archivedItems.findIndex(i => i.id === itemId);
     if (itemIndex === -1) return;
 
+    const item = state.archivedItems[itemIndex];
+
+    // Delete images from Firebase Storage if user is logged in and item has storage images
+    if (window.FirebaseBridge?.currentUser && item.imageUrl) {
+        if (window.FirebaseBridge.isStorageUrl(item.imageUrl)) {
+            window.FirebaseBridge.deleteItemImages(state.activeSpaceId, item.id, 'archived')
+                .then(result => {
+                    if (result.success && result.deletedCount > 0) {
+                        console.log(`🗑️ Cleaned up ${result.deletedCount} storage file(s) for deleted archived item`);
+                    }
+                })
+                .catch(err => console.warn('Could not cleanup storage files:', err));
+        }
+    }
+
     state.archivedItems.splice(itemIndex, 1);
     saveState();
     renderArchive();
@@ -122,6 +137,27 @@ export async function deleteAllArchived() {
 
     const confirmed = await showConfirm(`Delete all ${state.archivedItems.length} archived items? This cannot be undone.`, 'CLEAR ARCHIVE', true);
     if (!confirmed) return;
+
+    // Delete images from Firebase Storage for all archived items with storage images
+    if (window.FirebaseBridge?.currentUser) {
+        const itemsWithStorageImages = state.archivedItems.filter(
+            item => item.imageUrl && window.FirebaseBridge.isStorageUrl(item.imageUrl)
+        );
+        
+        // Delete in background, don't block the UI
+        if (itemsWithStorageImages.length > 0) {
+            Promise.all(
+                itemsWithStorageImages.map(item =>
+                    window.FirebaseBridge.deleteItemImages(state.activeSpaceId, item.id, 'archived')
+                )
+            ).then(results => {
+                const totalDeleted = results.reduce((sum, r) => sum + (r.deletedCount || 0), 0);
+                if (totalDeleted > 0) {
+                    console.log(`🗑️ Cleaned up ${totalDeleted} storage file(s) from ${itemsWithStorageImages.length} archived items`);
+                }
+            }).catch(err => console.warn('Could not cleanup storage files:', err));
+        }
+    }
 
     state.archivedItems = [];
     saveState();

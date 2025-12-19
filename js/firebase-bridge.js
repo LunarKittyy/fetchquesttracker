@@ -648,6 +648,46 @@ window.FirebaseBridge = {
         }
     },
 
+    // Delete all images associated with an item (main image + objective images)
+    async deleteItemImages(spaceId, itemId, prefix = 'items') {
+        if (!storage || !this.currentUser) return { success: false };
+        try {
+            // Path where item images are stored: users/{uid}/{spaceId}/{prefix}/{itemId}/
+            const itemFolderPath = `users/${this.currentUser.uid}/${spaceId}/${prefix}/${itemId}`;
+            const itemFolderRef = ref(storage, itemFolderPath);
+            
+            // List all files in the item's folder
+            const contents = await listAll(itemFolderRef);
+            
+            if (contents.items.length === 0) {
+                console.log('📁 No images found for item:', itemId);
+                return { success: true, deletedCount: 0 };
+            }
+            
+            // Delete each file
+            let deletedCount = 0;
+            for (const fileRef of contents.items) {
+                try {
+                    await deleteObject(fileRef);
+                    deletedCount++;
+                    console.log('🗑️ Deleted image:', fileRef.fullPath);
+                } catch (e) {
+                    console.warn('Could not delete:', fileRef.fullPath, e);
+                }
+            }
+            
+            console.log(`🗑️ Deleted ${deletedCount} image(s) for item:`, itemId);
+            return { success: true, deletedCount };
+        } catch (error) {
+            // If folder doesn't exist, that's OK (item had no uploaded images)
+            if (error.code === 'storage/object-not-found') {
+                return { success: true, deletedCount: 0 };
+            }
+            console.error('Delete item images error:', error);
+            return { success: false, error: error.message };
+        }
+    },
+
     // Recalculate storage used (call after deleting files)
     async recalculateStorage() {
         const result = await this.listStorageFiles();

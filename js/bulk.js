@@ -109,12 +109,38 @@ export function bulkArchiveItems() {
 export function bulkDeleteItems() {
     const itemsToDelete = [...selectedItems];
 
+    // Collect items with storage images for cleanup
+    const itemsWithStorageImages = [];
+
     itemsToDelete.forEach(itemId => {
         const itemIndex = state.items.findIndex(i => i.id === itemId);
         if (itemIndex !== -1) {
+            const item = state.items[itemIndex];
+            
+            // Check if item has storage images to delete
+            if (window.FirebaseBridge?.currentUser && item.imageUrl) {
+                if (window.FirebaseBridge.isStorageUrl(item.imageUrl)) {
+                    itemsWithStorageImages.push({ id: item.id, spaceId: state.activeSpaceId });
+                }
+            }
+            
             state.items.splice(itemIndex, 1);
         }
     });
+
+    // Delete storage files in background
+    if (itemsWithStorageImages.length > 0) {
+        Promise.all(
+            itemsWithStorageImages.map(item =>
+                window.FirebaseBridge.deleteItemImages(item.spaceId, item.id, 'items')
+            )
+        ).then(results => {
+            const totalDeleted = results.reduce((sum, r) => sum + (r.deletedCount || 0), 0);
+            if (totalDeleted > 0) {
+                console.log(`🗑️ Cleaned up ${totalDeleted} storage file(s) from ${itemsWithStorageImages.length} bulk-deleted items`);
+            }
+        }).catch(err => console.warn('Could not cleanup storage files:', err));
+    }
 
     saveState();
     exitBulkMode();

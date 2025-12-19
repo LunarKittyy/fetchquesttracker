@@ -91,6 +91,21 @@ export function deleteItem(id) {
     const category = item.category;
     const card = $(`.quest-card[data-id="${id}"]`);
 
+    // Delete images from Firebase Storage if user is logged in and item has storage images
+    if (window.FirebaseBridge?.currentUser && item.imageUrl) {
+        // Check if image is stored in Firebase Storage (not a base64 or external URL)
+        if (window.FirebaseBridge.isStorageUrl(item.imageUrl)) {
+            // Delete asynchronously in the background - don't block the UI
+            window.FirebaseBridge.deleteItemImages(state.activeSpaceId, item.id, 'items')
+                .then(result => {
+                    if (result.success && result.deletedCount > 0) {
+                        console.log(`🗑️ Cleaned up ${result.deletedCount} storage file(s) for deleted quest`);
+                    }
+                })
+                .catch(err => console.warn('Could not cleanup storage files:', err));
+        }
+    }
+
     state.items = state.items.filter(i => i.id !== id);
     saveState();
 
