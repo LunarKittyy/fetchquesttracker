@@ -181,10 +181,7 @@ function updateMobileMenuAuth() {
  * Setup mobile menu handlers
  */
 function setupMobileMenu() {
-    // Close button
-    document.getElementById('mobile-menu-close')?.addEventListener('click', closeMobileMenu);
-
-    // Backdrop click
+    // Backdrop click closes menu
     document.getElementById('mobile-menu-overlay')?.addEventListener('click', (e) => {
         if (e.target.id === 'mobile-menu-overlay') {
             closeMobileMenu();

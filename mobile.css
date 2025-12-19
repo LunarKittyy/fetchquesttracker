@@ -449,20 +449,6 @@ body.is-mobile .mobile-menu-overlay.hidden {
     color: var(--clr-accent-primary);
 }
 
-.mobile-menu-close {
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--clr-bg-tertiary);
-    border: none;
-    border-radius: var(--radius-sm);
-    color: var(--clr-text-muted);
-    font-size: 1.25rem;
-    cursor: pointer;
-}
-
 .mobile-menu-content {
     padding: 1rem;
     display: flex;
