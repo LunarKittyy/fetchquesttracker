@@ -10,6 +10,8 @@ import {
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
     signInWithPopup,
+    signInWithRedirect,
+    getRedirectResult,
     GoogleAuthProvider,
     signOut as firebaseSignOut,
     sendPasswordResetEmail,
@@ -77,6 +79,15 @@ if (isFirebaseConfigured()) {
         initializeAppCheck(app, {
             provider: new ReCaptchaV3Provider('6Ld2ETAsAAAAALgMe6039Lu-9s2yl3xZ5I5yhT2e'),
             isTokenAutoRefreshEnabled: true
+        });
+
+        // Handle Redirect Result
+        getRedirectResult(auth).then((result) => {
+            if (result && result.user) {
+                console.log('✅ Redirect sign-in success:', result.user.email);
+            }
+        }).catch((error) => {
+            console.error('❌ Redirect sign-in error:', error);
         });
 
         console.log('🔥 Firebase initialized successfully');
@@ -269,9 +280,9 @@ window.FirebaseBridge = {
     async signInWithGoogle() {
         if (!auth || !googleProvider) return { success: false, error: 'Firebase not configured' };
         try {
-            const result = await signInWithPopup(auth, googleProvider);
-            const isNewUser = result._tokenResponse?.isNewUser || false;
-            return { success: true, user: result.user, isNewUser };
+            // Using redirect instead of popup for better mobile support
+            await signInWithRedirect(auth, googleProvider);
+            return { success: true }; 
         } catch (error) {
             return { success: false, error: getAuthErrorMessage(error.code) };
         }

@@ -9,6 +9,7 @@
 - [x] Fix Storage Files modal X/Done buttons
 - [x] Quite often quests dissapear (when new created)/revert (when value changed) to previous state on sync after interacted with for the first time after page load
 - [x] The Spaces sidebar scrolls with page (it should stay in place when scrolling)
+- [x] Mobile Login: Google Sign-In fails on mobile because `signInWithPopup` is blocked/unreliable (switching to `signInWithRedirect`)
 
 ## Features
 
@@ -53,7 +54,7 @@
 - [x] Archive trigger button animation (rounded when closed, attached when open)
 - [x] Share progress (copy to clipboard)
 - [x] Category manager (delete unused custom categories)
-- [x] Custom popups instead of using browser native ones (like delete confirmations and other features) 
+- [x] Custom popups instead of using browser native ones (like delete confirmations and other features)
 - [x] Statistics dashboard
 - [/] Multi-column layout (optional, can be switched in settings)
 - [x] Custom right-click context menus (spaces, categories, quests) with proper z index
