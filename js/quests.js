@@ -462,6 +462,12 @@ export function updateCardProgress(id, archiveItemCallback) {
     }
     if (countTarget) countTarget.textContent = progress.total;
 
+    // Update button disabled states for item type cards
+    const decrementBtn = card.querySelector('.btn-decrement');
+    const incrementBtn = card.querySelector('.btn-increment');
+    if (decrementBtn) decrementBtn.disabled = item.current <= 0;
+    if (incrementBtn) incrementBtn.disabled = isComplete;
+
     if (isComplete && !card.classList.contains('complete')) {
         card.classList.add('complete');
         celebrate(card, item.type);
