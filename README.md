@@ -1,6 +1,7 @@
 # FETCH QUEST v4.1
 
 A stylish quest/item tracker web application with Firebase cloud sync support.
+### [Try it here!](https://lumikitten.github.io/fetchquesttracker/)
 
 ## Features
 
@@ -40,16 +41,6 @@ A stylish quest/item tracker web application with Firebase cloud sync support.
 - Vanilla HTML/CSS/JavaScript (modular architecture)
 - Firebase (Auth, Firestore, Storage, App Check)
 - No build step required
-
-### Firebase Cloud Sync
-
-1. Create a Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
-2. Enable Authentication (Email/Password + Google)
-3. Enable Cloud Firestore (start in test mode)
-4. Enable Cloud Storage (start in test mode)
-5. Enable App Check with reCAPTCHA v3
-6. Add your domain to authorized domains (Auth + reCAPTCHA)
-7. Update credentials in `js/firebase-bridge.js` (lines 32-42)
 
 ## File Structure
 
@@ -109,10 +100,3 @@ See [TASKS.md](TASKS.md) for detailed progress tracking.
 - `Shift + Click` on +/- buttons: Add/subtract 5 (configurable)
 - `Ctrl + Click` on +/- buttons: Add/subtract 10 (configurable)
 - `Right-click` on spaces/quests: Context menu with quick actions
-
-### Storage Limits
-
-- Each user has 10MB of cloud storage (around 150 images)
-- Images are automatically compressed (max 800px, 70% quality)
-- Local storage is unlimited™ (in localStorage)
-- Click storage bar in account menu to manage files
