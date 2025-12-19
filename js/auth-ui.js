@@ -27,9 +27,29 @@ export function initAuthUI(domElements, callbacks) {
 }
 
 /**
+ * Check if running on mobile Firefox
+ */
+function isMobileFirefox() {
+    const ua = navigator.userAgent;
+    const isFirefox = /Firefox/i.test(ua);
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|Mobile|Tablet/i.test(ua);
+    return isFirefox && isMobile;
+}
+
+/**
  * Open auth modal
  */
-export function openAuthModal() {
+export async function openAuthModal() {
+    // Check for mobile Firefox - login doesn't work there
+    if (isMobileFirefox()) {
+        const { showAlert } = await import('./popup.js');
+        await showAlert(
+            'Login is not supported in Firefox on mobile devices due to browser limitations. Please use Chrome or another browser to log in.',
+            'BROWSER NOT SUPPORTED'
+        );
+        return;
+    }
+
     // Close all other modals first
     document.querySelectorAll('.modal:not(.hidden)').forEach(modal => {
         modal.classList.add('hidden');
