@@ -111,9 +111,9 @@ const elements = {
     settingCtrlAmount: $('#setting-ctrl-amount'),
     settingAutoArchive: $('#setting-auto-archive'),
     settingMultiColumn: $('#setting-multi-column'),
-    settingsBtnExport: $('#settings-export'),
-    settingsBtnImport: $('#settings-import'),
-    settingsBtnClear: $('#settings-clear'),
+    settingsBtnExport: $('#settings-btn-export'),
+    settingsBtnImport: $('#settings-btn-import'),
+    settingsBtnClear: $('#settings-btn-clear'),
     fileImport: $('#file-import'),
 
     // Status bar
