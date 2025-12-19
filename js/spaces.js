@@ -252,11 +252,6 @@ export async function handleDeleteSpace() {
     const confirmed = await showConfirm(`Permanently delete "${space.name}" and all its quests? This cannot be undone.`, 'DELETE SPACE', true);
     if (!confirmed) return;
 
-    // If logged in, delete from cloud first to prevent it reappearing on sync
-    if (window.FirebaseBridge?.currentUser) {
-        await window.FirebaseBridge.deleteSpace(spaceId);
-    }
-
     state.spaces = state.spaces.filter(s => s.id !== spaceId);
     state.activeSpaceId = state.spaces[0].id;
     syncActiveSpace();

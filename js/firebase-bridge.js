@@ -10,8 +10,6 @@ import {
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
     signInWithPopup,
-    signInWithRedirect,
-    getRedirectResult,
     GoogleAuthProvider,
     signOut as firebaseSignOut,
     sendPasswordResetEmail,
@@ -75,29 +73,10 @@ if (isFirebaseConfigured()) {
         storage = getStorage(app);
         googleProvider = new GoogleAuthProvider();
 
-        // 1. Initialize auth state listener IMMEDIATELY
-        onAuthStateChanged(auth, (user) => {
-            window.FirebaseBridge.currentUser = user;
-            console.log('Auth state changed:', user ? user.email : 'signed out');
-            window.FirebaseBridge.authStateListeners.forEach(cb => cb(user));
-        });
-
-        // 2. Initialize App Check
+        // Initialize App Check with reCAPTCHA v3
         initializeAppCheck(app, {
             provider: new ReCaptchaV3Provider('6Ld2ETAsAAAAALgMe6039Lu-9s2yl3xZ5I5yhT2e'),
             isTokenAutoRefreshEnabled: true
-        });
-
-        // 3. Handle Redirect Result AFTER listener is set
-        getRedirectResult(auth).then((result) => {
-            if (result && result.user) {
-                console.log('✅ Redirect sign-in success:', result.user.email);
-                // Explicitly update and notify in case listener didn't fire yet
-                window.FirebaseBridge.currentUser = result.user;
-                window.FirebaseBridge.authStateListeners.forEach(cb => cb(result.user));
-            }
-        }).catch((error) => {
-            console.error('❌ Redirect sign-in error:', error);
         });
 
         console.log('🔥 Firebase initialized successfully');
@@ -109,8 +88,7 @@ if (isFirebaseConfigured()) {
 }
 
 // Error message mapping
-function getAuthErrorMessage(error) {
-    const errorCode = error.code;
+function getAuthErrorMessage(errorCode) {
     const errorMessages = {
         'auth/email-already-in-use': 'This email is already registered. Try signing in instead.',
         'auth/invalid-email': 'Please enter a valid email address.',
@@ -125,7 +103,7 @@ function getAuthErrorMessage(error) {
         'auth/cancelled-popup-request': 'Sign-in was cancelled.',
         'auth/network-request-failed': 'Network error. Check your connection.'
     };
-    return errorMessages[errorCode] || `An error occurred: ${error.message || errorCode}`;
+    return errorMessages[errorCode] || 'An error occurred. Please try again.';
 }
 
 // Storage limits
@@ -272,7 +250,7 @@ window.FirebaseBridge = {
             }
             return { success: true, user: userCredential.user };
         } catch (error) {
-            return { success: false, error: getAuthErrorMessage(error) };
+            return { success: false, error: getAuthErrorMessage(error.code) };
         }
     },
 
@@ -283,7 +261,7 @@ window.FirebaseBridge = {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             return { success: true, user: userCredential.user };
         } catch (error) {
-            return { success: false, error: getAuthErrorMessage(error) };
+            return { success: false, error: getAuthErrorMessage(error.code) };
         }
     },
 
@@ -291,11 +269,11 @@ window.FirebaseBridge = {
     async signInWithGoogle() {
         if (!auth || !googleProvider) return { success: false, error: 'Firebase not configured' };
         try {
-            // Using redirect instead of popup for better mobile support
-            await signInWithRedirect(auth, googleProvider);
-            return { success: true }; 
+            const result = await signInWithPopup(auth, googleProvider);
+            const isNewUser = result._tokenResponse?.isNewUser || false;
+            return { success: true, user: result.user, isNewUser };
         } catch (error) {
-            return { success: false, error: getAuthErrorMessage(error) };
+            return { success: false, error: getAuthErrorMessage(error.code) };
         }
     },
 
@@ -317,7 +295,7 @@ window.FirebaseBridge = {
             await sendPasswordResetEmail(auth, email);
             return { success: true };
         } catch (error) {
-            return { success: false, error: getAuthErrorMessage(error) };
+            return { success: false, error: getAuthErrorMessage(error.code) };
         }
     },
 
@@ -651,24 +629,16 @@ window.FirebaseBridge = {
             return { success: true, fileCount: result.files.length };
         }
         return { success: false };
-    },
-
-    // Firestore: Delete a specific space from cloud
-    async deleteSpace(spaceId) {
-        if (!db || !this.currentUser) return { success: false, error: 'Not logged in' };
-        try {
-            const spaceRef = doc(db, 'users', this.currentUser.uid, 'spaces', spaceId);
-            await deleteDoc(spaceRef);
-            console.log(`🗑️ Space ${spaceId} deleted from cloud`);
-            return { success: true };
-        } catch (error) {
-            console.error('Cloud space delete error:', error);
-            return { success: false, error: error.message };
-        }
     }
 };
 
 // Initialize auth state listener
-// Initialized above in the try/catch block for better control over timing
+if (auth) {
+    onAuthStateChanged(auth, (user) => {
+        window.FirebaseBridge.currentUser = user;
+        console.log('Auth state changed:', user ? user.email : 'signed out');
+        window.FirebaseBridge.authStateListeners.forEach(cb => cb(user));
+    });
+}
 
 console.log('🔌 Firebase Bridge loaded');

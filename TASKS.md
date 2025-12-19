@@ -9,7 +9,6 @@
 - [x] Fix Storage Files modal X/Done buttons
 - [x] Quite often quests dissapear (when new created)/revert (when value changed) to previous state on sync after interacted with for the first time after page load
 - [x] The Spaces sidebar scrolls with page (it should stay in place when scrolling)
-- [x] Mobile Login: Google Sign-In fails on mobile because `signInWithPopup` is blocked/unreliable (switching to `signInWithRedirect`)
 
 ## Features
 
