@@ -97,9 +97,15 @@ export function deleteItem(id) {
         if (window.FirebaseBridge.isStorageUrl(item.imageUrl)) {
             // Delete asynchronously in the background - don't block the UI
             window.FirebaseBridge.deleteItemImages(state.activeSpaceId, item.id, 'items')
-                .then(result => {
+                .then(async result => {
                     if (result.success && result.deletedCount > 0) {
                         console.log(`🗑️ Cleaned up ${result.deletedCount} storage file(s) for deleted quest`);
+                        // Refresh storage display after Cloud Functions update
+                        setTimeout(async () => {
+                            await window.FirebaseBridge.fetchStorageUsage();
+                            const { updateStorageDisplay } = await import('./storage.js');
+                            updateStorageDisplay();
+                        }, 1500);
                     }
                 })
                 .catch(err => console.warn('Could not cleanup storage files:', err));

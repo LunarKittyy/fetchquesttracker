@@ -594,8 +594,11 @@ async function handleClearAllData() {
                 await window.FirebaseBridge.deleteSpace(space.id);
             }
             
-            // Reset storage usage counter
-            window.FirebaseBridge.storageUsedBytes = 0;
+            // Refresh storage usage from Firestore after Cloud Functions update
+            setTimeout(async () => {
+                await window.FirebaseBridge.fetchStorageUsage();
+                updateStorageDisplay();
+            }, 1500);
             
             console.log('✅ Cloud data cleared');
         }

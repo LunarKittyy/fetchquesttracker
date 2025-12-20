@@ -112,12 +112,19 @@ export function deleteArchivedItem(itemId) {
     const item = state.archivedItems[itemIndex];
 
     // Delete images from Firebase Storage if user is logged in and item has storage images
+    // Note: Images stay in 'items' folder even when archived, so use 'items' prefix
     if (window.FirebaseBridge?.currentUser && item.imageUrl) {
         if (window.FirebaseBridge.isStorageUrl(item.imageUrl)) {
-            window.FirebaseBridge.deleteItemImages(state.activeSpaceId, item.id, 'archived')
-                .then(result => {
+            window.FirebaseBridge.deleteItemImages(state.activeSpaceId, item.id, 'items')
+                .then(async result => {
                     if (result.success && result.deletedCount > 0) {
                         console.log(`🗑️ Cleaned up ${result.deletedCount} storage file(s) for deleted archived item`);
+                        // Refresh storage display after Cloud Functions update
+                        setTimeout(async () => {
+                            await window.FirebaseBridge.fetchStorageUsage();
+                            const { updateStorageDisplay } = await import('./storage.js');
+                            updateStorageDisplay();
+                        }, 1500);
                     }
                 })
                 .catch(err => console.warn('Could not cleanup storage files:', err));
@@ -139,6 +146,7 @@ export async function deleteAllArchived() {
     if (!confirmed) return;
 
     // Delete images from Firebase Storage for all archived items with storage images
+    // Note: Images stay in 'items' folder even when archived, so use 'items' prefix
     if (window.FirebaseBridge?.currentUser) {
         const itemsWithStorageImages = state.archivedItems.filter(
             item => item.imageUrl && window.FirebaseBridge.isStorageUrl(item.imageUrl)
@@ -148,12 +156,18 @@ export async function deleteAllArchived() {
         if (itemsWithStorageImages.length > 0) {
             Promise.all(
                 itemsWithStorageImages.map(item =>
-                    window.FirebaseBridge.deleteItemImages(state.activeSpaceId, item.id, 'archived')
+                    window.FirebaseBridge.deleteItemImages(state.activeSpaceId, item.id, 'items')
                 )
-            ).then(results => {
+            ).then(async results => {
                 const totalDeleted = results.reduce((sum, r) => sum + (r.deletedCount || 0), 0);
                 if (totalDeleted > 0) {
                     console.log(`🗑️ Cleaned up ${totalDeleted} storage file(s) from ${itemsWithStorageImages.length} archived items`);
+                    // Refresh storage display after Cloud Functions update
+                    setTimeout(async () => {
+                        await window.FirebaseBridge.fetchStorageUsage();
+                        const { updateStorageDisplay } = await import('./storage.js');
+                        updateStorageDisplay();
+                    }, 1500);
                 }
             }).catch(err => console.warn('Could not cleanup storage files:', err));
         }

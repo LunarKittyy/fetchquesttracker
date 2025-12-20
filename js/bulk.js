@@ -134,10 +134,16 @@ export function bulkDeleteItems() {
             itemsWithStorageImages.map(item =>
                 window.FirebaseBridge.deleteItemImages(item.spaceId, item.id, 'items')
             )
-        ).then(results => {
+        ).then(async results => {
             const totalDeleted = results.reduce((sum, r) => sum + (r.deletedCount || 0), 0);
             if (totalDeleted > 0) {
                 console.log(`🗑️ Cleaned up ${totalDeleted} storage file(s) from ${itemsWithStorageImages.length} bulk-deleted items`);
+                // Refresh storage display after Cloud Functions update
+                setTimeout(async () => {
+                    await window.FirebaseBridge.fetchStorageUsage();
+                    const { updateStorageDisplay } = await import('./storage.js');
+                    updateStorageDisplay();
+                }, 1500);
             }
         }).catch(err => console.warn('Could not cleanup storage files:', err));
     }
