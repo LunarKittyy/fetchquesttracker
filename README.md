@@ -150,3 +150,4 @@ See [TASKS.md](TASKS.md) for detailed progress tracking.
 
 - Adblockers may block some Firebase requests.
 - Multi-column layout is partially implemented.
+- Login doesn't work on Firefox mobile due to it not being able to handle pop-up logins properly.
