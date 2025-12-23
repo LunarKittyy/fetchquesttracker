@@ -46,13 +46,30 @@ export function handleArchiveToggle() {
  * @param {string} itemId - ID of item to archive
  */
 export function archiveItem(itemId) {
-    const itemIndex = state.items.findIndex(i => i.id === itemId);
+    // Try current space first, then search all spaces (for cross-space search results)
+    let itemIndex = state.items.findIndex(i => i.id === itemId);
+    let targetSpace = null;
+    
+    if (itemIndex === -1) {
+        // Search all spaces
+        for (const space of state.spaces) {
+            const idx = space.items.findIndex(i => i.id === itemId);
+            if (idx !== -1) {
+                itemIndex = idx;
+                targetSpace = space;
+                break;
+            }
+        }
+    }
     if (itemIndex === -1) return;
 
-    const item = state.items[itemIndex];
+    const items = targetSpace ? targetSpace.items : state.items;
+    const archivedItems = targetSpace ? targetSpace.archivedItems : state.archivedItems;
+    
+    const item = items[itemIndex];
     item.archivedAt = Date.now();
-    state.archivedItems.unshift(item);
-    state.items.splice(itemIndex, 1);
+    archivedItems.unshift(item);
+    items.splice(itemIndex, 1);
     saveState();
 
     // Remove from DOM

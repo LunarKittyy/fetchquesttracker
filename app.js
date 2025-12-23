@@ -8,7 +8,7 @@ import {
     state, syncActiveSpace, DEFAULT_CATEGORIES, STORAGE_KEY,
     currentType, setCurrentType, tempObjectives, setTempObjectives,
     tempImageData, setTempImageData, searchQuery, setSearchQuery,
-    bulkMode, selectedItems, pendingLocalChange, setPendingLocalChange,
+    bulkMode, selectedItems, addSelectedItem, pendingLocalChange, setPendingLocalChange,
     selectedTags, setSelectedTags, clearSelectedTags
 } from './js/state.js';
 
@@ -278,14 +278,23 @@ function render() {
             itemsToRender = [];
             state.spaces.forEach(space => {
                 const matches = space.items.filter(item => matchesSearch(item, space));
-                // Attach space info for display in search results
-                matches.forEach(item => item._searchSpaceName = space.name);
+                // Add space name for display (will be cleaned up when search is cleared)
+                matches.forEach(item => {
+                    item._searchSpaceName = space.name;
+                });
                 itemsToRender.push(...matches);
             });
         } else {
             const currentSpace = state.spaces.find(s => s.id === state.activeSpaceId);
             itemsToRender = state.items.filter(item => matchesSearch(item, currentSpace));
         }
+    } else {
+        // Clean up _searchSpaceName from all items when not searching
+        state.spaces.forEach(space => {
+            (space.items || []).forEach(item => {
+                delete item._searchSpaceName;
+            });
+        });
     }
 
     if (itemsToRender.length === 0) {

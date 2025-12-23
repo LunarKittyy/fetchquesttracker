@@ -90,18 +90,26 @@ export function updateItemField(id, field, value, objectiveId = null) {
  * Delete an item
  */
 export function deleteItem(id) {
-    const item = state.items.find(i => i.id === id);
+    // Try current space first, then search all spaces (for cross-space search results)
+    let item = state.items.find(i => i.id === id);
+    let targetSpace = null;
+    if (!item) {
+        const result = findItemAcrossSpaces(state, id);
+        item = result.item;
+        targetSpace = result.space;
+    }
     if (!item) return;
 
     const category = item.category;
     const card = $(`.quest-card[data-id="${id}"]`);
+    const spaceId = targetSpace ? targetSpace.id : state.activeSpaceId;
 
     // Delete images from Firebase Storage if user is logged in and item has storage images
     if (window.FirebaseBridge?.currentUser && item.imageUrl) {
         // Check if image is stored in Firebase Storage (not a base64 or external URL)
         if (window.FirebaseBridge.isStorageUrl(item.imageUrl)) {
             // Delete asynchronously in the background - don't block the UI
-            window.FirebaseBridge.deleteItemImages(state.activeSpaceId, item.id, 'items')
+            window.FirebaseBridge.deleteItemImages(spaceId, item.id, 'items')
                 .then(async result => {
                     if (result.success && result.deletedCount > 0) {
                         console.log(`🗑️ Cleaned up ${result.deletedCount} storage file(s) for deleted quest`);
@@ -117,7 +125,12 @@ export function deleteItem(id) {
         }
     }
 
-    state.items = state.items.filter(i => i.id !== id);
+    // Remove from correct space
+    if (targetSpace) {
+        targetSpace.items = targetSpace.items.filter(i => i.id !== id);
+    } else {
+        state.items = state.items.filter(i => i.id !== id);
+    }
     saveState();
 
     if (card) {
