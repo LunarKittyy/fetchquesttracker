@@ -64,6 +64,42 @@
 
 ## Future Considerations
 
+- [ ] Visual Customization Settings
+
+  - [ ] Settings UI redesign (tabbed modal: General, Appearance, Effects)
+    - [ ] Pill-style tab buttons
+    - [ ] Card-style sections with accent indicators
+    - [ ] Enhanced sliders with gradient thumbs and hover effects
+    - [ ] Theme preset cards with gradient previews
+  - [ ] Theme presets (Default, Cyberpunk, Retro, Neon, Minimal, Stealth)
+  - [ ] Color customization
+    - [ ] Accent primary/secondary colors
+    - [ ] Background colors
+    - [ ] Text colors
+  - [ ] Card styles
+    - [ ] Default - full card with all elements
+    - [ ] Compact - single-row layout (name, inline progress bar, small controls)
+    - [ ] Minimal - transparent, borderless, no images/notes
+    - [ ] Detailed - expanded with visible notes
+  - [ ] Card hover effects (Lift, Glow, Scale, Border, None)
+  - [ ] Progress bar styles (Default, Gradient, Striped, Glow, Neon, Minimal)
+    - [ ] Ensure styles apply to complete cards too
+  - [ ] UI density (Comfortable, Default, Compact)
+  - [ ] Animation controls
+    - [ ] Animation level (Full, Reduced, None)
+    - [ ] Animation speed modifier
+    - [ ] Card entrance animations
+    - [ ] Fill animation styles (Smooth, Bounce, Step, Wave)
+  - [ ] Effects toggles
+    - [ ] Scanlines, Noise, Particles
+    - [ ] Glow effects
+    - [ ] Background breathing/idle animations
+  - [ ] Celebration effects on completion (Confetti, Sparkle, Firework, etc.)
+  - [ ] Visual settings persistence (localStorage + cloud sync)
+  - [ ] CSS variables for dynamic theming
+  - [ ] `visual-settings.js` - centralized settings registry (~50 settings)
+  - [ ] `visual-settings-ui.js` - UI event handlers and population
+
 - [ ] Collaborative Spaces (multi-user)
   - [ ] Invite system
     - [ ] Generate invite links/codes
