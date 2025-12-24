@@ -13,7 +13,8 @@ import {
 
 import {
     $, $$, generateId, escapeHtml, isItemComplete, getItemProgress,
-    sortItems, getUniqueCategories, groupItemsByCategory, getCategoryProgress, normalizeItem, debounce
+    sortItems, getUniqueCategories, groupItemsByCategory, getCategoryProgress, normalizeItem, debounce,
+    findItemAcrossSpaces
 } from './js/utils.js';
 
 import { initPopup, showPopup, showConfirm, showAlert, showPrompt } from './js/popup.js';
@@ -409,7 +410,15 @@ function handleQuestAction(e) {
 
     if (!action && !itemId) return;
 
-    const item = state.items.find(i => i.id === itemId);
+    // When searching across all spaces, find item in any space
+    const searchingAllSpaces = searchQuery && elements.searchAllSpaces?.checked;
+    let item;
+    if (searchingAllSpaces) {
+        const result = findItemAcrossSpaces(state, itemId);
+        item = result.item;
+    } else {
+        item = state.items.find(i => i.id === itemId);
+    }
 
     switch (action) {
         case 'increment':

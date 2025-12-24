@@ -224,3 +224,19 @@ export function debounce(func, wait) {
         timeout = setTimeout(later, wait);
     };
 }
+
+/**
+ * Find an item by ID across all spaces
+ * @param {Object} state - State object with spaces array
+ * @param {string} itemId - The item ID to find
+ * @returns {{item: Object|null, space: Object|null}} Item and its containing space, or nulls if not found
+ */
+export function findItemAcrossSpaces(state, itemId) {
+    for (const space of state.spaces) {
+        const item = space.items.find(i => i.id === itemId);
+        if (item) {
+            return { item, space };
+        }
+    }
+    return { item: null, space: null };
+}

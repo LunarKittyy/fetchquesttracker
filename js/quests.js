@@ -4,7 +4,7 @@
  */
 
 import { state, tempObjectives, setTempObjectives, tempImageData, setTempImageData, searchQuery } from './state.js';
-import { $, $$, generateId, escapeHtml, isItemComplete, getItemProgress, sortItems, getCategoryProgress, normalizeItem, groupItemsByCategory } from './utils.js';
+import { $, $$, generateId, escapeHtml, isItemComplete, getItemProgress, sortItems, getCategoryProgress, normalizeItem, groupItemsByCategory, findItemAcrossSpaces } from './utils.js';
 import { saveState } from './storage.js';
 import { celebrate, playSound } from './particles.js';
 import { showConfirm } from './popup.js';
@@ -52,7 +52,12 @@ export function addItem(data) {
  * Update a field on an item
  */
 export function updateItemField(id, field, value, objectiveId = null) {
-    const item = state.items.find(i => i.id === id);
+    // Try current space first, then search all spaces (for cross-space search results)
+    let item = state.items.find(i => i.id === id);
+    if (!item) {
+        const result = findItemAcrossSpaces(state, id);
+        item = result.item;
+    }
     if (!item) return;
 
     const wasComplete = isItemComplete(item);
@@ -455,7 +460,12 @@ export function updateCategoryDropdown() {
  * Update card progress display
  */
 export function updateCardProgress(id, archiveItemCallback) {
-    const item = state.items.find(i => i.id === id);
+    // Try current space first, then search all spaces (for cross-space search results)
+    let item = state.items.find(i => i.id === id);
+    if (!item) {
+        const result = findItemAcrossSpaces(state, id);
+        item = result.item;
+    }
     if (!item) return;
 
     const card = $(`.quest-card[data-id="${id}"]`);
@@ -526,7 +536,12 @@ export function updateCardProgress(id, archiveItemCallback) {
  * Update objective display
  */
 export function updateObjectiveDisplay(itemId, objectiveId, archiveItemCallback) {
-    const item = state.items.find(i => i.id === itemId);
+    // Try current space first, then search all spaces (for cross-space search results)
+    let item = state.items.find(i => i.id === itemId);
+    if (!item) {
+        const result = findItemAcrossSpaces(state, itemId);
+        item = result.item;
+    }
     if (!item) return;
 
     const objective = item.objectives.find(o => o.id === objectiveId);
