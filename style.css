@@ -1018,6 +1018,42 @@ body.shake {
   border-top: var(--border-subtle);
 }
 
+.form-actions-inline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: var(--border-subtle);
+  flex-wrap: nowrap;
+}
+
+.form-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-left: auto;
+}
+
+.form-actions-inline .form-group-dropdown {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.form-actions-inline .form-group-inline {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.form-actions-inline .form-group-inline .input-label {
+  margin-bottom: 0;
+}
+
 /* Dropdown picker trigger buttons */
 /* Dropdown picker trigger buttons */
 .form-group-dropdown {

@@ -27,6 +27,7 @@
       href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;500;700;900&display=swap"
       rel="stylesheet"
     />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <link rel="stylesheet" href="style.css?v=4.2" />
   </head>
 
@@ -291,8 +292,8 @@
             </div>
           </div>
           <div class="form-body">
-            <!-- Main info row -->
-            <div class="form-row">
+            <!-- Row 1: Designation + Category -->
+            <div class="form-row form-row-main">
               <div class="form-group form-group-name">
                 <label for="item-name" class="input-label">DESIGNATION</label>
                 <div class="input-with-image">
@@ -349,6 +350,21 @@
                   </button>
                 </div>
               </div>
+            </div>
+
+            <!-- Quest-specific: objectives -->
+            <div id="quest-fields" class="form-section hidden">
+              <div class="objectives-header">
+                <span class="input-label">OBJECTIVES</span>
+                <button type="button" id="btn-add-objective" class="btn-link">
+                  + Add Objective
+                </button>
+              </div>
+              <div id="objectives-list" class="objectives-list"></div>
+            </div>
+
+            <!-- Row 2: Color | Priority | Tags | QTY | Submit -->
+            <div class="form-actions form-actions-inline">
               <div class="form-group form-group-dropdown">
                 <div class="dropdown-trigger-wrapper">
                   <button
@@ -390,46 +406,34 @@
                   </button>
                 </div>
               </div>
-            </div>
-
-            <!-- Quest-specific: objectives -->
-            <div id="quest-fields" class="form-section hidden">
-              <div class="objectives-header">
-                <span class="input-label">OBJECTIVES</span>
-                <button type="button" id="btn-add-objective" class="btn-link">
-                  + Add Objective
+              
+              <div class="form-actions-right">
+                <div id="item-fields" class="form-group-inline">
+                  <label for="item-goal" class="input-label">QTY</label>
+                  <input
+                    type="number"
+                    id="item-goal"
+                    class="input-field input-number"
+                    min="1"
+                    max="9999"
+                    value="4"
+                  />
+                </div>
+                <button type="submit" class="btn btn-primary btn-submit">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="16" />
+                    <line x1="8" y1="12" x2="16" y2="12" />
+                  </svg>
+                  <span>LOG ITEM</span>
                 </button>
               </div>
-              <div id="objectives-list" class="objectives-list"></div>
-            </div>
-
-            <div class="form-actions">
-              <!-- Item-specific: quantity (inline with submit) -->
-              <div id="item-fields" class="form-group-inline">
-                <label for="item-goal" class="input-label">QTY</label>
-                <input
-                  type="number"
-                  id="item-goal"
-                  class="input-field input-number"
-                  min="1"
-                  max="9999"
-                  value="4"
-                />
-              </div>
-              <button type="submit" class="btn btn-primary btn-submit">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  aria-hidden="true"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="8" x2="12" y2="16" />
-                  <line x1="8" y1="12" x2="16" y2="12" />
-                </svg>
-                <span>LOG ITEM</span>
-              </button>
             </div>
           </div>
         </form>
