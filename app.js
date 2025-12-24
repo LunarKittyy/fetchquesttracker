@@ -856,14 +856,15 @@ function updateTagColorPreview() {
 
 function renderTagList() {
     if (!elements.tagsList) return;
-    const space = state.spaces.find(s => s.id === state.activeSpaceId);
     const tags = state.tags || [];
     
-    // Count how many items use each tag
+    // Count how many items use each tag (across ALL spaces)
     const usageCount = {};
-    state.items.forEach(item => {
-        (item.tags || []).forEach(tagId => {
-            usageCount[tagId] = (usageCount[tagId] || 0) + 1;
+    state.spaces.forEach(space => {
+        (space.items || []).forEach(item => {
+            (item.tags || []).forEach(tagId => {
+                usageCount[tagId] = (usageCount[tagId] || 0) + 1;
+            });
         });
     });
 
@@ -880,7 +881,7 @@ function renderTagList() {
                 <span class="tag-color-dot" style="background: ${tag.color}"></span>
                 <span class="tag-name">${escapeHtml(tag.name)}</span>
                 ${isUsed ? `<span class="tag-usage">(${count})</span>` : ''}
-                <button class="tag-item-delete${isUsed ? ' is-disabled' : ''}" data-in-use="${isUsed}" title="${isUsed ? 'In use' : 'Delete'}">×</button>
+                <button class="tag-item-delete" title="Delete">×</button>
             </div>
         `;
     }).join('');
@@ -930,11 +931,6 @@ function handleAddTag() {
 function handleTagListClick(e) {
     const deleteBtn = e.target.closest('.tag-item-delete');
     if (!deleteBtn) return;
-
-    if (deleteBtn.dataset.inUse === 'true') {
-        showAlert('Tag is in use by items and cannot be deleted.', 'ERROR');
-        return;
-    }
 
     const tagItem = deleteBtn.closest('.tag-item');
     const tagId = tagItem?.dataset.tagId;
