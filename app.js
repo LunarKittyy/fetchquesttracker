@@ -232,6 +232,8 @@ function render() {
                     item.name.toLowerCase().includes(query) ||
                     item.category.toLowerCase().includes(query)
                 );
+                // Attach space info for display in search results
+                matches.forEach(item => item._searchSpaceName = space.name);
                 itemsToRender.push(...matches);
             });
         } else {

@@ -334,6 +334,7 @@ export function createQuestCardHTML(item) {
                     <div class="quest-header">
                         <div class="quest-info">
                             <div class="quest-tags">
+                                ${item._searchSpaceName ? `<span class="quest-space-tag">${escapeHtml(item._searchSpaceName)}</span>` : ''}
                                 ${item.type === 'quest' ? '<span class="quest-type-tag">QUEST</span>' : ''}
                                 ${item.priority ? `<span class="quest-priority-tag priority-${item.priority}">${item.priority.toUpperCase()}</span>` : ''}
                                 <span class="quest-category-tag">${escapeHtml(item.category)}</span>
