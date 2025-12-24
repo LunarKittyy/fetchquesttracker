@@ -112,7 +112,7 @@ export function getItemProgress(item) {
  */
 export function sortItems(items) {
     // Priority order: high=0, medium=1, none=2, low=3
-    const priorityOrder = { high: 0, medium: 1, '': 2, null: 2, low: 3 };
+    const priorityOrder = { high: 0, medium: 1, low: 2, '': 3, null: 3 };
 
     items.sort((a, b) => {
         // Completed items go to bottom
