@@ -278,6 +278,24 @@ export function insertItemIntoDOM(item) {
 }
 
 /**
+ * Render custom tags for a quest item
+ * @param {Object} item - The quest item
+ * @returns {string} HTML string of tag spans
+ */
+function renderCustomTags(item) {
+    if (!item.tags || item.tags.length === 0) return '';
+    
+    const space = state.spaces.find(s => s.id === state.activeSpaceId);
+    if (!space || !space.tags) return '';
+    
+    return item.tags.map(tagId => {
+        const tag = space.tags.find(t => t.id === tagId);
+        if (!tag) return '';
+        return `<span class="quest-custom-tag" style="color: ${tag.color}; background: ${tag.color}22; border: 1px solid ${tag.color}55;">${escapeHtml(tag.name)}</span>`;
+    }).join('');
+}
+
+/**
  * Create HTML for a quest card
  */
 export function createQuestCardHTML(item) {
@@ -338,6 +356,7 @@ export function createQuestCardHTML(item) {
                                 ${item.type === 'quest' ? '<span class="quest-type-tag">QUEST</span>' : ''}
                                 ${item.priority ? `<span class="quest-priority-tag priority-${item.priority}">${item.priority.toUpperCase()}</span>` : ''}
                                 <span class="quest-category-tag">${escapeHtml(item.category)}</span>
+                                ${renderCustomTags(item)}
                                 ${isComplete ? '<span class="quest-complete-tag">ACQUIRED</span>' : ''}
                             </div>
                             <h3 class="quest-name">

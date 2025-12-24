@@ -53,7 +53,8 @@ export function syncActiveSpace() {
             color: '#4ecdb4',
             items: [],
             archivedItems: [],
-            categories: [...DEFAULT_CATEGORIES]
+            categories: [...DEFAULT_CATEGORIES],
+            tags: []
         };
         state.spaces = [defaultSpace];
         activeSpace = defaultSpace;
@@ -89,6 +90,7 @@ export let bulkMode = false;
 export let selectedItems = new Set();
 export let pendingLocalChange = false;
 export let isInitialSyncInProgress = false;
+export let selectedTags = []; // Tags selected in form
 
 // Setters for mutable UI state
 export function setCurrentType(type) { currentType = type; }
@@ -101,3 +103,5 @@ export function addSelectedItem(id) { selectedItems.add(id); }
 export function removeSelectedItem(id) { selectedItems.delete(id); }
 export function setPendingLocalChange(val) { pendingLocalChange = val; }
 export function setInitialSyncInProgress(val) { isInitialSyncInProgress = val; }
+export function setSelectedTags(tags) { selectedTags = tags; }
+export function clearSelectedTags() { selectedTags = []; }

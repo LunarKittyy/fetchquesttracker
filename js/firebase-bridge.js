@@ -473,6 +473,7 @@ window.FirebaseBridge = {
                     items: processedItems,
                     archivedItems: processedArchived,
                     categories: space.categories || [],
+                    tags: space.tags || [],
                     lastModified: serverTimestamp()
                 });
             }

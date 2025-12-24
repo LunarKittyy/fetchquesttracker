@@ -8,7 +8,8 @@ import {
     state, syncActiveSpace, DEFAULT_CATEGORIES, STORAGE_KEY,
     currentType, setCurrentType, tempObjectives, setTempObjectives,
     tempImageData, setTempImageData, searchQuery, setSearchQuery,
-    bulkMode, selectedItems, pendingLocalChange, setPendingLocalChange
+    bulkMode, selectedItems, pendingLocalChange, setPendingLocalChange,
+    selectedTags, setSelectedTags, clearSelectedTags
 } from './js/state.js';
 
 import {
@@ -142,6 +143,8 @@ const elements = {
     bulkActionsBar: $('#bulk-actions-bar'),
     bulkCount: $('#bulk-count'),
     bulkSelectAll: $('#bulk-select-all'),
+    btnSelectByTag: $('#btn-select-by-tag'),
+    selectByTagDropdown: $('#select-by-tag-dropdown'),
     bulkArchive: $('#bulk-archive'),
     bulkDelete: $('#bulk-delete'),
     bulkCancel: $('#bulk-cancel'),
@@ -190,6 +193,26 @@ const elements = {
     categoriesList: $('#categories-list'),
     btnShareProgress: $('#btn-share-progress'),
 
+    // Tag manager
+    btnManageTags: $('#btn-manage-tags'),
+    modalTags: $('#modal-tags'),
+    tagsList: $('#tags-list'),
+    newTagName: $('#new-tag-name'),
+    btnTagColor: $('#btn-tag-color'),
+    btnAddTag: $('#btn-add-tag'),
+    tagColorDropdown: $('#tag-color-dropdown'),
+    
+    // Tag picker (in form)
+    btnTagPicker: $('#btn-tag-picker'),
+    tagIndicator: $('#tag-indicator'),
+    tagDropdown: $('#tag-dropdown'),
+
+    // Edit Tags modal (context menu)
+    modalEditTags: $('#modal-edit-tags'),
+    editTagsItemId: $('#edit-tags-item-id'),
+    editTagsList: $('#edit-tags-list'),
+    btnSaveTags: $('#btn-save-tags'),
+
     // File manager
     modalFiles: $('#modal-files'),
     filesList: $('#files-list'),
@@ -225,22 +248,43 @@ function render() {
         const query = searchQuery.toLowerCase();
         const searchAllSpacesChecked = elements.searchAllSpaces?.checked;
 
+        // Check for tag: prefix for filtering
+        const tagPrefix = 'tag:';
+        const hasTagPrefix = query.startsWith(tagPrefix);
+        const tagFilter = hasTagPrefix ? query.slice(tagPrefix.length).trim() : null;
+
+        // Helper function to check if item matches search query
+        const matchesSearch = (item, space) => {
+            if (tagFilter) {
+                // Filter by tag: prefix - match priority, category, or custom tag names
+                if (item.priority && item.priority.toLowerCase() === tagFilter) return true;
+                if (item.category && item.category.toLowerCase() === tagFilter) return true;
+                if (item.type && item.type.toLowerCase() === tagFilter) return true;
+                // Check custom tags
+                if (item.tags && space?.tags) {
+                    const matchingTag = space.tags.find(t => 
+                        item.tags.includes(t.id) && t.name.toLowerCase() === tagFilter
+                    );
+                    if (matchingTag) return true;
+                }
+                return false;
+            } else {
+                // Regular search - only match item name
+                return item.name.toLowerCase().includes(query);
+            }
+        };
+
         if (searchAllSpacesChecked) {
             itemsToRender = [];
             state.spaces.forEach(space => {
-                const matches = space.items.filter(item =>
-                    item.name.toLowerCase().includes(query) ||
-                    item.category.toLowerCase().includes(query)
-                );
+                const matches = space.items.filter(item => matchesSearch(item, space));
                 // Attach space info for display in search results
                 matches.forEach(item => item._searchSpaceName = space.name);
                 itemsToRender.push(...matches);
             });
         } else {
-            itemsToRender = state.items.filter(item =>
-                item.name.toLowerCase().includes(query) ||
-                item.category.toLowerCase().includes(query)
-            );
+            const currentSpace = state.spaces.find(s => s.id === state.activeSpaceId);
+            itemsToRender = state.items.filter(item => matchesSearch(item, currentSpace));
         }
     }
 
@@ -308,7 +352,8 @@ function handleFormSubmit(e) {
         color: elements.itemColor.value || null,
         priority: elements.itemPriority.value || null,
         target: parseInt(elements.itemGoal.value) || 1,
-        objectives: currentType === 'quest' ? [...tempObjectives] : []
+        objectives: currentType === 'quest' ? [...tempObjectives] : [],
+        tags: [...selectedTags]
     });
 
     // Reset form
@@ -322,6 +367,12 @@ function handleFormSubmit(e) {
     elements.itemGoal.value = '4';
     setTempObjectives([]);
     if (elements.objectivesList) elements.objectivesList.innerHTML = '';
+    
+    // Reset tags
+    clearSelectedTags();
+    updateTagIndicator();
+    updateTagPickerDropdown();
+    
     elements.itemName.focus();
     updateFormContentState();
 }
@@ -784,6 +835,329 @@ function shareProgress() {
     });
 }
 
+// --- Tag Manager ---
+let currentTagColor = '#4ecdb4';
+
+function openTagManager() {
+    elements.modalSettings?.classList.add('hidden');
+    elements.modalTags?.classList.remove('hidden');
+    if (elements.newTagName) elements.newTagName.value = '';
+    currentTagColor = '#4ecdb4';
+    updateTagColorPreview();
+    renderTagList();
+}
+
+function updateTagColorPreview() {
+    const preview = elements.btnTagColor?.querySelector('.tag-color-preview');
+    if (preview) {
+        preview.style.background = currentTagColor;
+    }
+}
+
+function renderTagList() {
+    if (!elements.tagsList) return;
+    const space = state.spaces.find(s => s.id === state.activeSpaceId);
+    const tags = space?.tags || [];
+    
+    // Count how many items use each tag
+    const usageCount = {};
+    state.items.forEach(item => {
+        (item.tags || []).forEach(tagId => {
+            usageCount[tagId] = (usageCount[tagId] || 0) + 1;
+        });
+    });
+
+    if (tags.length === 0) {
+        elements.tagsList.innerHTML = '<p class="settings-hint">No tags created yet. Add one above!</p>';
+        return;
+    }
+
+    elements.tagsList.innerHTML = tags.map(tag => {
+        const count = usageCount[tag.id] || 0;
+        const isUsed = count > 0;
+        return `
+            <div class="tag-item" data-tag-id="${tag.id}">
+                <span class="tag-color-dot" style="background: ${tag.color}"></span>
+                <span class="tag-name">${escapeHtml(tag.name)}</span>
+                ${isUsed ? `<span class="tag-usage">(${count})</span>` : ''}
+                <button class="tag-item-delete${isUsed ? ' is-disabled' : ''}" data-in-use="${isUsed}" title="${isUsed ? 'In use' : 'Delete'}">×</button>
+            </div>
+        `;
+    }).join('');
+}
+
+function handleAddTag() {
+    const name = elements.newTagName?.value.trim();
+    if (!name) {
+        elements.newTagName?.focus();
+        return;
+    }
+
+    const space = state.spaces.find(s => s.id === state.activeSpaceId);
+    if (!space) return;
+
+    if (!space.tags) space.tags = [];
+    
+    const nameLower = name.toLowerCase();
+    
+    // Reserved names that can't be used for custom tags
+    const reservedNames = ['low', 'medium', 'high', 'none', 'quest', 'item'];
+    if (reservedNames.includes(nameLower)) {
+        showAlert(`"${name}" is a reserved tag name. Please choose a different name.`, 'ERROR');
+        return;
+    }
+    
+    // Check for duplicate name with existing custom tags
+    if (space.tags.some(t => t.name.toLowerCase() === nameLower)) {
+        showAlert('A tag with this name already exists.', 'ERROR');
+        return;
+    }
+
+    const newTag = {
+        id: 'tag_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 4),
+        name: name.toUpperCase(),
+        color: currentTagColor
+    };
+    
+    space.tags.push(newTag);
+    saveState();
+    
+    if (elements.newTagName) elements.newTagName.value = '';
+    renderTagList();
+    updateTagPickerDropdown();
+}
+
+function handleTagListClick(e) {
+    const deleteBtn = e.target.closest('.tag-item-delete');
+    if (!deleteBtn) return;
+
+    if (deleteBtn.dataset.inUse === 'true') {
+        showAlert('Tag is in use by items and cannot be deleted.', 'ERROR');
+        return;
+    }
+
+    const tagItem = deleteBtn.closest('.tag-item');
+    const tagId = tagItem?.dataset.tagId;
+    if (!tagId) return;
+
+    const space = state.spaces.find(s => s.id === state.activeSpaceId);
+    if (!space || !space.tags) return;
+
+    space.tags = space.tags.filter(t => t.id !== tagId);
+    saveState();
+    renderTagList();
+    updateTagPickerDropdown();
+}
+
+// --- Tag Picker (Form) ---
+function updateTagPickerDropdown() {
+    if (!elements.tagDropdown) return;
+    const space = state.spaces.find(s => s.id === state.activeSpaceId);
+    const tags = space?.tags || [];
+    const optionsContainer = elements.tagDropdown.querySelector('.tag-picker-options');
+    if (!optionsContainer) return;
+
+    if (tags.length === 0) {
+        optionsContainer.innerHTML = '<div class="tag-picker-empty">No tags defined. Manage tags in settings.</div>';
+        return;
+    }
+
+    optionsContainer.innerHTML = tags.map(tag => {
+        const isSelected = selectedTags.includes(tag.id);
+        return `
+            <div class="tag-picker-item ${isSelected ? 'selected' : ''}" data-tag-id="${tag.id}">
+                <span class="tag-color-dot" style="background: ${tag.color}"></span>
+                <span class="tag-name">${escapeHtml(tag.name)}</span>
+                <svg class="tag-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+            </div>
+        `;
+    }).join('');
+}
+
+function updateTagIndicator() {
+    if (elements.tagIndicator) {
+        elements.tagIndicator.textContent = selectedTags.length;
+        elements.tagIndicator.classList.toggle('has-tags', selectedTags.length > 0);
+    }
+}
+
+function handleTagPickerClick(e) {
+    const item = e.target.closest('.tag-picker-item');
+    if (!item) return;
+
+    const tagId = item.dataset.tagId;
+    if (!tagId) return;
+
+    // Toggle selection
+    if (selectedTags.includes(tagId)) {
+        setSelectedTags(selectedTags.filter(id => id !== tagId));
+    } else {
+        setSelectedTags([...selectedTags, tagId]);
+    }
+
+    item.classList.toggle('selected');
+    updateTagIndicator();
+}
+
+// --- Edit Tags Modal (for existing quests) ---
+let editTagsSelectedTags = [];
+
+function openEditTagsModal(itemId) {
+    const item = state.items.find(i => i.id === itemId);
+    if (!item) return;
+
+    elements.editTagsItemId.value = itemId;
+    editTagsSelectedTags = [...(item.tags || [])];
+    renderEditTagsList();
+    elements.modalEditTags?.classList.remove('hidden');
+}
+
+function renderEditTagsList() {
+    if (!elements.editTagsList) return;
+    const space = state.spaces.find(s => s.id === state.activeSpaceId);
+    const tags = space?.tags || [];
+
+    if (tags.length === 0) {
+        elements.editTagsList.innerHTML = '<p class="settings-hint">No tags defined. Create tags in settings first.</p>';
+        return;
+    }
+
+    elements.editTagsList.innerHTML = tags.map(tag => {
+        const isSelected = editTagsSelectedTags.includes(tag.id);
+        return `
+            <div class="tag-picker-item ${isSelected ? 'selected' : ''}" data-tag-id="${tag.id}">
+                <span class="tag-color-dot" style="background: ${tag.color}"></span>
+                <span class="tag-name">${escapeHtml(tag.name)}</span>
+                <svg class="tag-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+            </div>
+        `;
+    }).join('');
+}
+
+function handleEditTagsClick(e) {
+    const item = e.target.closest('.tag-picker-item');
+    if (!item) return;
+
+    const tagId = item.dataset.tagId;
+    if (!tagId) return;
+
+    // Toggle selection
+    if (editTagsSelectedTags.includes(tagId)) {
+        editTagsSelectedTags = editTagsSelectedTags.filter(id => id !== tagId);
+    } else {
+        editTagsSelectedTags.push(tagId);
+    }
+
+    item.classList.toggle('selected');
+}
+
+function saveItemTags() {
+    const itemId = elements.editTagsItemId?.value;
+    if (!itemId) return;
+
+    const item = state.items.find(i => i.id === itemId);
+    if (!item) return;
+
+    item.tags = [...editTagsSelectedTags];
+    saveState();
+    render();
+
+    elements.modalEditTags?.classList.add('hidden');
+    playSound('tick');
+}
+
+// --- Select by Tag (Bulk Mode) ---
+function populateSelectByTagDropdown() {
+    if (!elements.selectByTagDropdown) return;
+    const optionsContainer = elements.selectByTagDropdown.querySelector('.tag-picker-options');
+    if (!optionsContainer) return;
+
+    const space = state.spaces.find(s => s.id === state.activeSpaceId);
+    const items = state.items;
+    
+    // Collect all unique categories from items
+    const categories = [...new Set(items.map(i => i.category || 'Misc'))];
+    
+    // Collect priorities that are actually used
+    const priorities = [...new Set(items.map(i => i.priority).filter(p => p))];
+    
+    // Get custom tags from space
+    const customTags = space?.tags || [];
+    
+    let html = '';
+    
+    // Categories section
+    if (categories.length > 0) {
+        html += '<div class="select-tag-section">CATEGORY</div>';
+        categories.forEach(cat => {
+            html += `<div class="tag-picker-item" data-select-type="category" data-select-value="${escapeHtml(cat)}">
+                <span class="tag-name">${escapeHtml(cat)}</span>
+            </div>`;
+        });
+    }
+    
+    // Priorities section
+    if (priorities.length > 0) {
+        html += '<div class="select-tag-section">PRIORITY</div>';
+        priorities.forEach(pri => {
+            html += `<div class="tag-picker-item" data-select-type="priority" data-select-value="${pri}">
+                <span class="tag-name">${pri.toUpperCase()}</span>
+            </div>`;
+        });
+    }
+    
+    // Custom tags section
+    if (customTags.length > 0) {
+        html += '<div class="select-tag-section">TAGS</div>';
+        customTags.forEach(tag => {
+            html += `<div class="tag-picker-item" data-select-type="tag" data-select-value="${tag.id}">
+                <span class="tag-color-dot" style="background: ${tag.color}"></span>
+                <span class="tag-name">${escapeHtml(tag.name)}</span>
+            </div>`;
+        });
+    }
+    
+    if (html === '') {
+        html = '<div class="tag-picker-empty">No filter options available.</div>';
+    }
+    
+    optionsContainer.innerHTML = html;
+}
+
+function handleSelectByTagClick(e) {
+    const item = e.target.closest('.tag-picker-item');
+    if (!item) return;
+
+    const selectType = item.dataset.selectType;
+    const selectValue = item.dataset.selectValue;
+    if (!selectType || !selectValue) return;
+
+    // Find matching items and select them
+    const cards = $$('.quest-card');
+    cards.forEach(card => {
+        const itemId = card.dataset.id;
+        const questItem = state.items.find(i => i.id === itemId);
+        if (!questItem) return;
+
+        let matches = false;
+        if (selectType === 'category' && questItem.category === selectValue) matches = true;
+        if (selectType === 'priority' && questItem.priority === selectValue) matches = true;
+        if (selectType === 'tag' && questItem.tags?.includes(selectValue)) matches = true;
+
+        if (matches) {
+            addSelectedItem(itemId);
+            card.classList.add('selected');
+        }
+    });
+
+    updateBulkCount();
+    elements.selectByTagDropdown?.classList.add('hidden');
+}
+
 // --- Keyboard & Window Handlers ---
 function handleKeydown(e) {
     if (e.key === 'Escape') {
@@ -819,7 +1193,7 @@ function init() {
     initBulk({ btnBulkMode: elements.btnBulkMode, bulkActionsBar: elements.bulkActionsBar, bulkCount: elements.bulkCount },
         { render, renderArchive });
     initContextMenu({ contextMenu: elements.contextMenu },
-        { openSpaceEditModal, handleDeleteSpace, archiveItem, deleteItem });
+        { openSpaceEditModal, handleDeleteSpace, archiveItem, deleteItem, editTags: openEditTagsModal });
     initStatistics({
         modalStatistics: elements.modalStatistics, modalSettings: elements.modalSettings,
         statTotal: elements.statTotal, statCompleted: elements.statCompleted,
@@ -957,6 +1331,9 @@ function init() {
     document.addEventListener('click', () => {
         elements.colorDropdown?.classList.add('hidden');
         elements.priorityDropdown?.classList.add('hidden');
+        elements.tagDropdown?.classList.add('hidden');
+        elements.tagColorDropdown?.classList.add('hidden');
+        elements.selectByTagDropdown?.classList.add('hidden');
         elements.userDropdown?.classList.add('hidden');
     });
 
@@ -1029,6 +1406,29 @@ function init() {
     });
     elements.bulkCancel?.addEventListener('click', exitBulkMode);
 
+    // Select by Tag (bulk mode)
+    if (elements.btnSelectByTag) {
+        elements.btnSelectByTag.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isHidden = elements.selectByTagDropdown?.classList.contains('hidden');
+            if (isHidden) {
+                populateSelectByTagDropdown();
+                const rect = elements.btnSelectByTag.getBoundingClientRect();
+                if (elements.selectByTagDropdown) {
+                    elements.selectByTagDropdown.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
+                    elements.selectByTagDropdown.style.left = rect.left + 'px';
+                    elements.selectByTagDropdown.classList.remove('hidden');
+                }
+            } else {
+                elements.selectByTagDropdown?.classList.add('hidden');
+            }
+        });
+        elements.selectByTagDropdown?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            handleSelectByTagClick(e);
+        });
+    }
+
     // Auth
     elements.btnLogin?.addEventListener('click', openAuthModal);
     elements.btnUserMenu?.addEventListener('click', (e) => {
@@ -1054,6 +1454,81 @@ function init() {
     elements.modalCategories?.addEventListener('click', handleCloseModal);
     elements.categoriesList?.addEventListener('click', handleCategoryClick);
     elements.btnShareProgress?.addEventListener('click', shareProgress);
+
+    // Tag manager
+    elements.btnManageTags?.addEventListener('click', openTagManager);
+    elements.modalTags?.addEventListener('click', handleCloseModal);
+    elements.tagsList?.addEventListener('click', handleTagListClick);
+    elements.btnAddTag?.addEventListener('click', handleAddTag);
+    elements.newTagName?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleAddTag();
+        }
+    });
+
+    // Edit Tags modal (context menu)
+    elements.modalEditTags?.addEventListener('click', handleCloseModal);
+    elements.editTagsList?.addEventListener('click', handleEditTagsClick);
+    elements.btnSaveTags?.addEventListener('click', saveItemTags);
+
+    // Tag color picker (in tag manager)
+    if (elements.btnTagColor) {
+        elements.btnTagColor.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isHidden = elements.tagColorDropdown?.classList.contains('hidden');
+            if (isHidden) {
+                const rect = elements.btnTagColor.getBoundingClientRect();
+                if (elements.tagColorDropdown) {
+                    elements.tagColorDropdown.style.top = (rect.bottom + 8) + 'px';
+                    elements.tagColorDropdown.style.left = rect.left + 'px';
+                    elements.tagColorDropdown.classList.remove('hidden');
+                }
+            } else {
+                elements.tagColorDropdown?.classList.add('hidden');
+            }
+        });
+
+        elements.tagColorDropdown?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const option = e.target.closest('.color-option');
+            if (!option) return;
+
+            elements.tagColorDropdown.querySelectorAll('.color-option').forEach(o => o.classList.remove('active'));
+            option.classList.add('active');
+
+            currentTagColor = option.dataset.color || '#4ecdb4';
+            updateTagColorPreview();
+            elements.tagColorDropdown.classList.add('hidden');
+        });
+    }
+
+    // Tag picker dropdown (in form)
+    if (elements.btnTagPicker) {
+        elements.btnTagPicker.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isHidden = elements.tagDropdown?.classList.contains('hidden');
+            elements.colorDropdown?.classList.add('hidden');
+            elements.priorityDropdown?.classList.add('hidden');
+
+            if (isHidden) {
+                updateTagPickerDropdown();
+                const rect = elements.btnTagPicker.getBoundingClientRect();
+                if (elements.tagDropdown) {
+                    elements.tagDropdown.style.top = (rect.bottom + 8) + 'px';
+                    elements.tagDropdown.style.left = rect.left + 'px';
+                    elements.tagDropdown.classList.remove('hidden');
+                }
+            } else {
+                elements.tagDropdown?.classList.add('hidden');
+            }
+        });
+
+        elements.tagDropdown?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            handleTagPickerClick(e);
+        });
+    }
 
     // File manager
     elements.storageUsage?.addEventListener('click', openFileManager);

@@ -377,6 +377,18 @@
                   </button>
                 </div>
                 <input type="hidden" id="item-priority" value="" />
+
+                <div class="dropdown-trigger-wrapper">
+                  <button
+                    type="button"
+                    id="btn-tag-picker"
+                    class="dropdown-trigger"
+                    title="Tags"
+                  >
+                    <span class="tag-indicator" id="tag-indicator">0</span>
+                    <span class="trigger-label">TAGS</span>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -686,6 +698,90 @@
         </div>
       </div>
 
+      <!-- Tag Manager Modal -->
+      <div id="modal-tags" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 class="modal-title">MANAGE TAGS</h3>
+            <button type="button" class="modal-close" aria-label="Close modal">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p class="settings-hint">
+              Create custom tags to organize your quests. Each tag has a name and color.
+            </p>
+            <div class="tag-create-row">
+              <input
+                type="text"
+                id="new-tag-name"
+                class="input-field"
+                placeholder="Tag name..."
+                maxlength="20"
+              />
+              <button
+                type="button"
+                id="btn-tag-color"
+                class="color-picker-btn"
+                data-color="#4ecdb4"
+                title="Tag color"
+              >
+                <span class="tag-color-preview"></span>
+              </button>
+              <button type="button" id="btn-add-tag" class="btn btn-primary">
+                ADD
+              </button>
+            </div>
+            <div id="tags-list" class="tags-list"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary modal-close">
+              DONE
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Edit Tags Modal (for existing quests) -->
+      <div id="modal-edit-tags" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 class="modal-title">EDIT TAGS</h3>
+            <button type="button" class="modal-close" aria-label="Close modal">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p class="settings-hint">Select tags to assign to this quest.</p>
+            <input type="hidden" id="edit-tags-item-id" />
+            <div id="edit-tags-list" class="tags-list"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" id="btn-save-tags" class="btn btn-primary">
+              SAVE
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Settings Modal -->
       <div id="modal-settings" class="modal hidden">
         <div class="modal-backdrop"></div>
@@ -785,6 +881,22 @@
                     />
                   </svg>
                   MANAGE CATEGORIES
+                </button>
+                <button
+                  type="button"
+                  id="btn-manage-tags"
+                  class="btn btn-secondary"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                    <line x1="7" y1="7" x2="7.01" y2="7"/>
+                  </svg>
+                  MANAGE TAGS
                 </button>
                 <button
                   type="button"
@@ -1456,10 +1568,38 @@
       </div>
     </div>
 
+    <div id="tag-dropdown" class="picker-dropdown-portal hidden">
+      <div class="picker-options tag-picker-options">
+        <div class="tag-picker-empty">No tags defined. Manage tags in settings.</div>
+        <!-- Tags populated dynamically -->
+      </div>
+    </div>
+
+    <div id="tag-color-dropdown" class="picker-dropdown-portal hidden">
+      <div class="picker-options color-picker-options">
+        <button type="button" class="color-option color-amber" data-color="#e8b84a" title="Amber"></button>
+        <button type="button" class="color-option color-teal active" data-color="#4ecdb4" title="Teal"></button>
+        <button type="button" class="color-option color-red" data-color="#d45454" title="Red"></button>
+        <button type="button" class="color-option color-green" data-color="#5cb572" title="Green"></button>
+        <button type="button" class="color-option color-indigo" data-color="#6366f1" title="Indigo"></button>
+        <button type="button" class="color-option color-purple" data-color="#a855f7" title="Purple"></button>
+        <button type="button" class="color-option color-pink" data-color="#ec4899" title="Pink"></button>
+        <button type="button" class="color-option color-orange" data-color="#f97316" title="Orange"></button>
+      </div>
+    </div>
+
     <!-- Context Menu (positioned via JS) -->
     <div id="context-menu" class="context-menu hidden">
       <div class="context-menu-items">
         <!-- Items populated dynamically based on target -->
+      </div>
+    </div>
+
+    <!-- Select by Tag Dropdown (for bulk mode) -->
+    <div id="select-by-tag-dropdown" class="picker-dropdown-portal hidden">
+      <div class="picker-options tag-picker-options">
+        <div class="tag-picker-empty">No filter options available.</div>
+        <!-- Options populated dynamically: custom tags, categories, priorities -->
       </div>
     </div>
 
@@ -1470,6 +1610,11 @@
         <button type="button" id="bulk-select-all" class="btn btn-secondary">
           Select All
         </button>
+        <div class="dropdown-trigger-wrapper">
+          <button type="button" id="btn-select-by-tag" class="btn btn-secondary">
+            Select by Tag
+          </button>
+        </div>
         <button type="button" id="bulk-archive" class="btn btn-primary">
           Archive Selected
         </button>

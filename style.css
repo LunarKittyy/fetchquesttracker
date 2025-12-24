@@ -1269,6 +1269,202 @@ body.shake {
   background: rgba(212, 84, 84, 0.15);
 }
 
+/* Tag indicator in form */
+.tag-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--clr-text-muted);
+  background: var(--clr-bg-tertiary);
+  border-radius: 50%;
+  transition: all 0.15s ease;
+}
+
+.tag-indicator.has-tags {
+  color: var(--clr-text-primary);
+  background: var(--clr-accent-secondary);
+}
+
+/* Tag picker dropdown */
+.tag-picker-options {
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 200px;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.tag-picker-empty {
+  padding: 0.75rem 1rem;
+  font-size: 0.75rem;
+  color: var(--clr-text-muted);
+  text-align: center;
+}
+
+.tag-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--clr-bg-tertiary);
+  border: var(--border-subtle);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tag-picker-item:hover {
+  background: var(--clr-bg-elevated);
+}
+
+.tag-picker-item.selected {
+  background: var(--clr-bg-elevated);
+  border-color: var(--clr-accent-secondary);
+}
+
+.tag-picker-item .tag-color-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tag-picker-item .tag-name {
+  flex: 1;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--clr-text-primary);
+}
+
+.tag-picker-item .tag-check {
+  width: 14px;
+  height: 14px;
+  color: var(--clr-accent-secondary);
+  opacity: 0;
+}
+
+.tag-picker-item.selected .tag-check {
+  opacity: 1;
+}
+
+/* Tag Manager Modal styles */
+.tag-create-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.tag-create-row .input-field {
+  flex: 1;
+}
+
+.color-picker-btn {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background: var(--clr-bg-tertiary);
+  border: var(--border-subtle);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.color-picker-btn:hover {
+  background: var(--clr-bg-elevated);
+}
+
+.tag-color-preview {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #4ecdb4;
+}
+
+.tags-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.tag-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--clr-bg-tertiary);
+  border: var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.tag-item .tag-color-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tag-item .tag-name {
+  flex: 1;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--clr-text-primary);
+}
+
+.tag-item .tag-usage {
+  font-size: 0.7rem;
+  color: var(--clr-text-muted);
+}
+
+.tag-item-delete {
+  background: none;
+  border: none;
+  color: var(--clr-text-muted);
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0 0.25rem;
+  transition: all 0.15s ease;
+}
+
+.tag-item-delete:hover {
+  color: var(--clr-accent-danger);
+}
+
+.tag-item-delete.is-disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Custom tags on quest cards */
+.quest-custom-tag {
+  font-size: 0.55rem;
+  font-weight: 700;
+  padding: 0.2rem 0.45rem;
+  border-radius: 3px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: all 0.15s ease;
+}
+
+/* Select by Tag section headers */
+.select-tag-section {
+  padding: 0.5rem 0.75rem 0.25rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--clr-text-muted);
+  letter-spacing: 0.1em;
+  border-bottom: var(--border-subtle);
+  margin-bottom: 0.25rem;
+}
+
 /* Quest notes section */
 .quest-notes-section {
   display: flex;

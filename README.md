@@ -11,9 +11,11 @@ A stylish quest/item tracker web application with Firebase cloud sync support.
 - **Spaces** - Organize quests into separate spaces with custom colors
 - **Quest Types** - Track items (count-based) or objectives (checkbox-based)
 - **Categories** - Group quests within spaces, with category manager to remove unused ones
+- **Custom Tags** - Create colored tags for flexible organization. Assign multiple tags per quest.
 - **Progress Tracking** - Visual progress bars, bulk increment with Shift/Ctrl+click
 - **Archive System** - Completed quests auto-archive, can be restored
-- **Search** - Search quests across all spaces
+- **Search** - Search quests by name, or use `tag:` prefix to filter by tag/priority/category
+- **Bulk Actions** - Select by tag, archive, or delete multiple quests at once
 - **Statistics Dashboard** - View overall progress and completion stats
 
 ### Cloud Features (Firebase)
@@ -139,6 +141,7 @@ See [TASKS.md](TASKS.md) for detailed progress tracking.
 
 ### Recently Completed
 
+- **Custom Tagging System**: Create & assign colored tags to quests, search via `tag:` prefix, bulk select by tag
 - **Server-side Storage Enforcement**: Implemented Cloud Functions and Storage Rules to strictly enforce 10MB limit.
 - **Security Hardening**: Mitigated CWE-602 vulnerability.
 - Custom right-click context menus

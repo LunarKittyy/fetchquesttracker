@@ -224,7 +224,8 @@ export function loadState() {
                     color: '#4ecdb4',
                     items: parsed.items || [],
                     archivedItems: parsed.archivedItems || [],
-                    categories: parsed.categories || [...DEFAULT_CATEGORIES]
+                    categories: parsed.categories || [...DEFAULT_CATEGORIES],
+                    tags: []
                 };
                 state.spaces = [defaultSpace];
                 state.activeSpaceId = defaultSpace.id;
@@ -240,7 +241,8 @@ export function loadState() {
                 color: '#4ecdb4',
                 items: [],
                 archivedItems: [],
-                categories: [...DEFAULT_CATEGORIES]
+                categories: [...DEFAULT_CATEGORIES],
+                tags: []
             };
             state.spaces = [defaultSpace];
             state.activeSpaceId = defaultSpace.id;
@@ -249,10 +251,14 @@ export function loadState() {
         // Set active space pointer and sync top-level state for legacy code
         syncActiveSpace();
 
-        // Normalize items across all spaces
+        // Normalize items across all spaces and ensure tags array exists
         state.spaces.forEach(space => {
             space.items = (space.items || []).map(item => normalizeItem(item));
             space.archivedItems = (space.archivedItems || []).map(item => normalizeItem(item));
+            // Migration: ensure each space has a tags array
+            if (!Array.isArray(space.tags)) {
+                space.tags = [];
+            }
         });
 
     } catch (e) {
@@ -263,7 +269,8 @@ export function loadState() {
             color: '#4ecdb4',
             items: [],
             archivedItems: [],
-            categories: [...DEFAULT_CATEGORIES]
+            categories: [...DEFAULT_CATEGORIES],
+            tags: []
         };
         state.spaces.length = 0;
         state.spaces.push(defaultSpace);

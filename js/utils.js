@@ -8,7 +8,7 @@ export const $ = (sel) => document.querySelector(sel);
 export const $$ = (sel) => document.querySelectorAll(sel);
 
 // --- Valid field values for security validation ---
-const VALID_COLORS = [
+export const VALID_COLORS = [
     '',           // none
     '#e8b84a',    // amber
     '#4ecdb4',    // teal
@@ -203,7 +203,8 @@ export function normalizeItem(item, idGenerator = generateId) {
         completedAt: item.completedAt || null,
         color: validateColor(item.color),
         priority: validatePriority(item.priority),
-        notes: item.notes || ''
+        notes: item.notes || '',
+        tags: Array.isArray(item.tags) ? item.tags.filter(t => typeof t === 'string') : []
     };
 }
 

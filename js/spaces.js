@@ -227,7 +227,8 @@ export function handleSaveSpace() {
             color: color,
             items: [],
             archivedItems: [],
-            categories: [...DEFAULT_CATEGORIES]
+            categories: [...DEFAULT_CATEGORIES],
+            tags: []
         };
         state.spaces.push(newSpace);
         state.activeSpaceId = newSpace.id;
