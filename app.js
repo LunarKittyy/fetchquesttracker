@@ -260,9 +260,9 @@ function render() {
                 if (item.priority && item.priority.toLowerCase() === tagFilter) return true;
                 if (item.category && item.category.toLowerCase() === tagFilter) return true;
                 if (item.type && item.type.toLowerCase() === tagFilter) return true;
-                // Check custom tags
-                if (item.tags && space?.tags) {
-                    const matchingTag = space.tags.find(t => 
+                // Check custom tags (using global state.tags)
+                if (item.tags && state.tags.length > 0) {
+                    const matchingTag = state.tags.find(t => 
                         item.tags.includes(t.id) && t.name.toLowerCase() === tagFilter
                     );
                     if (matchingTag) return true;
@@ -857,7 +857,7 @@ function updateTagColorPreview() {
 function renderTagList() {
     if (!elements.tagsList) return;
     const space = state.spaces.find(s => s.id === state.activeSpaceId);
-    const tags = space?.tags || [];
+    const tags = state.tags || [];
     
     // Count how many items use each tag
     const usageCount = {};
@@ -896,7 +896,7 @@ function handleAddTag() {
     const space = state.spaces.find(s => s.id === state.activeSpaceId);
     if (!space) return;
 
-    if (!space.tags) space.tags = [];
+    if (!state.tags) state.tags = [];
     
     const nameLower = name.toLowerCase();
     
@@ -908,7 +908,7 @@ function handleAddTag() {
     }
     
     // Check for duplicate name with existing custom tags
-    if (space.tags.some(t => t.name.toLowerCase() === nameLower)) {
+    if (state.tags.some(t => t.name.toLowerCase() === nameLower)) {
         showAlert('A tag with this name already exists.', 'ERROR');
         return;
     }
@@ -919,7 +919,7 @@ function handleAddTag() {
         color: currentTagColor
     };
     
-    space.tags.push(newTag);
+    state.tags.push(newTag);
     saveState();
     
     if (elements.newTagName) elements.newTagName.value = '';
@@ -941,9 +941,9 @@ function handleTagListClick(e) {
     if (!tagId) return;
 
     const space = state.spaces.find(s => s.id === state.activeSpaceId);
-    if (!space || !space.tags) return;
+    if (!state.tags) return;
 
-    space.tags = space.tags.filter(t => t.id !== tagId);
+    state.tags = state.tags.filter(t => t.id !== tagId);
     saveState();
     renderTagList();
     updateTagPickerDropdown();
@@ -953,7 +953,7 @@ function handleTagListClick(e) {
 function updateTagPickerDropdown() {
     if (!elements.tagDropdown) return;
     const space = state.spaces.find(s => s.id === state.activeSpaceId);
-    const tags = space?.tags || [];
+    const tags = state.tags || [];
     const optionsContainer = elements.tagDropdown.querySelector('.tag-picker-options');
     if (!optionsContainer) return;
 
@@ -1017,7 +1017,7 @@ function openEditTagsModal(itemId) {
 function renderEditTagsList() {
     if (!elements.editTagsList) return;
     const space = state.spaces.find(s => s.id === state.activeSpaceId);
-    const tags = space?.tags || [];
+    const tags = state.tags || [];
 
     if (tags.length === 0) {
         elements.editTagsList.innerHTML = '<p class="settings-hint">No tags defined. Create tags in settings first.</p>';
@@ -1086,7 +1086,7 @@ function populateSelectByTagDropdown() {
     const priorities = [...new Set(items.map(i => i.priority).filter(p => p))];
     
     // Get custom tags from space
-    const customTags = space?.tags || [];
+    const customTags = state.tags || [];
     
     let html = '';
     

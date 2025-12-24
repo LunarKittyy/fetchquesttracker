@@ -284,12 +284,10 @@ export function insertItemIntoDOM(item) {
  */
 function renderCustomTags(item) {
     if (!item.tags || item.tags.length === 0) return '';
-    
-    const space = state.spaces.find(s => s.id === state.activeSpaceId);
-    if (!space || !space.tags) return '';
+    if (!state.tags || state.tags.length === 0) return '';
     
     return item.tags.map(tagId => {
-        const tag = space.tags.find(t => t.id === tagId);
+        const tag = state.tags.find(t => t.id === tagId);
         if (!tag) return '';
         return `<span class="quest-custom-tag" style="color: ${tag.color}; background: ${tag.color}22; border: 1px solid ${tag.color}55;">${escapeHtml(tag.name)}</span>`;
     }).join('');

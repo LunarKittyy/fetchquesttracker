@@ -11,6 +11,7 @@ export const DEFAULT_CATEGORIES = ['Misc', 'Main Quest', 'Side Quest', 'Crafting
 export const state = {
     spaces: [],
     activeSpaceId: null,
+    tags: [],  // Global tags (cross-space)
     soundEnabled: false,
     shiftAmount: 5,
     ctrlAmount: 10,
@@ -53,8 +54,7 @@ export function syncActiveSpace() {
             color: '#4ecdb4',
             items: [],
             archivedItems: [],
-            categories: [...DEFAULT_CATEGORIES],
-            tags: []
+            categories: [...DEFAULT_CATEGORIES]
         };
         state.spaces = [defaultSpace];
         activeSpace = defaultSpace;

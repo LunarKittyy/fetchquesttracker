@@ -224,8 +224,7 @@ export function loadState() {
                     color: '#4ecdb4',
                     items: parsed.items || [],
                     archivedItems: parsed.archivedItems || [],
-                    categories: parsed.categories || [...DEFAULT_CATEGORIES],
-                    tags: []
+                    categories: parsed.categories || [...DEFAULT_CATEGORIES]
                 };
                 state.spaces = [defaultSpace];
                 state.activeSpaceId = defaultSpace.id;
@@ -241,8 +240,7 @@ export function loadState() {
                 color: '#4ecdb4',
                 items: [],
                 archivedItems: [],
-                categories: [...DEFAULT_CATEGORIES],
-                tags: []
+                categories: [...DEFAULT_CATEGORIES]
             };
             state.spaces = [defaultSpace];
             state.activeSpaceId = defaultSpace.id;
@@ -251,14 +249,31 @@ export function loadState() {
         // Set active space pointer and sync top-level state for legacy code
         syncActiveSpace();
 
-        // Normalize items across all spaces and ensure tags array exists
+        // Load global tags (or migrate from space-level tags)
+        if (Array.isArray(parsed?.tags)) {
+            state.tags = parsed.tags;
+        } else {
+            // Migration: collect tags from all spaces into global tags array
+            const seenTagIds = new Set();
+            state.tags = [];
+            state.spaces.forEach(space => {
+                if (Array.isArray(space.tags)) {
+                    space.tags.forEach(tag => {
+                        if (!seenTagIds.has(tag.id)) {
+                            seenTagIds.add(tag.id);
+                            state.tags.push(tag);
+                        }
+                    });
+                    // Clear space-level tags after migration
+                    delete space.tags;
+                }
+            });
+        }
+
+        // Normalize items across all spaces
         state.spaces.forEach(space => {
             space.items = (space.items || []).map(item => normalizeItem(item));
             space.archivedItems = (space.archivedItems || []).map(item => normalizeItem(item));
-            // Migration: ensure each space has a tags array
-            if (!Array.isArray(space.tags)) {
-                space.tags = [];
-            }
         });
 
     } catch (e) {
@@ -269,12 +284,12 @@ export function loadState() {
             color: '#4ecdb4',
             items: [],
             archivedItems: [],
-            categories: [...DEFAULT_CATEGORIES],
-            tags: []
+            categories: [...DEFAULT_CATEGORIES]
         };
         state.spaces.length = 0;
         state.spaces.push(defaultSpace);
         state.activeSpaceId = defaultSpace.id;
+        state.tags = [];
         state.soundEnabled = false;
         state.shiftAmount = 5;
         state.ctrlAmount = 10;

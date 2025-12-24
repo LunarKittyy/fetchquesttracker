@@ -385,7 +385,11 @@ export function handleRealtimeUpdate(data, pendingLocalChange, callbacks) {
 
     if (data.spaces) {
         state.spaces = data.spaces;
-        state.activeSpaceId = data.activeSpaceId || state.spaces[0]?.id;
+        // Only update activeSpaceId if the current one no longer exists
+        const currentSpaceExists = state.spaces.some(s => s.id === state.activeSpaceId);
+        if (!currentSpaceExists) {
+            state.activeSpaceId = state.spaces[0]?.id;
+        }
         syncActiveSpace();
     }
 

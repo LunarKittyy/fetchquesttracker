@@ -450,6 +450,7 @@ window.FirebaseBridge = {
                     ctrlAmount: state.ctrlAmount,
                     autoArchive: state.autoArchive
                 },
+                tags: state.tags || [],  // Global tags
                 activeSpaceId: state.activeSpaceId,
                 storageUsedBytes: this.storageUsedBytes,
                 lastModified: serverTimestamp()
@@ -473,7 +474,6 @@ window.FirebaseBridge = {
                     items: processedItems,
                     archivedItems: processedArchived,
                     categories: space.categories || [],
-                    tags: space.tags || [],
                     lastModified: serverTimestamp()
                 });
             }
@@ -515,6 +515,7 @@ window.FirebaseBridge = {
                 success: true,
                 state: {
                     spaces: spaces,
+                    tags: userData.tags || [],  // Global tags
                     activeSpaceId: userData.activeSpaceId,
                     soundEnabled: userData.settings?.soundEnabled ?? false,
                     shiftAmount: userData.settings?.shiftAmount ?? 5,
