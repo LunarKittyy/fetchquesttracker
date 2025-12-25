@@ -14,7 +14,7 @@ A stylish quest/item tracker web application with Firebase cloud sync support.
 - **Custom Tags** - Create colored tags for flexible organization. Assign multiple tags per quest.
 - **Progress Tracking** - Visual progress bars, bulk increment with Shift/Ctrl+click
 - **Archive System** - Completed quests auto-archive, can be restored
-- **Search** - Search quests by name, or use `tag:` prefix to filter by tag/priority/category
+- **Search** - Search quests by name, or use `tag:` prefix to filter by tag/priority/category. Search across all spaces at once.
 - **Bulk Actions** - Select by tag, archive, or delete multiple quests at once
 - **Statistics Dashboard** - View overall progress and completion stats
 
@@ -36,7 +36,7 @@ A stylish quest/item tracker web application with Firebase cloud sync support.
 - **Custom Context Menus** - Right-click menus for spaces, categories, and quests
 - **Custom Popups** - Styled confirmation dialogs (no browser alerts)
 - **Dark Theme** - Post-apocalyptic aesthetic with subtle animations
-- **Responsive** - Works on desktop and mobile
+- **Mobile Responsive** - Bottom navigation, touch-friendly controls, long-press context menus
 - **Smooth Animations** - Quest creation fly-in, progress updates
 
 ### Storage Quotas
@@ -109,9 +109,11 @@ The frontend is a static site (HTML/JS/CSS).
 
 ```
 ├── index.html              # Main HTML structure
-├── style.css               # All styles
+├── style.css               # Desktop styles
+├── mobile.css              # Mobile-specific styles
 ├── app.js                  # Main application logic & initialization
 ├── storage.rules           # Firebase Storage security rules
+├── firestore.rules         # Firestore security rules
 ├── functions/              # Cloud Functions (Backend logic)
 │   ├── index.js            # Storage trigger implementations
 │   └── package.json        # Function dependencies
@@ -132,6 +134,7 @@ The frontend is a static site (HTML/JS/CSS).
     ├── popup.js            # Custom popup/alert system
     ├── statistics.js       # Statistics dashboard
     ├── particles.js        # Background particle effects
+    ├── mobile-nav.js       # Mobile navigation & touch interactions
     └── utils.js            # Utility functions
 ```
 
@@ -141,9 +144,12 @@ See [TASKS.md](TASKS.md) for detailed progress tracking.
 
 ### Recently Completed
 
+- **Mobile Interface**: Full mobile support with bottom navigation, touch gestures, and long-press context menus
+- **Cross-Space Search**: Search across all spaces at once, with space tags on results
 - **Custom Tagging System**: Create & assign colored tags to quests, search via `tag:` prefix, bulk select by tag
-- **Server-side Storage Enforcement**: Implemented Cloud Functions and Storage Rules to strictly enforce 10MB limit.
-- **Security Hardening**: Mitigated CWE-602 vulnerability.
+- **Server-side Storage Enforcement**: Cloud Functions and Storage Rules enforce 10MB limit
+- **Security Hardening**: Mitigated CWE-602 vulnerability
+- **Real-time Sync Optimization**: No animation flicker, hover protection during sync
 - Custom right-click context menus
 - Statistics dashboard
 - Category manager
@@ -151,6 +157,6 @@ See [TASKS.md](TASKS.md) for detailed progress tracking.
 
 ### Known Issues
 
-- Adblockers may block some Firebase requests.
-- Multi-column layout is partially implemented.
-- Login doesn't work on Firefox mobile due to it not being able to handle pop-up logins properly.
+- Adblockers may block some Firebase requests
+- Multi-column layout is partially implemented
+- Login doesn't work on Firefox mobile (popup-based auth not supported)
