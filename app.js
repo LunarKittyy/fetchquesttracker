@@ -677,6 +677,7 @@ async function handleClearAllData() {
         // 2. Clear all local state
         state.spaces.length = 0;
         state.activeSpaceId = null;
+        state.tags = []; // Reset custom tags
         
         // 3. Clear localStorage completely
         localStorage.removeItem(STORAGE_KEY);
