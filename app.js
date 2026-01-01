@@ -1267,13 +1267,13 @@ function init() {
 
     // Number input validation
     document.addEventListener('input', (e) => {
-        if (e.target.classList.contains('input-number')) {
+        if (e.target?.classList?.contains('input-number')) {
             // Remove non-numeric and limit to 4 digits
             e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 4);
         }
     });
     document.addEventListener('blur', (e) => {
-        if (e.target.classList.contains('input-number')) {
+        if (e.target?.classList?.contains('input-number')) {
             const min = parseInt(e.target.min) || 1;
             const max = parseInt(e.target.max) || 9999;
             let val = parseInt(e.target.value) || min;

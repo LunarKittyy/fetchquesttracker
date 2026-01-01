@@ -20,7 +20,8 @@ body.is-mobile {
    =========================================== */
 
 .mobile-nav {
-  display: none; /* Hidden on desktop */
+  display: none;
+  /* Hidden on desktop */
 }
 
 body.is-mobile .mobile-nav {
@@ -280,6 +281,15 @@ body.is-mobile .add-form.mobile-add-open .form-body {
   max-height: 600px;
   padding: 1.25rem;
   opacity: 1;
+  /* Reset desktop overlay positioning */
+  position: relative;
+  bottom: auto;
+  left: auto;
+  right: auto;
+  width: 100%;
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--clr-bg-secondary);
 }
 
 body.is-mobile.mobile-add-active::before {
@@ -313,7 +323,8 @@ body.is-mobile .form-group-category {
 
 /* Touch-friendly form inputs */
 body.is-mobile .input-field {
-  font-size: 16px; /* Prevents iOS zoom */
+  font-size: 16px;
+  /* Prevents iOS zoom */
   min-height: 44px;
   padding: 0.75rem;
 }
@@ -329,21 +340,24 @@ body.is-mobile .btn-submit {
    =========================================== */
 
 body.is-mobile .quest-card {
-    margin-bottom: 0.75rem;
-    padding: 0.75rem; /* Reduced padding on mobile */
-    overflow: visible; /* Prevent button cutoff */
+  margin-bottom: 0.75rem;
+  padding: 0.75rem;
+  /* Reduced padding on mobile */
+  overflow: visible;
+  /* Prevent button cutoff */
 }
 
 body.is-mobile .quest-content {
-    padding: 0;
-    min-width: 0; /* Allow flex child to shrink */
+  padding: 0;
+  min-width: 0;
+  /* Allow flex child to shrink */
 }
 
 /* Fix quest name text wrapping */
 body.is-mobile .quest-name {
-    word-break: normal;
-    overflow-wrap: break-word;
-    hyphens: auto;
+  word-break: normal;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 /* Quest card with image - stack vertically on mobile */
@@ -365,29 +379,30 @@ body.is-mobile .quest-card.has-image .quest-image {
 
 /* Fix quest controls to prevent button overflow */
 body.is-mobile .quest-controls {
-    display: flex;
-    flex-wrap: nowrap;
-    justify-content: center; /* Override space-between */
-    gap: 0.5rem;
-    padding: 0.35rem;
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  /* Override space-between */
+  gap: 0.5rem;
+  padding: 0.35rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 body.is-mobile .btn-control {
-    width: 36px;
-    height: 36px;
-    flex-shrink: 0;
-    flex-grow: 0;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  flex-grow: 0;
 }
 
 body.is-mobile .quest-count {
-    font-size: 1rem;
-    min-width: 50px;
-    padding: 0 0.25rem;
-    flex-shrink: 0;
-    text-align: center;
+  font-size: 1rem;
+  min-width: 50px;
+  padding: 0 0.25rem;
+  flex-shrink: 0;
+  text-align: center;
 }
 
 /* Larger touch targets for +/- buttons */
@@ -397,45 +412,9 @@ body.is-mobile .btn-count {
   font-size: 1.25rem;
 }
 
-/* Show action buttons always visible (no hover needed) */
+/* Hide action buttons on mobile - use long-press for actions */
 body.is-mobile .quest-actions {
-  opacity: 1;
-  position: static;
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--clr-bg-elevated);
-}
-
-body.is-mobile .quest-actions .btn-archive,
-body.is-mobile .quest-actions .btn-delete {
-  flex: 1;
-  padding: 0.5rem 0.75rem;
-  min-height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  background: var(--clr-bg-tertiary);
-  border: 1px solid var(--clr-bg-elevated);
-  border-radius: var(--radius-sm);
-  color: var(--clr-text-muted);
-  font-size: 0.7rem;
-  font-weight: 600;
-}
-
-body.is-mobile .quest-actions .btn-archive::after {
-  content: "ARCHIVE";
-}
-
-body.is-mobile .quest-actions .btn-delete::after {
-  content: "DELETE";
-}
-
-body.is-mobile .quest-actions svg {
-  width: 16px;
-  height: 16px;
+  display: none;
 }
 
 /* ===========================================
@@ -477,6 +456,7 @@ body.is-mobile .mobile-menu-overlay.hidden {
   from {
     transform: translateY(100%);
   }
+
   to {
     transform: translateY(0);
   }
@@ -660,6 +640,7 @@ body.is-mobile .space-tab:hover {
 
 /* Comprehensive hover reset for touch devices */
 @media (hover: none) {
+
   /* Reset all hover visual effects */
   .btn:hover,
   .btn-control:hover,
@@ -769,6 +750,78 @@ body.is-mobile .bulk-buttons .btn {
 }
 
 /* ===========================================
+   BULK IMPORT MODAL - MOBILE
+   =========================================== */
+
+/* Modal body needs relative for help button positioning */
+body.is-mobile #modal-bulk .modal-body {
+  position: relative;
+  padding-top: 2.5rem;
+}
+
+/* Stack header row vertically on mobile */
+body.is-mobile .bulk-header-row {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
+}
+
+body.is-mobile .type-toggle-compact {
+  width: 100%;
+  justify-content: center;
+}
+
+body.is-mobile .type-toggle-compact .type-btn {
+  flex: 1;
+  padding: 0.6rem;
+  font-size: 0.7rem;
+}
+
+body.is-mobile .bulk-ocr-section {
+  width: 100%;
+  justify-content: center;
+}
+
+/* Help button positioning */
+body.is-mobile .bulk-help-wrapper {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+}
+
+body.is-mobile .bulk-help-btn {
+  width: 32px;
+  height: 32px;
+}
+
+/* Tooltip position for mobile - show below button */
+body.is-mobile .bulk-help-tooltip {
+  left: auto;
+  right: 0;
+  min-width: 260px;
+  max-width: calc(100vw - 2rem);
+}
+
+/* Larger textarea for touch */
+body.is-mobile .bulk-textarea {
+  min-height: 180px;
+  font-size: 16px;
+  /* Prevent iOS zoom */
+  padding: 0.75rem;
+}
+
+/* Preview list touch-friendly */
+body.is-mobile .bulk-preview-item {
+  padding: 0.75rem;
+  min-height: 44px;
+}
+
+body.is-mobile .bulk-preview-remove {
+  width: 32px;
+  height: 32px;
+}
+
+/* ===========================================
    STATUS BAR - MOBILE
    =========================================== */
 
@@ -797,10 +850,12 @@ body.is-mobile .scanlines {
 
 /* Swipe hint animation */
 @keyframes swipeHint {
+
   0%,
   100% {
     transform: translateX(0);
   }
+
   50% {
     transform: translateX(-10px);
   }
@@ -811,9 +866,11 @@ body.is-mobile .scanlines {
   0% {
     box-shadow: 0 0 0 0 rgba(78, 205, 180, 0.4);
   }
+
   70% {
     box-shadow: 0 0 0 10px rgba(78, 205, 180, 0);
   }
+
   100% {
     box-shadow: 0 0 0 0 rgba(78, 205, 180, 0);
   }

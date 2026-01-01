@@ -12,8 +12,12 @@ const LONG_PRESS_DURATION = 500; // ms
  * Initialize mobile navigation
  */
 export function initMobileNav() {
-  // Only initialize on mobile devices
-  if (!window.FirebaseBridge?.isMobile) {
+  // Detect mobile: FirebaseBridge, user agent, or small screen
+  const isMobileDevice = window.FirebaseBridge?.isMobile ||
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    window.innerWidth <= 768;
+
+  if (!isMobileDevice) {
     return;
   }
 
@@ -187,9 +191,8 @@ function updateMobileMenuAuth() {
 
     authSection.innerHTML = `
             <div class="mobile-menu-user">
-                <span class="mobile-menu-user-email">${
-                  user.email || user.displayName || "User"
-                }</span>
+                <span class="mobile-menu-user-email">${user.email || user.displayName || "User"
+      }</span>
                 <div class="mobile-menu-sync-status">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                         <polyline points="23 4 23 10 17 10"/>
@@ -200,17 +203,15 @@ function updateMobileMenuAuth() {
                 </div>
                 <button id="mobile-menu-storage" class="mobile-menu-storage" title="Manage Storage Files">
                     <div class="mobile-storage-bar">
-                        <div class="mobile-storage-fill ${
-                          storageInfo.percent >= 90
-                            ? "danger"
-                            : storageInfo.percent >= 70
-                            ? "warning"
-                            : ""
-                        }" style="width: ${storageInfo.percent}%"></div>
+                        <div class="mobile-storage-fill ${storageInfo.percent >= 90
+        ? "danger"
+        : storageInfo.percent >= 70
+          ? "warning"
+          : ""
+      }" style="width: ${storageInfo.percent}%"></div>
                     </div>
-                    <span class="mobile-storage-text">${storageInfo.usedMB} / ${
-      storageInfo.limitMB
-    } MB</span>
+                    <span class="mobile-storage-text">${storageInfo.usedMB} / ${storageInfo.limitMB
+      } MB</span>
                 </button>
                 <button id="mobile-menu-export" class="mobile-menu-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -314,30 +315,30 @@ function setupMobileMenu() {
  * Setup add form dismissal (click outside to close)
  */
 function setupAddFormDismissal() {
-    // Listen for clicks on the backdrop created by mobile-add-active::before
-    document.addEventListener("click", (e) => {
-        // Only when add form is open
-        if (!document.body.classList.contains("mobile-add-active")) return;
+  // Listen for clicks on the backdrop created by mobile-add-active::before
+  document.addEventListener("click", (e) => {
+    // Only when add form is open
+    if (!document.body.classList.contains("mobile-add-active")) return;
 
-        // Don't close if any modal is open (like image picker)
-        const openModal = document.querySelector('.modal:not(.hidden)');
-        if (openModal) return;
+    // Don't close if any modal is open (like image picker)
+    const openModal = document.querySelector('.modal:not(.hidden)');
+    if (openModal) return;
 
-        // Don't close if clicking on a modal backdrop or content
-        if (e.target.closest('.modal')) return;
+    // Don't close if clicking on a modal backdrop or content
+    if (e.target.closest('.modal')) return;
 
-        const addForm = document.getElementById("add-quest-form");
-        const mobileNav = document.getElementById("mobile-nav");
+    const addForm = document.getElementById("add-quest-form");
+    const mobileNav = document.getElementById("mobile-nav");
 
-        // Check if click is outside the form and nav
-        if (
-            addForm &&
-            !addForm.contains(e.target) &&
-            !mobileNav?.contains(e.target)
-        ) {
-            closeMobileAddForm();
-        }
-    });
+    // Check if click is outside the form and nav
+    if (
+      addForm &&
+      !addForm.contains(e.target) &&
+      !mobileNav?.contains(e.target)
+    ) {
+      closeMobileAddForm();
+    }
+  });
 }
 
 /**
