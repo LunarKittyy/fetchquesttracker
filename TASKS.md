@@ -58,11 +58,27 @@
 - [/] Multi-column layout (optional, can be switched in settings)
 - [x] Custom right-click context menus (spaces, categories, quests) with proper z index
 
+## In Progress
+
+- [/] Bulk Entry Enhancements
+  - [x] OCR text extraction (Tesseract.js)
+  - [x] CSP update for WebAssembly support
+  - [x] Pin button to keep form open when adding multiple items
+  - [x] X buttons in preview list (event delegation + renderPreview)
+  - [/] Real-time preview update (live typing)
+  - [/] OCR character filtering (letters + basic punctuation only)
+  - [/] Form overlay instead of push down when expanded
+
 ## Deferred
 
 - [x] File split refactor (separate the thousands of lines into smaller files for easier maintenance)
 
 ## Future Considerations
+
+- [ ] Voice Input for Item Entry
+  - [ ] Browser Speech Recognition API
+  - [ ] Microphone button on form
+  - [ ] Parse spoken item names and quantities
 
 - [ ] Visual Customization Settings
 

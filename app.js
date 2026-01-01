@@ -60,6 +60,9 @@ import {
     handleGoogleSignIn, handleLogout, handleExportData, handleDeleteAccount, handleRealtimeUpdate
 } from './js/auth-ui.js';
 
+import { parseItemInput } from './js/input-parser.js';
+import { initBulkEntry } from './js/bulk-entry.js';
+
 // --- DOM Element References ---
 const elements = {
     // Form elements
@@ -201,7 +204,7 @@ const elements = {
     btnTagColor: $('#btn-tag-color'),
     btnAddTag: $('#btn-add-tag'),
     tagColorDropdown: $('#tag-color-dropdown'),
-    
+
     // Tag picker (in form)
     btnTagPicker: $('#btn-tag-picker'),
     tagIndicator: $('#tag-indicator'),
@@ -262,7 +265,7 @@ function render() {
                 if (item.type && item.type.toLowerCase() === tagFilter) return true;
                 // Check custom tags (using global state.tags)
                 if (item.tags && state.tags.length > 0) {
-                    const matchingTag = state.tags.find(t => 
+                    const matchingTag = state.tags.find(t =>
                         item.tags.includes(t.id) && t.name.toLowerCase() === tagFilter
                     );
                     if (matchingTag) return true;
@@ -348,19 +351,25 @@ function updateStatusBar() {
 function handleFormSubmit(e) {
     e.preventDefault();
 
-    const name = elements.itemName.value.trim();
+    const rawName = elements.itemName.value.trim();
     const hasImage = tempImageData || elements.itemImage.value;
 
-    if (!name && !hasImage) return;
+    if (!rawName && !hasImage) return;
+
+    // Parse quantity from name (e.g., "Film Reels x5")
+    const parsed = parseItemInput(rawName);
+    const manualQty = parseInt(elements.itemGoal.value);
+    // Use parsed qty if found, otherwise use manual input
+    const target = parsed.quantity ?? (manualQty || 4);
 
     addItem({
         type: currentType,
-        name: name || 'Unnamed Item',
+        name: parsed.name || 'Unnamed Item',
         imageUrl: tempImageData || elements.itemImage.value || null,
         category: elements.itemCategory.value,
         color: elements.itemColor.value || null,
         priority: elements.itemPriority.value || null,
-        target: parseInt(elements.itemGoal.value) || 1,
+        target,
         objectives: currentType === 'quest' ? [...tempObjectives] : [],
         tags: [...selectedTags]
     });
@@ -376,12 +385,12 @@ function handleFormSubmit(e) {
     elements.itemGoal.value = '4';
     setTempObjectives([]);
     if (elements.objectivesList) elements.objectivesList.innerHTML = '';
-    
+
     // Reset tags
     clearSelectedTags();
     updateTagIndicator();
     updateTagPickerDropdown();
-    
+
     elements.itemName.focus();
     updateFormContentState();
 }
@@ -432,6 +441,7 @@ function handleRemoveObjective(e) {
     const id = btn.dataset.id;
     setTempObjectives(tempObjectives.filter(o => o.id !== id));
     renderObjectives();
+    updateFormContentState();
 }
 
 function renderObjectives() {
@@ -439,7 +449,7 @@ function renderObjectives() {
     elements.objectivesList.innerHTML = tempObjectives.map(obj => `
         <div class="objective-row" data-id="${obj.id}">
             <input type="text" class="input-field objective-name-input" placeholder="Objective name" value="${escapeHtml(obj.name)}" data-field="name">
-            <input type="number" class="input-field objective-target-input" min="1" value="${obj.target}" data-field="target">
+            <input type="number" class="input-field input-number objective-target-input" min="1" value="${obj.target}" data-field="target">
             <button type="button" class="btn-remove-objective" data-id="${obj.id}">×</button>
         </div>
     `).join('');
@@ -634,10 +644,10 @@ function handleFileChange(e) {
 
 async function handleClearAllData() {
     const isLoggedIn = window.FirebaseBridge?.currentUser;
-    const warningMsg = isLoggedIn 
-        ? 'Delete ALL data including cloud data? This cannot be undone!' 
+    const warningMsg = isLoggedIn
+        ? 'Delete ALL data including cloud data? This cannot be undone!'
         : 'Delete ALL local data? This cannot be undone!';
-    
+
     const confirmed1 = await showConfirm(warningMsg, 'CLEAR DATA', true);
     if (!confirmed1) return;
     const confirmed2 = await showConfirm('Really? This will permanently remove everything.', 'FINAL WARNING', true);
@@ -650,7 +660,7 @@ async function handleClearAllData() {
         // 1. If logged in, delete all cloud data first
         if (isLoggedIn && window.FirebaseBridge) {
             console.log('🗑️ Clearing cloud data...');
-            
+
             // Delete all storage files
             const storageResult = await window.FirebaseBridge.listStorageFiles();
             if (storageResult.success && storageResult.files.length > 0) {
@@ -659,18 +669,18 @@ async function handleClearAllData() {
                     await window.FirebaseBridge.deleteStorageFile(file.fullPath);
                 }
             }
-            
+
             // Delete all spaces from Firestore
             for (const space of state.spaces) {
                 await window.FirebaseBridge.deleteSpace(space.id);
             }
-            
+
             // Refresh storage usage from Firestore after Cloud Functions update
             setTimeout(async () => {
                 await window.FirebaseBridge.fetchStorageUsage();
                 updateStorageDisplay();
             }, 1500);
-            
+
             console.log('✅ Cloud data cleared');
         }
 
@@ -678,19 +688,19 @@ async function handleClearAllData() {
         state.spaces.length = 0;
         state.activeSpaceId = null;
         state.tags = []; // Reset custom tags
-        
+
         // 3. Clear localStorage completely
         localStorage.removeItem(STORAGE_KEY);
-        
+
         // 4. Re-initialize with a fresh default space
         syncActiveSpace(); // This creates a default space if none exist
-        
+
         // 5. Re-render everything
         render();
         renderArchive();
         renderSpaces();
         updateCategoryDropdown();
-        
+
         showAlert('All data has been cleared.', 'SUCCESS');
     } catch (error) {
         console.error('Error clearing data:', error);
@@ -867,7 +877,7 @@ function updateTagColorPreview() {
 function renderTagList() {
     if (!elements.tagsList) return;
     const tags = state.tags || [];
-    
+
     // Count how many items use each tag (across ALL spaces)
     const usageCount = {};
     state.spaces.forEach(space => {
@@ -908,16 +918,16 @@ function handleAddTag() {
     if (!space) return;
 
     if (!state.tags) state.tags = [];
-    
+
     const nameLower = name.toLowerCase();
-    
+
     // Reserved names that can't be used for custom tags
     const reservedNames = ['low', 'medium', 'high', 'none', 'quest', 'item'];
     if (reservedNames.includes(nameLower)) {
         showAlert(`"${name}" is a reserved tag name. Please choose a different name.`, 'ERROR');
         return;
     }
-    
+
     // Check for duplicate name with existing custom tags
     if (state.tags.some(t => t.name.toLowerCase() === nameLower)) {
         showAlert('A tag with this name already exists.', 'ERROR');
@@ -929,10 +939,10 @@ function handleAddTag() {
         name: name.toUpperCase(),
         color: currentTagColor
     };
-    
+
     state.tags.push(newTag);
     saveState();
-    
+
     if (elements.newTagName) elements.newTagName.value = '';
     renderTagList();
     updateTagPickerDropdown();
@@ -1084,18 +1094,18 @@ function populateSelectByTagDropdown() {
 
     const space = state.spaces.find(s => s.id === state.activeSpaceId);
     const items = state.items;
-    
+
     // Collect all unique categories from items
     const categories = [...new Set(items.map(i => i.category || 'Misc'))];
-    
+
     // Collect priorities that are actually used
     const priorities = [...new Set(items.map(i => i.priority).filter(p => p))];
-    
+
     // Get custom tags from space
     const customTags = state.tags || [];
-    
+
     let html = '';
-    
+
     // Categories section
     if (categories.length > 0) {
         html += '<div class="select-tag-section">CATEGORY</div>';
@@ -1105,7 +1115,7 @@ function populateSelectByTagDropdown() {
             </div>`;
         });
     }
-    
+
     // Priorities section
     if (priorities.length > 0) {
         html += '<div class="select-tag-section">PRIORITY</div>';
@@ -1115,7 +1125,7 @@ function populateSelectByTagDropdown() {
             </div>`;
         });
     }
-    
+
     // Custom tags section
     if (customTags.length > 0) {
         html += '<div class="select-tag-section">TAGS</div>';
@@ -1126,11 +1136,11 @@ function populateSelectByTagDropdown() {
             </div>`;
         });
     }
-    
+
     if (html === '') {
         html = '<div class="tag-picker-empty">No filter options available.</div>';
     }
-    
+
     optionsContainer.innerHTML = html;
 }
 
@@ -1207,6 +1217,7 @@ function init() {
         statsCategories: elements.statsCategories, statsSpaces: elements.statsSpaces
     });
     initFileManager({ modalFiles: elements.modalFiles, filesList: elements.filesList });
+    initBulkEntry({ render });
     initQuests({ renderArchive, updateStatusBar });
     initAuthUI({
         modalAuth: elements.modalAuth, authTabs: elements.authTabs,
@@ -1253,6 +1264,33 @@ function init() {
 
     // Form content state - prevent collapse when has content
     elements.itemName?.addEventListener('input', updateFormContentState);
+
+    // Number input validation
+    document.addEventListener('input', (e) => {
+        if (e.target.classList.contains('input-number')) {
+            // Remove non-numeric and limit to 4 digits
+            e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 4);
+        }
+    });
+    document.addEventListener('blur', (e) => {
+        if (e.target.classList.contains('input-number')) {
+            const min = parseInt(e.target.min) || 1;
+            const max = parseInt(e.target.max) || 9999;
+            let val = parseInt(e.target.value) || min;
+            e.target.value = Math.max(min, Math.min(max, val));
+        }
+    }, true);
+
+    // Pin button - keep form open when adding multiple items
+    const btnPinForm = $('#btn-pin-form');
+    btnPinForm?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const form = elements.form;
+        if (form) {
+            form.classList.toggle('keep-open');
+            btnPinForm.classList.toggle('active', form.classList.contains('keep-open'));
+        }
+    });
 
     // Color picker dropdown
     if (elements.btnColorPicker) {
