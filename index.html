@@ -1172,11 +1172,26 @@
             <span id="ocr-status" class="ocr-status hidden">Processing...</span>
           </div>
         </div>
-        <p class="settings-hint bulk-hint">
-          <strong>ITEMS:</strong> One per line. <code>Item x5</code> for qty, <code>Item | Category</code> for
-          category.<br>
-          <strong>QUEST:</strong> First line = quest name, rest = objectives.
-        </p>
+        <div class="bulk-help-wrapper">
+          <button type="button" class="bulk-help-btn" aria-label="Help">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+              <circle cx="12" cy="17" r="0.5" fill="currentColor" />
+            </svg>
+          </button>
+          <div class="bulk-help-tooltip">
+            <strong>IMPORT MODES</strong>
+            <p><b>ITEMS:</b> One per line. Add <code>x5</code> for qty, <code>| Category</code> for category.</p>
+            <p><b>QUEST:</b> First line = quest name, remaining lines = objectives.</p>
+            <hr>
+            <strong>KEYBOARD SHORTCUTS</strong>
+            <p><kbd>Shift</kbd> Toggle case of selected text</p>
+            <p><kbd>Ctrl+click</kbd> Select and delete on release</p>
+            <p><kbd>Ctrl+V</kbd> Paste screenshot for OCR</p>
+          </div>
+        </div>
         <textarea id="bulk-text" class="input-field bulk-textarea" rows="8"
           placeholder="Film Reels x4&#10;Circuit Board x2 | Electronics&#10;Medical Kit"></textarea>
         <div id="bulk-preview" class="bulk-preview hidden">

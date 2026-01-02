@@ -4256,6 +4256,114 @@ body.bulk-mode .quest-content {
   line-height: 1.6;
 }
 
+/* Bulk Help Icon */
+.bulk-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.bulk-help-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  overflow: visible;
+}
+
+.bulk-help-btn {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 4px;
+  border: none;
+  background: transparent;
+  color: var(--clr-text-muted);
+  cursor: pointer;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.bulk-help-btn:hover {
+  color: var(--clr-accent-secondary);
+  background: var(--clr-bg-tertiary);
+}
+
+.bulk-help-btn svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.bulk-help-tooltip {
+  position: absolute;
+  left: 0;
+  top: 100%;
+  margin-top: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--clr-bg-elevated);
+  border: var(--border-medium);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  min-width: 280px;
+  z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: all 0.15s ease;
+}
+
+.bulk-help-wrapper:hover .bulk-help-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.bulk-help-tooltip strong {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--clr-accent-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.bulk-help-tooltip p {
+  font-size: 0.75rem;
+  color: var(--clr-text-secondary);
+  margin: 0.3rem 0;
+  line-height: 1.4;
+}
+
+.bulk-help-tooltip b {
+  color: var(--clr-text-primary);
+}
+
+.bulk-help-tooltip hr {
+  border: none;
+  border-top: var(--border-subtle);
+  margin: 0.6rem 0;
+}
+
+.bulk-help-tooltip kbd {
+  display: inline-block;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  background: var(--clr-bg-tertiary);
+  border: var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--clr-text-primary);
+  margin-right: 0.3rem;
+}
+
 .bulk-preview {
   margin-top: 1rem;
   border: var(--border-medium);

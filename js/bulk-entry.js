@@ -77,6 +77,57 @@ export function initBulkEntry(callbacks = {}) {
         }, 200);
     });
 
+    // Ctrl+left-click drag to select and delete on release
+    let ctrlSelecting = false;
+
+    elements.textarea?.addEventListener('mousedown', (e) => {
+        if (e.button === 0 && e.ctrlKey) { // Ctrl + left click
+            ctrlSelecting = true;
+        }
+    });
+
+    elements.textarea?.addEventListener('mouseup', (e) => {
+        if (e.button === 0 && ctrlSelecting) {
+            ctrlSelecting = false;
+            // Delete the selected text
+            const start = elements.textarea.selectionStart;
+            const end = elements.textarea.selectionEnd;
+            if (start !== end) {
+                const value = elements.textarea.value;
+                elements.textarea.value = value.substring(0, start) + value.substring(end);
+                elements.textarea.setSelectionRange(start, start);
+                handlePreview();
+            }
+        }
+    });
+
+    // Shift key to toggle case of selected text
+    elements.textarea?.addEventListener('keydown', (e) => {
+        if (e.key === 'Shift' && !e.repeat) {
+            const start = elements.textarea.selectionStart;
+            const end = elements.textarea.selectionEnd;
+            if (start !== end) {
+                e.preventDefault();
+                const value = elements.textarea.value;
+                const selected = value.substring(start, end);
+                // Toggle case: if mostly uppercase -> lowercase, else -> uppercase
+                const upperCount = (selected.match(/[A-Z]/g) || []).length;
+                const lowerCount = (selected.match(/[a-z]/g) || []).length;
+                const toggled = upperCount > lowerCount
+                    ? selected.toLowerCase()
+                    : selected.toUpperCase();
+                elements.textarea.value = value.substring(0, start) + toggled + value.substring(end);
+                elements.textarea.setSelectionRange(start, end);
+                handlePreview();
+            }
+        }
+    });
+
+    // Disable context menu for entire bulk modal
+    elements.modal?.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+    });
+
     // Paste support for screenshots (snipping tool, etc.)
     elements.modal?.addEventListener('paste', handlePaste);
 
@@ -123,9 +174,7 @@ export function closeBulkModal() {
     elements.textarea.value = '';
     elements.preview?.classList.add('hidden');
     parsedItems = [];
-    // Reset to item mode
-    bulkImportMode = 'item';
-    elements.typeBtns?.forEach(b => b.classList.toggle('active', b.dataset.type === 'item'));
+    // Keep last selected mode (don't reset to item)
 }
 
 /**
@@ -343,35 +392,35 @@ function cleanOcrText(rawText) {
             // Replace pipe with I (common OCR confusion)
             line = line.replace(/\|/g, 'I');
             // Keep only letters, numbers, spaces, and basic punctuation
-            return line.replace(/[^a-zA-Z0-9\s.,;:?!'"()-]/g, '').trim();
+            return line.replace(/[^a-zA-Z0-9\s.,;:?!'"()\/\-]/g, '').trim();
         })
         .filter(line => {
             if (line.length < 3) return false;
-            // Filter out common UI elements
+            // Filter out common UI buttons
             if (/^(CLAIM|REWARDS|BACK|MENU|CANCEL|OK|CLOSE)$/i.test(line)) return false;
-            // Filter lines with too many special patterns that indicate UI noise
-            const alphaRatio = (line.match(/[a-zA-Z]/g) || []).length / line.length;
-            if (alphaRatio < 0.5 && line.length < 10) return false;
+            // Filter lines that are just numbers/currency
+            if (/^[\d,.\s]+$/.test(line)) return false;
+            // Filter very short nonsense
+            if (line.length < 3) return false;
             return true;
         })
         .map(line => {
-            // Strip leading UI garbage patterns like "Vv )" from OCR of dropdowns/icons
-            // Run multiple times to catch nested garbage
-            line = line.replace(/^[VvXx<>)()\[\]{}|\\\/\-_]+\s*/g, '').trim();
-            line = line.replace(/^[VvXx<>)()\[\]{}|\\\/\-_]+\s*/g, '').trim();
-            // Remove checkbox prefixes (text-based)
-            line = line.replace(/^\[\s*[x\s]?\s*\]\s*/i, '').trim();
-            // Remove OCR checkbox artifacts: single chars like 8, J, O, 0, I at start
-            line = line.replace(/^[8JO0IiLl]\s+/, '').trim();
-            // Extract quantity from patterns like "Find 3 Androids" -> "Find Androids x3"
-            const quantityMatch = line.match(/^(.+?)\s+(\d+)\s+(.+)$/);
-            if (quantityMatch) {
-                const [, prefix, num, suffix] = quantityMatch;
-                line = `${prefix} ${suffix} x${num}`;
+            // Strip leading special chars (UI garbage)
+            line = line.replace(/^[^a-zA-Z]+/, '').trim();
+
+            // Detect N/M progress pattern (e.g., "CANDLE HOLDER 0/3" -> "CANDLE HOLDER x3")
+            const progressMatch = line.match(/^(.+?)\s+(\d+)\s*\/\s*(\d+)$/);
+            if (progressMatch) {
+                const [, name, current, target] = progressMatch;
+                return `${name.trim()} x${target}`;
             }
+
+            // Clean title patterns like "DECORATIONS (2/5)" -> "DECORATIONS"
+            line = line.replace(/\s*\(\d+\/\d+\)\s*$/, '').trim();
+
             return line;
         })
-        .filter(line => line.length > 0);
+        .filter(line => line.length > 1);
 }
 
 /**
@@ -382,3 +431,4 @@ function escapeHtml(str) {
     div.textContent = str;
     return div.innerHTML;
 }
+
