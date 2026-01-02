@@ -19,11 +19,16 @@ let elements = {
     previewCount: null,
     btnImport: null,
     ocrUpload: null,
-    ocrStatus: null
+    ocrStatus: null,
+    typeToggle: null,
+    typeBtns: null
 };
 
 // Parsed items cache
 let parsedItems = [];
+
+// Current import mode: 'item' or 'quest'
+let bulkImportMode = 'item';
 
 // Tesseract worker reference (lazy loaded)
 let tesseractWorker = null;
@@ -41,7 +46,9 @@ export function initBulkEntry(callbacks = {}) {
         previewCount: $('#bulk-preview-count'),
         btnImport: $('#btn-bulk-import'),
         ocrUpload: $('#ocr-upload'),
-        ocrStatus: $('#ocr-status')
+        ocrStatus: $('#ocr-status'),
+        typeToggle: $('#bulk-type-toggle'),
+        typeBtns: document.querySelectorAll('#bulk-type-toggle .type-btn')
     };
 
     // Store callbacks
@@ -51,6 +58,15 @@ export function initBulkEntry(callbacks = {}) {
     elements.btnOpen?.addEventListener('click', openBulkModal);
     elements.btnImport?.addEventListener('click', handleImport);
     elements.ocrUpload?.addEventListener('change', handleOcrUpload);
+
+    // Type toggle (ITEM vs QUEST)
+    elements.typeBtns?.forEach(btn => {
+        btn.addEventListener('click', () => {
+            bulkImportMode = btn.dataset.type;
+            elements.typeBtns.forEach(b => b.classList.toggle('active', b.dataset.type === bulkImportMode));
+            handlePreview(); // Re-parse with new mode
+        });
+    });
 
     // Real-time preview as user types (debounced)
     let previewTimeout;
@@ -71,8 +87,13 @@ export function initBulkEntry(callbacks = {}) {
         e.stopPropagation();
         const index = parseInt(removeBtn.dataset.index);
         if (!isNaN(index)) {
+            // Remove from parsed items
             parsedItems.splice(index, 1);
-            renderPreview(); // Re-render without re-parsing
+            // Sync back to textarea
+            const lines = elements.textarea.value.split('\n').filter(l => l.trim().length > 0);
+            lines.splice(index, 1);
+            elements.textarea.value = lines.join('\n');
+            renderPreview();
         }
     });
 
@@ -102,6 +123,9 @@ export function closeBulkModal() {
     elements.textarea.value = '';
     elements.preview?.classList.add('hidden');
     parsedItems = [];
+    // Reset to item mode
+    bulkImportMode = 'item';
+    elements.typeBtns?.forEach(b => b.classList.toggle('active', b.dataset.type === 'item'));
 }
 
 /**
@@ -123,21 +147,49 @@ function renderPreview() {
         return;
     }
 
-    // Build preview HTML
-    const html = parsedItems.map((item, i) => {
-        const cat = item.category || 'Misc';
-        const qty = item.quantity ?? 1;
-        return `
-            <div class="bulk-preview-item" data-index="${i}">
-                <span class="bulk-preview-name">${escapeHtml(item.name)}</span>
-                <span class="bulk-preview-meta">×${qty} | ${escapeHtml(cat)}</span>
-                <button type="button" class="bulk-preview-remove" data-index="${i}">×</button>
+    // Build preview HTML based on mode
+    let html;
+    if (bulkImportMode === 'quest' && parsedItems.length > 0) {
+        // Quest mode: first item is title, rest are objectives
+        const questName = parsedItems[0]?.name || 'Unnamed Quest';
+        const objectives = parsedItems.slice(1);
+        html = `
+            <div class="bulk-preview-quest">
+                <div class="bulk-preview-quest-title">
+                    <span class="bulk-preview-label">QUEST:</span>
+                    <span class="bulk-preview-name">${escapeHtml(questName)}</span>
+                    <button type="button" class="bulk-preview-remove" data-index="0">×</button>
+                </div>
+                <div class="bulk-preview-objectives">
+                    <span class="bulk-preview-label">OBJECTIVES:</span>
+                    ${objectives.map((obj, i) => `
+                        <div class="bulk-preview-item" data-index="${i + 1}">
+                            <span class="bulk-preview-name">${escapeHtml(obj.name)}</span>
+                            <span class="bulk-preview-meta">×${obj.quantity ?? 1}</span>
+                            <button type="button" class="bulk-preview-remove" data-index="${i + 1}">×</button>
+                        </div>
+                    `).join('')}
+                </div>
             </div>
         `;
-    }).join('');
+        elements.previewCount.textContent = `1 quest, ${objectives.length} objective${objectives.length !== 1 ? 's' : ''}`;
+    } else {
+        // Item mode
+        html = parsedItems.map((item, i) => {
+            const cat = item.category || 'Misc';
+            const qty = item.quantity ?? 1;
+            return `
+                <div class="bulk-preview-item" data-index="${i}">
+                    <span class="bulk-preview-name">${escapeHtml(item.name)}</span>
+                    <span class="bulk-preview-meta">×${qty} | ${escapeHtml(cat)}</span>
+                    <button type="button" class="bulk-preview-remove" data-index="${i}">×</button>
+                </div>
+            `;
+        }).join('');
+        elements.previewCount.textContent = `${parsedItems.length} item${parsedItems.length !== 1 ? 's' : ''}`;
+    }
 
     elements.previewList.innerHTML = html;
-    elements.previewCount.textContent = `${parsedItems.length} item${parsedItems.length !== 1 ? 's' : ''}`;
     elements.preview?.classList.remove('hidden');
 }
 
@@ -146,40 +198,64 @@ function renderPreview() {
  */
 function handleImport() {
     if (parsedItems.length === 0) {
-        // Parse first if not previewed
         const text = elements.textarea?.value || '';
         parsedItems = parseMultiLineInput(text);
     }
 
     if (parsedItems.length === 0) return;
 
-    // Add each item
-    parsedItems.forEach(item => {
-        // Check if category exists, add if not
-        const category = item.category || 'Misc';
-        if (category && !state.categories.includes(category)) {
-            state.categories.push(category);
-        }
+    if (bulkImportMode === 'quest') {
+        // Quest mode: first line is quest name, rest are objectives
+        const questName = parsedItems[0]?.name || 'Unnamed Quest';
+        const objectives = parsedItems.slice(1).map(item => ({
+            id: generateId(),
+            name: item.name,
+            current: 0,
+            target: item.quantity ?? 1
+        }));
 
         addItem({
-            type: 'item',
-            name: item.name || 'Unnamed Item',
-            category: category,
-            target: item.quantity ?? 1,
+            type: 'quest',
+            name: questName,
+            category: 'Misc',
+            target: 1,
             color: null,
             priority: null,
-            objectives: [],
+            objectives: objectives,
             tags: []
         });
-    });
+    } else {
+        // Item mode: add each as separate item
+        parsedItems.forEach(item => {
+            const category = item.category || 'Misc';
+            if (category && !state.categories.includes(category)) {
+                state.categories.push(category);
+            }
+
+            addItem({
+                type: 'item',
+                name: item.name || 'Unnamed Item',
+                category: category,
+                target: item.quantity ?? 1,
+                color: null,
+                priority: null,
+                objectives: [],
+                tags: []
+            });
+        });
+    }
 
     saveState();
     closeBulkModal();
 
-    // Callback to re-render
     if (initBulkEntry.callbacks?.render) {
         initBulkEntry.callbacks.render();
     }
+}
+
+// Generate unique ID for objectives
+function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
 }
 
 /**
@@ -264,21 +340,36 @@ function cleanOcrText(rawText) {
     return rawText
         .split('\n')
         .map(line => {
+            // Replace pipe with I (common OCR confusion)
+            line = line.replace(/\|/g, 'I');
             // Keep only letters, numbers, spaces, and basic punctuation
             return line.replace(/[^a-zA-Z0-9\s.,;:?!'"()-]/g, '').trim();
         })
         .filter(line => {
-            // Filter out empty/short lines
-            if (line.length < 2) return false;
+            if (line.length < 3) return false;
             // Filter out common UI elements
             if (/^(CLAIM|REWARDS|BACK|MENU|CANCEL|OK|CLOSE)$/i.test(line)) return false;
+            // Filter lines with too many special patterns that indicate UI noise
+            const alphaRatio = (line.match(/[a-zA-Z]/g) || []).length / line.length;
+            if (alphaRatio < 0.5 && line.length < 10) return false;
             return true;
         })
         .map(line => {
-            // Remove checkbox-like prefixes that might have survived
-            return line
-                .replace(/^\[\s*[x\s]?\s*\]\s*/i, '')
-                .trim();
+            // Strip leading UI garbage patterns like "Vv )" from OCR of dropdowns/icons
+            // Run multiple times to catch nested garbage
+            line = line.replace(/^[VvXx<>)()\[\]{}|\\\/\-_]+\s*/g, '').trim();
+            line = line.replace(/^[VvXx<>)()\[\]{}|\\\/\-_]+\s*/g, '').trim();
+            // Remove checkbox prefixes (text-based)
+            line = line.replace(/^\[\s*[x\s]?\s*\]\s*/i, '').trim();
+            // Remove OCR checkbox artifacts: single chars like 8, J, O, 0, I at start
+            line = line.replace(/^[8JO0IiLl]\s+/, '').trim();
+            // Extract quantity from patterns like "Find 3 Androids" -> "Find Androids x3"
+            const quantityMatch = line.match(/^(.+?)\s+(\d+)\s+(.+)$/);
+            if (quantityMatch) {
+                const [, prefix, num, suffix] = quantityMatch;
+                line = `${prefix} ${suffix} x${num}`;
+            }
+            return line;
         })
         .filter(line => line.length > 0);
 }

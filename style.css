@@ -4338,3 +4338,69 @@ body.bulk-mode .quest-content {
   color: var(--clr-accent-danger);
   background: rgba(212, 84, 84, 0.15);
 }
+
+/* Bulk Header Row */
+.bulk-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.type-toggle-compact {
+  padding: 0.25rem;
+  gap: 0.25rem;
+}
+
+.type-toggle-compact .type-btn {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.7rem;
+  gap: 0.3rem;
+}
+
+.type-toggle-compact .type-btn svg {
+  width: 12px;
+  height: 12px;
+}
+
+.bulk-hint {
+  margin-bottom: 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.bulk-hint strong {
+  color: var(--clr-accent-secondary);
+}
+
+/* Quest Preview Styles */
+.bulk-preview-quest-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--clr-bg-tertiary);
+  border-bottom: var(--border-subtle);
+}
+
+.bulk-preview-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--clr-accent-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.bulk-preview-objectives {
+  padding: 0.5rem 0;
+}
+
+.bulk-preview-objectives .bulk-preview-label {
+  display: block;
+  padding: 0 0.75rem 0.5rem;
+}
+
+.bulk-preview-objectives .bulk-preview-item {
+  padding-left: 1.5rem;
+}

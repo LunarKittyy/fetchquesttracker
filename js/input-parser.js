@@ -47,6 +47,19 @@ export function parseItemInput(input, supportCategory = false) {
         }
     }
 
+    // If no quantity found, check for embedded number pattern: "Find 3 Androids"
+    if (quantity === null) {
+        const embeddedMatch = name.match(/^(.+?)\s+(\d+)\s+(.+)$/);
+        if (embeddedMatch) {
+            const [, prefix, num, suffix] = embeddedMatch;
+            const parsed = parseInt(num, 10);
+            if (parsed > 0 && parsed <= 9999) {
+                quantity = parsed;
+                name = `${prefix} ${suffix}`.trim();
+            }
+        }
+    }
+
     return { name, quantity, category };
 }
 

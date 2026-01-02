@@ -1144,22 +1144,39 @@
         </button>
       </div>
       <div class="modal-body">
-        <p class="settings-hint">
-          Enter items one per line. Syntax: <code>Item x5</code> for quantity,
-          <code>Item | Category</code> for classification.
-        </p>
-        <div class="bulk-ocr-section">
-          <label class="btn btn-secondary btn-ocr-upload">
-            <input type="file" id="ocr-upload" accept="image/*" hidden />
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-              <circle cx="8.5" cy="8.5" r="1.5" />
-              <polyline points="21 15 16 10 5 21" />
-            </svg>
-            SCAN SCREENSHOT
-          </label>
-          <span id="ocr-status" class="ocr-status hidden">Processing...</span>
+        <div class="bulk-header-row">
+          <div id="bulk-type-toggle" class="type-toggle type-toggle-compact">
+            <button type="button" class="type-btn active" data-type="item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10" />
+              </svg>
+              ITEMS
+            </button>
+            <button type="button" class="type-btn" data-type="quest">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+              </svg>
+              QUEST
+            </button>
+          </div>
+          <div class="bulk-ocr-section">
+            <label class="btn btn-secondary btn-ocr-upload">
+              <input type="file" id="ocr-upload" accept="image/*" hidden />
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <polyline points="21 15 16 10 5 21" />
+              </svg>
+              SCAN
+            </label>
+            <span id="ocr-status" class="ocr-status hidden">Processing...</span>
+          </div>
         </div>
+        <p class="settings-hint bulk-hint">
+          <strong>ITEMS:</strong> One per line. <code>Item x5</code> for qty, <code>Item | Category</code> for
+          category.<br>
+          <strong>QUEST:</strong> First line = quest name, rest = objectives.
+        </p>
         <textarea id="bulk-text" class="input-field bulk-textarea" rows="8"
           placeholder="Film Reels x4&#10;Circuit Board x2 | Electronics&#10;Medical Kit"></textarea>
         <div id="bulk-preview" class="bulk-preview hidden">
