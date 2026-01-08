@@ -324,6 +324,37 @@ body.shake {
   transition: height 0.3s ease;
 }
 
+/* Shared space indicators */
+.space-tab.shared-space::before {
+  background: var(--clr-accent-secondary);
+  opacity: 0.3;
+}
+
+.space-tab.shared-space.active::before {
+  opacity: 0.7;
+}
+
+.space-shared-icon {
+  font-size: 0.65rem;
+  opacity: 0.6;
+  margin-right: 0.15rem;
+}
+
+.space-role-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  font-size: 0.5rem;
+  font-weight: 700;
+  background: var(--clr-accent-secondary);
+  color: var(--clr-bg-deep);
+  border-radius: 2px;
+  margin-left: 0.25rem;
+}
+
+
 .btn-add-space {
   width: 40px;
   height: 40px;

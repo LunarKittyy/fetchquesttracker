@@ -33,16 +33,21 @@ export function renderSpaces() {
     list.innerHTML = state.spaces.map(space => {
         const isActive = space.id === state.activeSpaceId;
         const progress = calculateSpaceProgress(space);
+        const isShared = space.isOwned === false;
+        const roleLabel = space.myRole === 'editor' ? 'E' : 'V';
 
         return `
-            <div class="space-tab ${isActive ? 'active' : ''}" 
+            <div class="space-tab ${isActive ? 'active' : ''} ${isShared ? 'shared-space' : ''}" 
                  data-id="${space.id}" 
+                 data-owner-id="${space.ownerId || ''}"
                  style="--space-color: ${space.color || 'var(--clr-accent-primary)'}">
                 <div class="space-progress" title="Completion: ${Math.round(progress)}%">
                     <div class="space-progress-fill" style="height: ${progress}%"></div>
                 </div>
-                <button class="space-tab-button" title="${escapeHtml(space.name)}">
+                <button class="space-tab-button" title="${escapeHtml(space.name)}${isShared ? ' (Shared)' : ''}">
+                    ${isShared ? '<span class="space-shared-icon" title="Shared with you">⤵</span>' : ''}
                     ${escapeHtml(space.name)}
+                    ${isShared ? `<span class="space-role-badge" title="${space.myRole}">${roleLabel}</span>` : ''}
                 </button>
             </div>
         `;
@@ -270,18 +275,18 @@ export async function handleDeleteSpace() {
         const itemsWithStorageImages = allItems.filter(
             item => item.imageUrl && window.FirebaseBridge.isStorageUrl(item.imageUrl)
         );
-        
+
         if (itemsWithStorageImages.length > 0) {
             console.log(`🗑️ Deleting ${itemsWithStorageImages.length} items' images from space ${space.name}...`);
             try {
                 const results = await Promise.all(
-                    itemsWithStorageImages.map(item => 
+                    itemsWithStorageImages.map(item =>
                         window.FirebaseBridge.deleteItemImages(spaceId, item.id, 'items')
                     )
                 );
                 const totalDeleted = results.reduce((sum, r) => sum + (r.deletedCount || 0), 0);
                 console.log(`🗑️ Cleaned up ${totalDeleted} storage file(s) from deleted space`);
-                
+
                 // Refresh storage display after Cloud Functions update
                 setTimeout(async () => {
                     await window.FirebaseBridge.fetchStorageUsage();
@@ -292,7 +297,7 @@ export async function handleDeleteSpace() {
                 console.warn('Could not cleanup storage files for space:', err);
             }
         }
-        
+
         // Delete space from Firestore
         await window.FirebaseBridge.deleteSpace(spaceId);
     }

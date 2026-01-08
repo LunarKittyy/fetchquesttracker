@@ -1660,8 +1660,7 @@ function init() {
     elements.btnCopyShareLink?.addEventListener('click', handleCopyShareLink);
     elements.modalShare?.addEventListener('click', handleCloseModal);
 
-    // Check for invite code in URL
-    checkAndAcceptInvite();
+    // Note: Invite check moved to auth callback below to ensure auth state is ready
 
     // Window handlers
     window.addEventListener('focus', handleWindowFocus);
@@ -1676,6 +1675,8 @@ function init() {
                 // Process any pending invite after login
                 await processPendingInvite();
             }
+            // Check for invite code in URL (now that auth state is known)
+            checkAndAcceptInvite();
         });
         startSyncTimeInterval();
         console.log('FETCH QUEST v3.0 initialized. Firebase active.');

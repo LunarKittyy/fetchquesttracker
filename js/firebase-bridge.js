@@ -474,9 +474,14 @@ window.FirebaseBridge = {
                 lastModified: serverTimestamp()
             }, { merge: true });
 
-            // Save spaces with uploaded images
+            // Save spaces with uploaded images (skip shared spaces - only save owned spaces)
             const batch = writeBatch(db);
             for (const space of state.spaces) {
+                // Skip shared spaces - don't save to our own collection
+                if (space.isOwned === false) {
+                    continue;
+                }
+
                 // Process items and upload base64 images to Storage
                 const processedItems = await this.processItemsForUpload(
                     space.items || [], space.id, 'items'
@@ -492,6 +497,8 @@ window.FirebaseBridge = {
                     items: processedItems,
                     archivedItems: processedArchived,
                     categories: space.categories || [],
+                    collaborators: space.collaborators || null,
+                    isShared: space.isShared || false,
                     lastModified: serverTimestamp()
                 });
             }
@@ -521,18 +528,41 @@ window.FirebaseBridge = {
                 this.storageUsedBytes = userData.storageUsedBytes;
             }
 
+            // Load user's own spaces
             const spacesRef = collection(db, 'users', this.currentUser.uid, 'spaces');
             const spacesSnap = await getDocs(spacesRef);
 
             const spaces = [];
             spacesSnap.forEach(doc => {
-                spaces.push({ id: doc.id, ...doc.data() });
+                spaces.push({ id: doc.id, ...doc.data(), isOwned: true });
             });
+
+            // Load shared spaces from sharedWithMe array
+            const sharedWithMe = userData.sharedWithMe || [];
+            for (const shared of sharedWithMe) {
+                try {
+                    const sharedSpaceRef = doc(db, 'users', shared.ownerId, 'spaces', shared.spaceId);
+                    const sharedSpaceSnap = await getDoc(sharedSpaceRef);
+                    if (sharedSpaceSnap.exists()) {
+                        spaces.push({
+                            id: shared.spaceId,
+                            ...sharedSpaceSnap.data(),
+                            isShared: true,
+                            isOwned: false,
+                            ownerId: shared.ownerId,
+                            myRole: shared.role
+                        });
+                    }
+                } catch (e) {
+                    console.warn('Could not load shared space:', shared.spaceId, e);
+                }
+            }
 
             return {
                 success: true,
                 state: {
                     spaces: spaces,
+                    sharedWithMe: sharedWithMe,
                     tags: userData.tags || [],  // Global tags
                     activeSpaceId: userData.activeSpaceId,
                     soundEnabled: userData.settings?.soundEnabled ?? false,
