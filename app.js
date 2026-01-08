@@ -8,7 +8,7 @@ import {
     state, syncActiveSpace, DEFAULT_CATEGORIES, STORAGE_KEY,
     currentType, setCurrentType, tempObjectives, setTempObjectives,
     tempImageData, setTempImageData, searchQuery, setSearchQuery,
-    bulkMode, selectedItems, addSelectedItem, pendingLocalChange, setPendingLocalChange,
+    bulkMode, selectedItems, addSelectedItem,
     selectedTags, setSelectedTags, clearSelectedTags, isViewOnly
 } from './js/state.js';
 
@@ -57,7 +57,7 @@ import {
 import {
     initAuthUI, openAuthModal, closeAuthModal, switchAuthTab, showPasswordReset,
     updateAuthUI, updateSyncStatusUI, handleSignIn, handleSignUp, handlePasswordReset,
-    handleGoogleSignIn, handleLogout, handleExportData, handleDeleteAccount, handleRealtimeUpdate
+    handleGoogleSignIn, handleLogout, handleExportData, handleDeleteAccount
 } from './js/auth-ui.js';
 
 import { parseItemInput } from './js/input-parser.js';

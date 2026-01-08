@@ -3,10 +3,11 @@
  * Authentication UI handlers and state management
  */
 
-import { state, STORAGE_KEY, syncActiveSpace, getPendingLocalChange, isInitialSyncInProgress, setInitialSyncInProgress } from './state.js';
+import { state, STORAGE_KEY, syncActiveSpace } from './state.js';
 import { $, $$ } from './utils.js';
 import { saveState, loadState, updateLastSyncedDisplay, updateStorageDisplay, startSyncTimeInterval } from './storage.js';
 import { sortItems } from './utils.js';
+import { syncManager } from './sync-manager.js';
 
 // Callbacks
 let renderCallback = null;
@@ -155,60 +156,40 @@ export async function updateAuthUI(user) {
         if (elements.userEmail) elements.userEmail.textContent = user.email || user.displayName || 'User';
         closeAuthModal();
 
-        console.log('📥 Loading data from cloud...');
-        setInitialSyncInProgress(true);
-        const result = await window.FirebaseBridge.loadFromCloud();
-        console.log('📥 Load result:', result);
+        // Load cloud data via SyncManager
+        const result = await syncManager.load();
 
-        // Check if user made local changes during the async load
-        if (getPendingLocalChange()) {
-            console.log('⚠️ User made local changes during initial load - preserving local state and syncing to cloud');
-            setInitialSyncInProgress(false);
-            // User's local changes take priority - sync them to cloud instead
-            window.FirebaseBridge.startRealtimeSync();
-            // Register callback for realtime updates from other devices
-            window.FirebaseBridge.onDataChange((data) => {
-                handleRealtimeUpdate(data, getPendingLocalChange(), {
-                    render: renderCallback,
-                    renderArchive: renderArchiveCallback,
-                    renderSpaces: renderSpacesCallback
-                });
-            });
-            startSyncTimeInterval();
-            // Force sync local changes to cloud now
-            saveState();
-        } else if (result.success && result.state) {
-            setInitialSyncInProgress(false);
+        if (result.success && result.state) {
+            // Apply cloud state
             state.spaces = result.state.spaces;
             state.activeSpaceId = result.state.activeSpaceId || state.spaces[0]?.id;
+            state.tags = result.state.tags || [];
             state.shiftAmount = result.state.shiftAmount;
             state.ctrlAmount = result.state.ctrlAmount;
             state.autoArchive = result.state.autoArchive;
             syncActiveSpace();
 
+            // Persist to localStorage
             localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 
+            // Render UI
             sortItems(state.items);
             if (renderCallback) renderCallback();
             if (renderArchiveCallback) renderArchiveCallback();
             if (renderSpacesCallback) renderSpacesCallback();
-
-            window.FirebaseBridge.startRealtimeSync();
-            // Register callback for realtime updates from other devices
-            window.FirebaseBridge.onDataChange((data) => {
-                handleRealtimeUpdate(data, getPendingLocalChange(), {
-                    render: renderCallback,
-                    renderArchive: renderArchiveCallback,
-                    renderSpaces: renderSpacesCallback
-                });
-            });
-            startSyncTimeInterval();
-        } else {
-            setInitialSyncInProgress(false);
         }
 
-        // Fetch authoritative storage usage from Firestore before updating display
-        await window.FirebaseBridge.fetchStorageUsage();
+        // Start real-time sync and register data change handler
+        syncManager.start();
+        syncManager.onDataChange((data) => {
+            handleRealtimeUpdate(data);
+        });
+        syncManager.onStatusChange(updateSyncStatusUI);
+
+        startSyncTimeInterval();
+
+        // Fetch authoritative storage usage
+        await window.FirebaseBridge?.fetchStorageUsage?.();
         updateLastSyncedDisplay();
         updateStorageDisplay();
     } else {
@@ -216,7 +197,7 @@ export async function updateAuthUI(user) {
         if (elements.userMenu) elements.userMenu.classList.add('hidden');
         if (elements.userDropdown) elements.userDropdown.classList.add('hidden');
 
-        window.FirebaseBridge?.stopRealtimeSync();
+        syncManager.stop();
     }
 }
 
@@ -367,23 +348,12 @@ export async function handleDeleteAccount() {
 }
 
 /**
- * Handle realtime data update from Firebase
+ * Handle realtime data update from SyncManager
  */
-export function handleRealtimeUpdate(data, pendingLocalChange, callbacks) {
-    if (pendingLocalChange) {
-        console.log('🔄 Realtime update ignored (pending local change)');
-        return;
-    }
-
-    if (isInitialSyncInProgress) {
-        console.log('🔄 Realtime update ignored (initial sync in progress)');
-        return;
-    }
-
-    console.log('🔄 Realtime update received');
+function handleRealtimeUpdate(data) {
     document.body.classList.add('sync-update');
 
-    if (data.spaces) {
+    if (data.type === 'spaces' && data.spaces) {
         // Preserve shared spaces (those we don't own)
         const sharedSpaces = state.spaces.filter(s => s.isOwned === false);
 
@@ -392,15 +362,11 @@ export function handleRealtimeUpdate(data, pendingLocalChange, callbacks) {
             const localSpace = state.spaces.find(s => s.id === incomingSpace.id && s.isOwned !== false);
 
             if (localSpace) {
-                // Compare timestamps - only update if incoming is newer
-                const incomingTime = incomingSpace.lastModified?.toMillis?.() ||
-                    incomingSpace.lastModified?.seconds * 1000 || 0;
-                const localTime = localSpace.lastModified?.toMillis?.() ||
-                    localSpace.lastModified?.seconds * 1000 ||
-                    localSpace._localModified || 0;
+                // Compare timestamps - _cloudTimestamp is already in ms from SyncManager
+                const incomingTime = incomingSpace._cloudTimestamp || 0;
+                const localTime = localSpace._localModified || localSpace._cloudTimestamp || 0;
 
                 if (localTime > incomingTime) {
-                    console.log(`🔄 Keeping local version of "${localSpace.name}" (local: ${localTime}, incoming: ${incomingTime})`);
                     return { ...localSpace, isOwned: true };
                 }
             }
@@ -419,53 +385,38 @@ export function handleRealtimeUpdate(data, pendingLocalChange, callbacks) {
     }
 
     // Handle shared space updates from owner
-    if (data.sharedSpaceUpdate) {
-        const update = data.sharedSpaceUpdate;
-        const existingIndex = state.spaces.findIndex(s => s.id === update.id && s.isOwned === false);
-
-        const updatedSpace = {
-            id: update.id,
-            ...update.data,
-            isShared: true,
-            isOwned: false,
-            ownerId: update.ownerId,
-            myRole: update.role
-        };
+    if (data.type === 'sharedSpaceUpdate' && data.space) {
+        const incomingSpace = data.space;
+        const existingIndex = state.spaces.findIndex(s => s.id === incomingSpace.id && s.isOwned === false);
 
         if (existingIndex >= 0) {
             const existingSpace = state.spaces[existingIndex];
             const isViewer = existingSpace.myRole === 'viewer';
 
             if (isViewer) {
-                // Viewers can't edit, always accept incoming data
-                console.log(`📡 Updating shared space "${update.data.name}" (viewer)`);
-                state.spaces[existingIndex] = updatedSpace;
+                // Viewers always accept incoming data
+                state.spaces[existingIndex] = incomingSpace;
             } else {
-                // Editors can make changes - use timestamp comparison
-                const incomingTime = update.data.lastModified?.toMillis?.() ||
-                    update.data.lastModified?.seconds * 1000 || 0;
-                const localTime = existingSpace._localModified ||
-                    existingSpace.lastModified?.toMillis?.() ||
-                    existingSpace.lastModified?.seconds * 1000 || 0;
+                // Editors use timestamp comparison
+                const incomingTime = incomingSpace._cloudTimestamp || 0;
+                const localTime = existingSpace._localModified || existingSpace._cloudTimestamp || 0;
 
                 if (incomingTime >= localTime) {
-                    console.log(`📡 Updating shared space "${update.data.name}" (editor, newer data)`);
-                    state.spaces[existingIndex] = updatedSpace;
-                } else {
-                    console.log(`📡 Keeping local shared space "${update.data.name}" (editor, local newer)`);
+                    state.spaces[existingIndex] = incomingSpace;
                 }
             }
         } else {
             // New shared space
-            state.spaces.push(updatedSpace);
+            state.spaces.push(incomingSpace);
         }
 
         syncActiveSpace();
     }
 
-    if (callbacks.render) callbacks.render();
-    if (callbacks.renderArchive) callbacks.renderArchive();
-    if (callbacks.renderSpaces) callbacks.renderSpaces();
+    // Render updates
+    if (renderCallback) renderCallback();
+    if (renderArchiveCallback) renderArchiveCallback();
+    if (renderSpacesCallback) renderSpacesCallback();
 
     setTimeout(() => {
         document.body.classList.remove('sync-update');

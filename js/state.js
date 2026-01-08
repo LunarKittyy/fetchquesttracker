@@ -107,8 +107,6 @@ export let tempImageData = null;
 export let searchQuery = '';
 export let bulkMode = false;
 export let selectedItems = new Set();
-export let pendingLocalChange = false;
-export let isInitialSyncInProgress = false;
 export let selectedTags = []; // Tags selected in form
 
 // Setters for mutable UI state
@@ -120,8 +118,5 @@ export function setBulkMode(mode) { bulkMode = mode; }
 export function clearSelectedItems() { selectedItems.clear(); }
 export function addSelectedItem(id) { selectedItems.add(id); }
 export function removeSelectedItem(id) { selectedItems.delete(id); }
-export function setPendingLocalChange(val) { pendingLocalChange = val; }
-export function getPendingLocalChange() { return pendingLocalChange; }
-export function setInitialSyncInProgress(val) { isInitialSyncInProgress = val; }
 export function setSelectedTags(tags) { selectedTags = tags; }
 export function clearSelectedTags() { selectedTags = []; }

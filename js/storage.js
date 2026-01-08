@@ -3,12 +3,12 @@
  * Handles LocalStorage and Cloud sync operations
  */
 
-import { state, syncActiveSpace, DEFAULT_CATEGORIES, STORAGE_KEY, setPendingLocalChange, pendingLocalChange } from './state.js';
+import { state, syncActiveSpace, DEFAULT_CATEGORIES, STORAGE_KEY } from './state.js';
 import { normalizeItem } from './utils.js';
 import { showAlert } from './popup.js';
+import { syncManager } from './sync-manager.js';
 
 // --- Module State ---
-let cloudSyncTimeout = null;
 let syncTimeInterval = null;
 
 // DOM element references (set via init)
@@ -39,7 +39,6 @@ export function initStorage(domElements, callbacks) {
  */
 export function saveState() {
     // Set local modification timestamp for sync comparison
-    // For owned spaces and shared spaces where user is editor
     const activeSpace = state.spaces.find(s => s.id === state.activeSpaceId);
     const canEdit = activeSpace && (activeSpace.isOwned !== false || activeSpace.myRole === 'editor');
     if (canEdit) {
@@ -47,12 +46,9 @@ export function saveState() {
     }
 
     saveStateLocal();
-    // Mark that we have a pending local change
-    setPendingLocalChange(true);
-    // Auto-sync to cloud (debounced)
-    if (window.FirebaseBridge?.currentUser) {
-        debouncedCloudSync();
-    }
+
+    // Sync to cloud via SyncManager
+    syncManager.save(state);
 }
 
 /**
@@ -117,52 +113,7 @@ export function saveStateLocal() {
     }
 }
 
-/**
- * Debounced cloud sync to prevent excessive API calls
- */
-export function debouncedCloudSync() {
-    if (cloudSyncTimeout) clearTimeout(cloudSyncTimeout);
-    console.log('🔄 Cloud sync queued (2s debounce)');
-    cloudSyncTimeout = setTimeout(async () => {
-        if (!window.FirebaseBridge?.currentUser) {
-            console.log('❌ No user, skipping sync');
-            return;
-        }
-
-        // Check if user is hovering on a quest card - delay sync to prevent hover interruption
-        // Skip this check on mobile since :hover doesn't work reliably and mouseleave never fires
-        if (!window.FirebaseBridge?.isMobile) {
-            const hoveredCard = document.querySelector('.quest-card:hover');
-            if (hoveredCard) {
-                console.log('🔄 Delaying sync (user hovering)');
-                // Wait for hover to end, then retry
-                hoveredCard.addEventListener('mouseleave', () => {
-                    debouncedCloudSync();
-                }, { once: true });
-                return;
-            }
-        }
-
-        console.log('🔄 Starting cloud sync...');
-        if (updateSyncStatusUICallback) updateSyncStatusUICallback('syncing');
-        const result = await window.FirebaseBridge.saveToCloud(state);
-        console.log('🔄 Sync result:', result);
-        if (result.success) {
-            // Delay resetting pendingLocalChange to allow onSnapshot to fire
-            // with our data and be properly ignored
-            setTimeout(() => {
-                setPendingLocalChange(false);
-            }, 500);
-            window.FirebaseBridge.updateLastSyncTime();
-            if (updateSyncStatusUICallback) updateSyncStatusUICallback('synced');
-            updateLastSyncedDisplay();
-            console.log('✅ Cloud sync complete');
-        } else {
-            if (updateSyncStatusUICallback) updateSyncStatusUICallback('error');
-            console.error('❌ Cloud sync failed:', result.error);
-        }
-    }, 2000); // 2 second debounce
-}
+// debouncedCloudSync removed - now handled by SyncManager
 
 /**
  * Update the "last synced" display text
