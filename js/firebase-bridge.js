@@ -26,7 +26,8 @@ import {
     getDocs,
     deleteDoc,
     writeBatch,
-    onSnapshot
+    onSnapshot,
+    enableMultiTabIndexedDbPersistence
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 import {
     getStorage,
@@ -68,7 +69,7 @@ let googleProvider = null;
 // Mobile detection - used to determine auth method
 function isMobileDevice() {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-           (navigator.maxTouchPoints && navigator.maxTouchPoints > 2);
+        (navigator.maxTouchPoints && navigator.maxTouchPoints > 2);
 }
 
 if (isFirebaseConfigured()) {
@@ -78,6 +79,15 @@ if (isFirebaseConfigured()) {
         db = getFirestore(app);
         storage = getStorage(app);
         googleProvider = new GoogleAuthProvider();
+
+        // Enable offline persistence
+        enableMultiTabIndexedDbPersistence(db).catch((err) => {
+            if (err.code === 'failed-precondition') {
+                console.warn('Multiple tabs open, persistence can only be enabled in one tab at a time.');
+            } else if (err.code === 'unimplemented') {
+                console.warn('The current browser doesn\'t support all of the features required to enable persistence.');
+            }
+        });
 
         // Initialize App Check with reCAPTCHA v3
         initializeAppCheck(app, {
@@ -277,7 +287,7 @@ window.FirebaseBridge = {
     // due to third-party cookie blocking. Popup is more reliable.
     async signInWithGoogle() {
         if (!auth || !googleProvider) return { success: false, error: 'Firebase not configured' };
-        
+
         try {
             console.log('🔐 Starting Google sign-in with popup...');
             const result = await signInWithPopup(auth, googleProvider);
@@ -286,21 +296,21 @@ window.FirebaseBridge = {
             return { success: true, user: result.user, isNewUser };
         } catch (error) {
             console.error('Google sign-in error:', error);
-            
+
             // Provide more helpful error messages for common mobile issues
             if (error.code === 'auth/popup-blocked') {
-                return { 
-                    success: false, 
-                    error: 'Popup was blocked. Please allow popups for this site and try again.' 
+                return {
+                    success: false,
+                    error: 'Popup was blocked. Please allow popups for this site and try again.'
                 };
             }
             if (error.code === 'auth/popup-closed-by-user') {
-                return { 
-                    success: false, 
-                    error: 'Sign-in was cancelled. Please try again.' 
+                return {
+                    success: false,
+                    error: 'Sign-in was cancelled. Please try again.'
                 };
             }
-            
+
             return { success: false, error: getAuthErrorMessage(error.code) };
         }
     },
@@ -343,7 +353,7 @@ window.FirebaseBridge = {
         try {
             const storageDocRef = doc(db, 'userStorage', this.currentUser.uid);
             const storageSnap = await getDoc(storageDocRef);
-            
+
             if (storageSnap.exists()) {
                 const data = storageSnap.data();
                 this.storageUsedBytes = data.bytesUsed || 0;
@@ -679,15 +689,15 @@ window.FirebaseBridge = {
             // Path where item images are stored: users/{uid}/{spaceId}/{prefix}/{itemId}/
             const itemFolderPath = `users/${this.currentUser.uid}/${spaceId}/${prefix}/${itemId}`;
             const itemFolderRef = ref(storage, itemFolderPath);
-            
+
             // List all files in the item's folder
             const contents = await listAll(itemFolderRef);
-            
+
             if (contents.items.length === 0) {
                 console.log('📁 No images found for item:', itemId);
                 return { success: true, deletedCount: 0 };
             }
-            
+
             // Delete each file
             let deletedCount = 0;
             for (const fileRef of contents.items) {
@@ -699,7 +709,7 @@ window.FirebaseBridge = {
                     console.warn('Could not delete:', fileRef.fullPath, e);
                 }
             }
-            
+
             console.log(`🗑️ Deleted ${deletedCount} image(s) for item:`, itemId);
             return { success: true, deletedCount };
         } catch (error) {
