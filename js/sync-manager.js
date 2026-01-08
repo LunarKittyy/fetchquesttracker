@@ -376,9 +376,9 @@ export class SyncManager {
                 items: processedItems,
                 archivedItems: processedArchived,
                 categories: space.categories || [],
-                collaborators: space.collaborators || null,
+                // collaborators: explicitly excluded to prevent overwrite
                 lastModified: serverTimestamp()
-            });
+            }, { merge: true });
 
             space._syncingTimestamp = localMod || Date.now();
             savedCount++;

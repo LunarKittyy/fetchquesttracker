@@ -362,14 +362,9 @@ function handleRealtimeUpdate(data) {
             const localSpace = state.spaces.find(s => s.id === incomingSpace.id && s.isOwned !== false);
 
             if (localSpace) {
-                // Merge collaborators regardless of items (owner wants to know who joined)
+                // Always accept collaborators from server (since client doesn't write them)
                 if (incomingSpace.collaborators) {
-                    const localCount = localSpace.collaborators?.length || 0;
-                    const incomingCount = incomingSpace.collaborators.length;
-                    if (incomingCount !== localCount) {
-                        SyncLog.info(`Merging collaborators for "${localSpace.name}" (${localCount} -> ${incomingCount})`);
-                        localSpace.collaborators = incomingSpace.collaborators;
-                    }
+                    localSpace.collaborators = incomingSpace.collaborators;
                 }
 
                 // Preserve sync markers
