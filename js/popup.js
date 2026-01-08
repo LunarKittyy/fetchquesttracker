@@ -176,3 +176,77 @@ export function showAlert(message, title = 'ALERT') {
 export function showPrompt(message, title = 'INPUT', defaultValue = '') {
     return showPopup({ type: 'prompt', title, message, input: true, inputDefault: defaultValue, confirmText: 'OK', cancelText: 'CANCEL' });
 }
+/**
+ * Show a toast notification
+ * @param {string} message - Message to display
+ * @param {number} [duration=3000] - Duration in ms
+ */
+export function showToast(message, duration = 3000) {
+    let toast = document.getElementById('toast-notification');
+
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast-notification';
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(30, 30, 30, 0.9);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: 1px solid var(--clr-accent-primary, #4ecdb4);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            z-index: 10000;
+            font-family: var(--font-action, sans-serif);
+            font-size: 14px;
+            pointer-events: none;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+            opacity: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        `;
+        document.body.appendChild(toast);
+    }
+
+    // Reset state
+    toast.style.transition = 'none';
+    toast.style.transform = 'translateX(-50%) translateY(100px)';
+    toast.style.opacity = '0';
+
+    // Set content (add spinner)
+    toast.innerHTML = `
+        <div class="spinner-small" style="width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: var(--clr-accent-primary, #4ecdb4); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        <span>${message}</span>
+    `;
+
+    // Needed for animation restart
+    void toast.offsetWidth;
+
+    // Animate in
+    requestAnimationFrame(() => {
+        toast.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease';
+        toast.style.transform = 'translateX(-50%) translateY(0)';
+        toast.style.opacity = '1';
+    });
+
+    // Global spin keyframe if not exists
+    if (!document.getElementById('toast-style')) {
+        const style = document.createElement('style');
+        style.id = 'toast-style';
+        style.textContent = `
+            @keyframes spin { to { transform: rotate(360deg); } }
+        `;
+        document.head.appendChild(style);
+    }
+
+    // Auto hide
+    if (duration > 0) {
+        setTimeout(() => {
+            toast.style.transform = 'translateX(-50%) translateY(100px)';
+            toast.style.opacity = '0';
+        }, duration);
+    }
+}

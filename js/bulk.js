@@ -3,7 +3,7 @@
  * Multi-select mode for mass archive/delete
  */
 
-import { state, selectedItems, clearSelectedItems, addSelectedItem, removeSelectedItem, setBulkMode, bulkMode } from './state.js';
+import { state, selectedItems, clearSelectedItems, addSelectedItem, removeSelectedItem, setBulkMode, bulkMode, isViewOnly } from './state.js';
 import { $$ } from './utils.js';
 import { saveState } from './storage.js';
 
@@ -31,6 +31,11 @@ export function initBulk(domElements, callbacks) {
  * Toggle bulk selection mode
  */
 export function toggleBulkMode() {
+    if (isViewOnly()) {
+        import('./popup.js').then(({ showAlert }) => showAlert("Viewers cannot perform bulk actions.", "ACCESS DENIED"));
+        return;
+    }
+
     const newMode = !bulkMode;
     setBulkMode(newMode);
     document.body.classList.toggle('bulk-mode', newMode);
@@ -116,14 +121,14 @@ export function bulkDeleteItems() {
         const itemIndex = state.items.findIndex(i => i.id === itemId);
         if (itemIndex !== -1) {
             const item = state.items[itemIndex];
-            
+
             // Check if item has storage images to delete
             if (window.FirebaseBridge?.currentUser && item.imageUrl) {
                 if (window.FirebaseBridge.isStorageUrl(item.imageUrl)) {
                     itemsWithStorageImages.push({ id: item.id, spaceId: state.activeSpaceId });
                 }
             }
-            
+
             state.items.splice(itemIndex, 1);
         }
     });

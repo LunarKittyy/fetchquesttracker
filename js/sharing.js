@@ -3,7 +3,7 @@
  * Handles invite creation, acceptance, and shared spaces UI
  */
 
-import { showAlert, showConfirm } from './popup.js';
+import { showAlert, showConfirm, showToast } from './popup.js';
 
 // Firebase Functions reference (loaded dynamically)
 let functionsRef = null;
@@ -91,6 +91,7 @@ export async function checkAndAcceptInvite() {
  */
 export async function acceptInvite(inviteCode) {
     try {
+        showToast("Joining space...");
         const result = await callFunction("acceptInvite", { inviteCode });
 
         await showAlert(
@@ -167,6 +168,7 @@ export async function leaveSharedSpace(ownerId, spaceId, spaceName) {
     if (!confirmed) return null;
 
     try {
+        showToast(`Leaving "${spaceName}"...`);
         await callFunction("leaveSpace", { ownerId, spaceId });
         return { success: true };
     } catch (error) {
