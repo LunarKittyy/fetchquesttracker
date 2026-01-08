@@ -539,27 +539,36 @@ export function updateCardProgress(id, archiveItemCallback) {
 
         if (state.autoArchive && archiveItemCallback) {
             card.classList.add('pending-archive');
-            const handleArchiveTrigger = () => {
-                if (card.classList.contains('pending-archive')) {
-                    setTimeout(() => {
-                        const stillItem = state.items.find(i => i.id === item.id);
-                        if (stillItem && isItemComplete(stillItem)) {
-                            archiveItemCallback(item.id);
-                        }
-                    }, 800);
-                }
-            };
 
-            // On mobile, use touchend since mouseleave doesn't fire properly
-            if (window.FirebaseBridge?.isMobile) {
-                // Use a short delay to let touch sequence complete
-                setTimeout(handleArchiveTrigger, 100);
-            } else {
-                card.addEventListener('mouseleave', handleArchiveTrigger, { once: true });
+            // Clear any existing timer for this item
+            if (window.archiveTimers && window.archiveTimers.has(item.id)) {
+                clearTimeout(window.archiveTimers.get(item.id));
+                window.archiveTimers.delete(item.id);
             }
+
+            // Initialize timer map if needed
+            if (!window.archiveTimers) window.archiveTimers = new Map();
+
+            // Set new timer
+            const timerId = setTimeout(() => {
+                const stillItem = state.items.find(i => i.id === item.id);
+                // Verify it's still complete and meant to be archived
+                if (stillItem && isItemComplete(stillItem)) {
+                    archiveItemCallback(item.id);
+                }
+                window.archiveTimers.delete(item.id);
+            }, 1700); // 1.7s delay (faster response)
+
+            window.archiveTimers.set(item.id, timerId);
         }
     } else if (!isComplete && card.classList.contains('complete')) {
         card.classList.remove('complete', 'pending-archive');
+
+        // Cancel pending archive if user unchecks
+        if (window.archiveTimers && window.archiveTimers.has(item.id)) {
+            clearTimeout(window.archiveTimers.get(item.id));
+            window.archiveTimers.delete(item.id);
+        }
     }
 
     updateCategoryProgress(item.category);
