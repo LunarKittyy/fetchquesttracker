@@ -1,0 +1,17 @@
+{
+    "name": "FetchQuest Tracker",
+    "short_name": "FetchQuest",
+    "description": "Track your quest items, objectives, and loot",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#111413",
+    "theme_color": "#4ecdb4",
+    "icons": [
+        {
+            "src": "favicon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ]
+}
