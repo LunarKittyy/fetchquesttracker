@@ -425,9 +425,11 @@ export class SyncManager {
         } catch (error) {
             SyncLog.error('Cloud save failed', error.message);
             this.setStatus('error');
-            // Clean up markers
+            this.pendingChanges = false; // Ensure we don't get stuck
+            // Clean up temporary markers
             delete this._syncingGlobalTimestamp;
             state.spaces.forEach(s => delete s._syncingTimestamp);
+            if (debugOverlay) updateDebugOverlay();
             return { success: false, error: error.message };
         }
     }

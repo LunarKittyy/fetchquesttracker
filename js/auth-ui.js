@@ -362,7 +362,16 @@ function handleRealtimeUpdate(data) {
             const localSpace = state.spaces.find(s => s.id === incomingSpace.id && s.isOwned !== false);
 
             if (localSpace) {
-                // Compare timestamps - _cloudTimestamp is already in ms from SyncManager
+                // Merge collaborators regardless of items (owner wants to know who joined)
+                if (incomingSpace.collaborators) {
+                    localSpace.collaborators = incomingSpace.collaborators;
+                }
+
+                // Preserve sync markers
+                incomingSpace._localModified = localSpace._localModified;
+                incomingSpace._lastSyncedLocal = localSpace._lastSyncedLocal;
+
+                // Compare timestamps
                 const incomingTime = incomingSpace._cloudTimestamp || 0;
                 const localTime = localSpace._localModified || localSpace._cloudTimestamp || 0;
 
@@ -398,6 +407,10 @@ function handleRealtimeUpdate(data) {
                 state.spaces[existingIndex] = incomingSpace;
             } else {
                 // Editors use timestamp comparison
+                // Preserve sync markers
+                incomingSpace._localModified = existingSpace._localModified;
+                incomingSpace._lastSyncedLocal = existingSpace._lastSyncedLocal;
+
                 const incomingTime = incomingSpace._cloudTimestamp || 0;
                 const localTime = existingSpace._localModified || existingSpace._cloudTimestamp || 0;
 
