@@ -21,6 +21,7 @@ import {
     doc,
     setDoc,
     getDoc,
+    getDocFromServer,
     serverTimestamp,
     collection,
     getDocs,
@@ -228,7 +229,7 @@ window.FirebaseBridge = {
     },
 
     // Start real-time sync (call after login)
-    startRealtimeSync() {
+    async startRealtimeSync() {
         if (!db || !this.currentUser) return;
 
         // Unsubscribe from previous listeners
@@ -236,7 +237,7 @@ window.FirebaseBridge = {
 
         console.log('📡 Starting real-time sync...');
 
-        // Listen to spaces collection changes
+        // Listen to user's own spaces collection changes
         const spacesRef = collection(db, 'users', this.currentUser.uid, 'spaces');
         const unsubSpaces = onSnapshot(spacesRef, (snapshot) => {
             if (snapshot.metadata.hasPendingWrites) {
@@ -254,6 +255,37 @@ window.FirebaseBridge = {
         });
 
         this.realtimeUnsubscribers.push(unsubSpaces);
+
+        // Also listen for changes to shared spaces
+        try {
+            const userDocRef = doc(db, 'users', this.currentUser.uid);
+            const userDocSnap = await getDoc(userDocRef);
+            const userData = userDocSnap.data() || {};
+            const sharedWithMe = userData.sharedWithMe || [];
+
+            // Add a listener for each shared space
+            for (const shared of sharedWithMe) {
+                const sharedSpaceRef = doc(db, 'users', shared.ownerId, 'spaces', shared.spaceId);
+                const unsubShared = onSnapshot(sharedSpaceRef, (docSnap) => {
+                    if (!docSnap.exists()) return;
+                    console.log('📡 Shared space updated:', shared.spaceId);
+                    this.notifyDataChange({
+                        sharedSpaceUpdate: {
+                            id: shared.spaceId,
+                            ownerId: shared.ownerId,
+                            role: shared.role,
+                            data: docSnap.data()
+                        }
+                    });
+                }, (error) => {
+                    console.warn('Shared space sync error:', shared.spaceId, error);
+                });
+                this.realtimeUnsubscribers.push(unsubShared);
+            }
+        } catch (e) {
+            console.warn('Could not setup shared space listeners:', e);
+        }
+
         console.log('📡 Real-time sync active');
     },
 
@@ -542,7 +574,8 @@ window.FirebaseBridge = {
             for (const shared of sharedWithMe) {
                 try {
                     const sharedSpaceRef = doc(db, 'users', shared.ownerId, 'spaces', shared.spaceId);
-                    const sharedSpaceSnap = await getDoc(sharedSpaceRef);
+                    // Use getDocFromServer to bypass cache and get fresh data
+                    const sharedSpaceSnap = await getDocFromServer(sharedSpaceRef);
                     if (sharedSpaceSnap.exists()) {
                         spaces.push({
                             id: shared.spaceId,

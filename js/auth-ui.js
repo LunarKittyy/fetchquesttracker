@@ -418,6 +418,40 @@ export function handleRealtimeUpdate(data, pendingLocalChange, callbacks) {
         syncActiveSpace();
     }
 
+    // Handle shared space updates from owner
+    if (data.sharedSpaceUpdate) {
+        const update = data.sharedSpaceUpdate;
+        const existingIndex = state.spaces.findIndex(s => s.id === update.id && s.isOwned === false);
+
+        const updatedSpace = {
+            id: update.id,
+            ...update.data,
+            isShared: true,
+            isOwned: false,
+            ownerId: update.ownerId,
+            myRole: update.role
+        };
+
+        if (existingIndex >= 0) {
+            // Compare timestamps - only update if incoming is newer
+            const existingSpace = state.spaces[existingIndex];
+            const incomingTime = update.data.lastModified?.toMillis?.() ||
+                update.data.lastModified?.seconds * 1000 || 0;
+            const localTime = existingSpace.lastModified?.toMillis?.() ||
+                existingSpace.lastModified?.seconds * 1000 || 0;
+
+            if (incomingTime >= localTime) {
+                console.log(`📡 Updating shared space "${update.data.name}"`);
+                state.spaces[existingIndex] = updatedSpace;
+            }
+        } else {
+            // New shared space
+            state.spaces.push(updatedSpace);
+        }
+
+        syncActiveSpace();
+    }
+
     if (callbacks.render) callbacks.render();
     if (callbacks.renderArchive) callbacks.renderArchive();
     if (callbacks.renderSpaces) callbacks.renderSpaces();
