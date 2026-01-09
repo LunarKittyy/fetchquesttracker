@@ -1,7 +1,7 @@
 import { elements } from './elements.js';
 import { state, selectedTags, setSelectedTags, addSelectedItem } from './state.js';
 import { saveState } from './storage.js';
-import { showAlert, playSound } from './popup.js';
+import { showAlert } from './popup.js';
 import { escapeHtml, $$ } from './utils.js';
 import { updateBulkCount } from './bulk.js';
 
@@ -235,7 +235,7 @@ export function saveItemTags() {
     document.dispatchEvent(new CustomEvent('render-app'));
 
     elements.modalEditTags?.classList.add('hidden');
-    playSound('tick');
+
 }
 
 // --- Tag Color Picker ---

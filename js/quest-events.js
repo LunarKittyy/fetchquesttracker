@@ -10,7 +10,7 @@ import { updateItemField, updateCardProgress, updateObjectiveDisplay, deleteItem
 import { archiveItem } from './archive.js';
 import { handleBulkCardClick } from './bulk.js';
 import { showConfirm } from './popup.js';
-import { playSound } from './particles.js';
+
 
 /**
  * Handle actions on quest cards (clicks on buttons)
@@ -52,7 +52,9 @@ export function handleQuestAction(e) {
             const newVal = Math.min(item.target, Math.max(0, item.current + delta));
             updateItemField(itemId, 'current', newVal);
             updateCardProgress(itemId, archiveItem);
-            if (action === 'increment') playSound('tick');
+            if (action === 'increment') {
+                // Sound removed
+            }
             break;
         }
         case 'obj-increment':
