@@ -84,10 +84,7 @@ export class SyncManager {
         }
         syncManagerInstance = this;
 
-        // Check for debug mode (unified with logger.js)
-        if (new URLSearchParams(window.location.search).has('debug')) {
-            this.enableDebugOverlay();
-        }
+        // Debug mode now handled by logger.js
 
         SyncLog.info('SyncManager initialized');
     }
@@ -116,7 +113,6 @@ export class SyncManager {
         if (this.status === status) return;
         this.status = status;
         this.statusListeners.forEach(cb => cb(status));
-        if (debugOverlay) updateDebugOverlay();
     }
 
     onStatusChange(callback) {
@@ -163,7 +159,6 @@ export class SyncManager {
         }
 
         this.pendingChanges = true;
-        if (debugOverlay) updateDebugOverlay();
 
         if (this.saveTimeout) {
             clearTimeout(this.saveTimeout);
@@ -299,21 +294,18 @@ export class SyncManager {
             this.lastSyncTime = Date.now();
             this.setStatus('synced');
 
-            // Delay clearing pendingChanges to allow onSnapshot to fire with our data
             setTimeout(() => {
                 this.pendingChanges = false;
-                if (debugOverlay) updateDebugOverlay();
             }, 500);
 
             return { success: true };
         } catch (error) {
             SyncLog.error('Cloud save failed', error.message);
             this.setStatus('error');
-            this.pendingChanges = false; // Ensure we don't get stuck
+            this.pendingChanges = false;
             // Clean up temporary markers
             delete this._syncingGlobalTimestamp;
             state.spaces.forEach(s => delete s._syncingTimestamp);
-            if (debugOverlay) updateDebugOverlay();
             return { success: false, error: error.message };
         }
     }
@@ -517,19 +509,6 @@ export class SyncManager {
     // -------------------------------------------------------------------------
     // Debug
     // -------------------------------------------------------------------------
-
-    enableDebugOverlay() {
-        createDebugOverlay();
-        SyncLog.info('Debug overlay enabled');
-    }
-
-    disableDebugOverlay() {
-        if (debugOverlay) {
-            debugOverlay.remove();
-            debugOverlay = null;
-        }
-    }
-
     getLogs() {
         return SyncLog.getHistory();
     }
