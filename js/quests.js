@@ -618,16 +618,22 @@ export function updateObjectiveDisplay(itemId, objectiveId, archiveItemCallback)
     const checkbox = objEl.querySelector('.objective-checkbox');
     if (checkbox) {
         checkbox.classList.toggle('checked', isObjComplete);
+        const svg = checkbox.querySelector('svg');
+        if (svg) svg.setAttribute('stroke-width', isObjComplete ? '3' : '2');
     }
 
-    const countEl = objEl.querySelector('.objective-count');
-    if (countEl) countEl.textContent = `${objective.current}/${objective.target}`;
+    // Update numbers individually to preserve editable spans
+    const currentEl = objEl.querySelector('.objective-current');
+    if (currentEl) currentEl.textContent = formatBigNumber(objective.current);
+
+    const targetEl = objEl.querySelector('.objective-target');
+    if (targetEl) targetEl.textContent = formatBigNumber(objective.target);
 
     // Update button disabled states
-    const decrementBtn = objEl.querySelector('.objective-btn.decrement');
-    const incrementBtn = objEl.querySelector('.objective-btn.increment');
+    const decrementBtn = objEl.querySelector('.btn-obj-decrement');
+    const incrementBtn = objEl.querySelector('.btn-obj-increment');
     if (decrementBtn) decrementBtn.disabled = objective.current <= 0;
-    if (incrementBtn) incrementBtn.disabled = isObjComplete;
+    if (incrementBtn) incrementBtn.disabled = objective.current >= objective.target;
 
     objEl.classList.toggle('complete', isObjComplete);
 
