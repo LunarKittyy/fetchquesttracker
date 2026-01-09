@@ -262,14 +262,15 @@ export class SyncManager {
     }
 
     notifyDataChange(data) {
-        if (this.pendingChanges) {
-            SyncLog.debug('Skipping notification (pending local changes)');
-            return;
-        }
         if (this.isInitializing) {
             SyncLog.debug('Skipping notification (initializing)');
             return;
         }
+
+        if (this.pendingChanges) {
+            SyncLog.debug('Received update while changes pending (will reconcile)');
+        }
+
         SyncLog.incoming('Data changed from server');
         this.dataListeners.forEach(cb => cb(data));
     }

@@ -364,7 +364,12 @@ function handleRealtimeUpdate(data) {
             if (localSpace) {
                 // Merge collaborators regardless of items (owner wants to know who joined)
                 if (incomingSpace.collaborators) {
-                    localSpace.collaborators = incomingSpace.collaborators;
+                    const localCount = localSpace.collaborators?.length || 0;
+                    const incomingCount = incomingSpace.collaborators.length;
+                    if (incomingCount !== localCount) {
+                        SyncLog.info(`Merging collaborators for "${localSpace.name}" (${localCount} -> ${incomingCount})`);
+                        localSpace.collaborators = incomingSpace.collaborators;
+                    }
                 }
 
                 // Preserve sync markers
@@ -376,7 +381,10 @@ function handleRealtimeUpdate(data) {
                 const localTime = localSpace._localModified || localSpace._cloudTimestamp || 0;
 
                 if (localTime > incomingTime) {
+                    SyncLog.debug(`Keeping local version of "${localSpace.name}" (local edit is newer)`);
                     return { ...localSpace, isOwned: true };
+                } else if (localTime < incomingTime) {
+                    SyncLog.info(`Updating "${localSpace.name}" from server (server is newer)`);
                 }
             }
 
