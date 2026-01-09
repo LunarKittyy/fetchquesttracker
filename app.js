@@ -957,35 +957,8 @@ async function init() {
     elements.btnSaveTags?.addEventListener('click', saveItemTags);
 
     // Tag color picker (in tag manager)
-    if (elements.btnTagColor) {
-        elements.btnTagColor.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const isHidden = elements.tagColorDropdown?.classList.contains('hidden');
-            if (isHidden) {
-                const rect = elements.btnTagColor.getBoundingClientRect();
-                if (elements.tagColorDropdown) {
-                    elements.tagColorDropdown.style.top = (rect.bottom + 8) + 'px';
-                    elements.tagColorDropdown.style.left = rect.left + 'px';
-                    elements.tagColorDropdown.classList.remove('hidden');
-                }
-            } else {
-                elements.tagColorDropdown?.classList.add('hidden');
-            }
-        });
-
-        elements.tagColorDropdown?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const option = e.target.closest('.color-option');
-            if (!option) return;
-
-            elements.tagColorDropdown.querySelectorAll('.color-option').forEach(o => o.classList.remove('active'));
-            option.classList.add('active');
-
-            currentTagColor = option.dataset.color || '#4ecdb4';
-            updateTagColorPreview();
-            elements.tagColorDropdown.classList.add('hidden');
-        });
-    }
+    // Tag color picker
+    initTagColorPicker();
 
     // Tag picker dropdown (in form)
     if (elements.btnTagPicker) {
