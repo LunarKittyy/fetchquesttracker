@@ -384,11 +384,31 @@ export function handleRealtimeUpdate(data, pendingLocalChange, callbacks) {
     document.body.classList.add('sync-update');
 
     if (data.spaces) {
-        // Preserve shared spaces (those we don't own) and merge with updated owned spaces
-        // Filter by isOwned === false (not isShared, since owned spaces can also have isShared true)
+        // Preserve shared spaces (those we don't own)
         const sharedSpaces = state.spaces.filter(s => s.isOwned === false);
-        const updatedOwnedSpaces = data.spaces.map(s => ({ ...s, isOwned: true }));
-        state.spaces = [...updatedOwnedSpaces, ...sharedSpaces];
+
+        // For owned spaces, compare timestamps and only update if incoming is newer
+        const mergedOwnedSpaces = data.spaces.map(incomingSpace => {
+            const localSpace = state.spaces.find(s => s.id === incomingSpace.id && s.isOwned !== false);
+
+            if (localSpace) {
+                // Compare timestamps - only update if incoming is newer
+                const incomingTime = incomingSpace.lastModified?.toMillis?.() ||
+                    incomingSpace.lastModified?.seconds * 1000 || 0;
+                const localTime = localSpace.lastModified?.toMillis?.() ||
+                    localSpace.lastModified?.seconds * 1000 ||
+                    localSpace._localModified || 0;
+
+                if (localTime > incomingTime) {
+                    console.log(`🔄 Keeping local version of "${localSpace.name}" (local: ${localTime}, incoming: ${incomingTime})`);
+                    return { ...localSpace, isOwned: true };
+                }
+            }
+
+            return { ...incomingSpace, isOwned: true };
+        });
+
+        state.spaces = [...mergedOwnedSpaces, ...sharedSpaces];
 
         // Only update activeSpaceId if the current one no longer exists
         const currentSpaceExists = state.spaces.some(s => s.id === state.activeSpaceId);

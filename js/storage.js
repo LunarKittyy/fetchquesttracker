@@ -38,6 +38,12 @@ export function initStorage(domElements, callbacks) {
  * Save state to both localStorage and cloud (if logged in)
  */
 export function saveState() {
+    // Set local modification timestamp on active space for sync comparison
+    const activeSpace = state.spaces.find(s => s.id === state.activeSpaceId);
+    if (activeSpace) {
+        activeSpace._localModified = Date.now();
+    }
+
     saveStateLocal();
     // Mark that we have a pending local change
     setPendingLocalChange(true);
@@ -140,7 +146,11 @@ export function debouncedCloudSync() {
         const result = await window.FirebaseBridge.saveToCloud(state);
         console.log('🔄 Sync result:', result);
         if (result.success) {
-            setPendingLocalChange(false); // Local changes are now synced
+            // Delay resetting pendingLocalChange to allow onSnapshot to fire
+            // with our data and be properly ignored
+            setTimeout(() => {
+                setPendingLocalChange(false);
+            }, 500);
             window.FirebaseBridge.updateLastSyncTime();
             if (updateSyncStatusUICallback) updateSyncStatusUICallback('synced');
             updateLastSyncedDisplay();

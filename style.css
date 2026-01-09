@@ -4599,11 +4599,13 @@ body.view-only .quest-actions {
   display: none;
 }
 
-body.view-only .quest-controls {
+body.view-only .btn-control,
+body.view-only .btn-decrement,
+body.view-only .btn-increment {
   display: none;
 }
 
-body.view-only .objective-controls {
+body.view-only .objective-btn {
   display: none;
 }
 
