@@ -143,31 +143,24 @@ export function handleQuestContextMenu(e) {
 
     contextMenuTarget = { type: 'quest', id: itemId, data: item };
 
-    const menuItems = [
-        {
-            label: 'Edit Name',
-            action: 'edit-name',
-            icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'
-        },
-        {
-            label: 'Edit Tags',
-            action: 'edit-tags',
-            icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>'
-        },
-        {
-            label: 'Archive',
-            action: 'archive-quest',
-            icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>'
-        },
-        { divider: true },
-        {
-            label: 'Delete',
-            action: 'delete-quest',
-            danger: true,
-            icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>'
-        }
-    ];
+    const isSharedSpace = item.isOwned === false;
+    let menuItems;
 
+    if (isSharedSpace) {
+        // Viewers can only copy ID/JSON
+        menuItems = [
+            { label: 'Copy ID', action: 'copy-id', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' },
+            { label: 'Copy JSON', action: 'copy-json', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>' }
+        ];
+    } else {
+        // Owners/Editors get full options
+        menuItems = [
+            { label: 'Copy ID', action: 'copy-id', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' },
+            { label: 'Copy JSON', action: 'copy-json', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>' },
+            { divider: true },
+            { label: 'Delete', action: 'delete-quest', danger: true, icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>' }
+        ];
+    }
     showContextMenu(e, menuItems);
 }
 
@@ -208,6 +201,14 @@ export function handleContextMenuAction(e) {
                 const card = $(`.quest-card[data-id="${target.id}"]`);
                 const nameEl = card?.querySelector('.quest-name-text');
                 if (nameEl) nameEl.click();
+                if (nameEl) nameEl.click();
+            }
+            break;
+        case 'edit-category':
+            if (target.type === 'quest') {
+                import('./quest-events.js').then(module => {
+                    module.startCategoryEdit(target.id);
+                });
             }
             break;
         case 'archive-quest':

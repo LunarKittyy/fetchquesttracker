@@ -82,8 +82,10 @@ import {
     handleTagPickerClick, openEditTagsModal, handleEditTagsClick, saveItemTags, initTagColorPicker,
     populateSelectByTagDropdown, handleSelectByTagClick
 } from './js/tags.js';
+import { openCategoryManager, handleAddCategory, handleCategoryListClick } from './js/categories.js';
 
 import { handleQuestAction, handleNotesBlur } from './js/quest-events.js';
+import { initDragDrop } from './js/drag-drop.js';
 
 
 // --- Main Render Function ---
@@ -213,7 +215,7 @@ function updateStatusBar() {
 // --- Modal Handlers logic moved to js/modals.js ---
 
 
-function handleAddCategory() {
+function handleOpenAddCategoryModal() {
     closeAllModals();
     elements.categoryInput.value = '';
     elements.modalCategory?.classList.remove('hidden');
@@ -337,60 +339,9 @@ async function handleClearAllData() {
 
 // --- Image Handlers logic moved to js/form-logic.js ---
 
-// --- Category Manager ---
-function openCategoryManager() {
-    elements.modalSettings?.classList.add('hidden');
-    elements.modalCategories?.classList.remove('hidden');
-    renderCategoryList();
-}
+// --- Image Handlers logic moved to js/form-logic.js ---
 
-function renderCategoryList() {
-    if (!elements.categoriesList) return;
-    // Count how many items use each category
-    const usageCount = {};
-    state.items.forEach(item => {
-        const cat = item.category || 'Misc';
-        usageCount[cat] = (usageCount[cat] || 0) + 1;
-    });
-
-    elements.categoriesList.innerHTML = state.categories.map(cat => {
-        const count = usageCount[cat] || 0;
-        const isUsed = count > 0;
-        // Allow deleting ANY category that's not in use (including presets)
-        return `
-            <div class="category-item" data-category="${escapeHtml(cat)}">
-                <div class="category-item-info">
-                    <span class="category-item-name">${escapeHtml(cat)}</span>
-                    ${isUsed ? `<span class="category-item-count">(${count} item${count !== 1 ? 's' : ''})</span>` : ''}
-                </div>
-                <button class="category-item-delete${isUsed ? ' is-disabled' : ''}" data-in-use="${isUsed}" title="${isUsed ? 'In use' : 'Delete'}">×</button>
-            </div>
-        `;
-    }).join('');
-}
-
-function handleCategoryClick(e) {
-    const deleteBtn = e.target.closest('.category-item-delete');
-    if (!deleteBtn) return;
-
-    // Show alert if category is in use
-    if (deleteBtn.dataset.inUse === 'true') {
-        showAlert('Category is in use by items and cannot be deleted.', 'ERROR');
-        return;
-    }
-
-    const item = deleteBtn.closest('.category-item');
-    const category = item?.dataset.category;
-    if (!category) return;
-
-    const idx = state.categories.indexOf(category);
-    if (idx !== -1) {
-        state.categories.splice(idx, 1);
-        saveState();
-        updateCategoryDropdown();
-        renderCategoryList();
-    }
-}
+// --- Category Manager logic moved to js/categories.js ---
 
 function shareProgress() {
     elements.modalSettings?.classList.add('hidden');
@@ -615,7 +566,9 @@ async function init() {
     const { loadingBar } = await import('./js/loading-bar.js');
     loadingBar.start();
 
-    // Initialize modules
+    // Initialize dragging
+    initDragDrop(elements.questContainer);
+
     initPopup();
     initParticleElements();
     initStorage({
@@ -676,6 +629,9 @@ async function init() {
         updateTagPickerDropdown();
     });
 
+    // Global render event (for DnD and Category updates)
+    document.addEventListener('render-app', () => render());
+
     // Event listeners
     elements.form?.addEventListener('submit', handleFormSubmit);
     elements.typeBtns.forEach(btn => btn.addEventListener('click', handleTypeToggle));
@@ -683,10 +639,11 @@ async function init() {
     elements.objectivesList?.addEventListener('click', handleRemoveObjective);
     elements.questContainer?.addEventListener('click', handleQuestAction);
     elements.questContainer?.addEventListener('blur', handleNotesBlur, true);
-    elements.btnAddCategory?.addEventListener('click', handleAddCategory);
+    elements.imageModalPreview?.addEventListener('click', handleOpenImageModal);
+    elements.btnAddCategory?.addEventListener('click', handleOpenAddCategoryModal);
     elements.btnSaveCategory?.addEventListener('click', handleSaveCategory);
     elements.modalCategory?.addEventListener('click', handleCloseModal);
-    elements.categoriesList?.addEventListener('click', handleCategoryClick);
+    elements.categoriesList?.addEventListener('click', handleCategoryListClick);
     elements.fileImport?.addEventListener('change', handleFileChange);
     document.addEventListener('keydown', handleKeydown);
 
@@ -829,6 +786,13 @@ async function init() {
     elements.settingsBtnExport?.addEventListener('click', handleExport);
     elements.settingsBtnImport?.addEventListener('click', handleImportClick);
     elements.settingsBtnClear?.addEventListener('click', handleClearAllData);
+
+    // Category Manager
+    elements.btnManageCategories?.addEventListener('click', openCategoryManager);
+    elements.modalCategories?.addEventListener('click', handleCloseModal);
+    elements.btnAddCategoryManage?.addEventListener('click', handleAddCategory);
+    elements.categoriesList?.addEventListener('click', handleCategoryListClick);
+
     elements.btnStatistics?.addEventListener('click', openStatistics);
     elements.modalStatistics?.addEventListener('click', handleCloseModal);
 
@@ -954,11 +918,7 @@ async function init() {
     elements.btnShowInfo?.addEventListener('click', handleShowInfo);
     elements.btnDeleteAccount?.addEventListener('click', handleDeleteAccount);
 
-    // Category manager
-    elements.btnManageCategories?.addEventListener('click', openCategoryManager);
-    elements.modalCategories?.addEventListener('click', handleCloseModal);
-    elements.categoriesList?.addEventListener('click', handleCategoryClick);
-    elements.btnShareProgress?.addEventListener('click', shareProgress);
+
 
     // Tag manager
     elements.btnManageTags?.addEventListener('click', openTagManager);

@@ -188,9 +188,11 @@ export function insertItemIntoDOM(item) {
         const groupHTML = `
             <section class="category-group" data-category="${escapeHtml(category)}">
                 <div class="category-header">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                    </svg>
+                    <button class="btn-collapse-category" data-action="collapse-category" title="Collapse">
+                        <svg viewBox="0 0 24 24" fill="none" class="icon-chevron" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </button>
                     <h2 class="category-name">${escapeHtml(category)}</h2>
                     <span class="category-count">0</span>
                     <div class="category-progress-wrapper">
@@ -364,7 +366,7 @@ export function createQuestCardHTML(item) {
     }
 
     return `
-        <article class="quest-card ${isComplete ? 'complete' : ''} ${item.imageUrl ? 'has-image' : ''}" data-id="${item.id}" data-type="${item.type}" ${item.color ? `style="--quest-color: ${item.color}" data-color="${item.color}"` : ''}>
+        <article class="quest-card ${isComplete ? 'complete' : ''} ${item.imageUrl ? 'has-image' : ''}" draggable="true" data-id="${item.id}" data-type="${item.type}" ${item.color ? `style="--quest-color: ${item.color}" data-color="${item.color}"` : ''}>
             <div class="quest-card-inner">
                 <div class="quest-content">
                     <div class="quest-header">
@@ -373,8 +375,11 @@ export function createQuestCardHTML(item) {
                                 ${item._searchSpaceName ? `<span class="quest-space-tag">${escapeHtml(item._searchSpaceName)}</span>` : ''}
                                 ${item.type === 'quest' ? '<span class="quest-type-tag">QUEST</span>' : ''}
                                 ${item.priority ? `<span class="quest-priority-tag priority-${item.priority}">${item.priority.toUpperCase()}</span>` : ''}
-                                <span class="quest-category-tag">${escapeHtml(item.category)}</span>
+                                <span class="quest-category-tag clickable" data-action="start-category-edit" title="Change category">${escapeHtml(item.category)}</span>
                                 ${renderCustomTags(item)}
+                                <button class="btn-add-tag" data-action="open-edit-tags" title="Edit tags">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                </button>
                                 ${isComplete ? '<span class="quest-complete-tag">ACQUIRED</span>' : ''}
                             </div>
                             <h3 class="quest-name">

@@ -6,10 +6,11 @@
 import { elements } from './elements.js';
 import { state, searchQuery, bulkMode } from './state.js';
 import { findItemAcrossSpaces } from './utils.js';
-import { updateItemField, updateCardProgress, updateObjectiveDisplay, deleteItem } from './quests.js';
+import { updateItemField, updateCardProgress, updateObjectiveDisplay, deleteItem, insertItemIntoDOM, cleanupEmptyCategory } from './quests.js';
 import { archiveItem } from './archive.js';
 import { handleBulkCardClick } from './bulk.js';
 import { showConfirm } from './popup.js';
+import { openEditTagsModal } from './tags.js';
 
 
 /**
@@ -192,6 +193,12 @@ export function handleQuestAction(e) {
             });
             break;
         }
+        case 'start-category-edit':
+            startCategoryEdit(itemId);
+            break;
+        case 'open-edit-tags':
+            openEditTagsModal(itemId);
+            break;
     }
 }
 
@@ -206,4 +213,117 @@ export function handleNotesBlur(e) {
             updateItemField(card.dataset.id, 'notes', e.target.value);
         }
     }
+}
+
+/**
+ * Start editing category for an item (inline)
+ * @param {string} itemId 
+ */
+export function startCategoryEdit(itemId) {
+    const card = document.querySelector(`.quest-card[data-id="${itemId}"]`);
+    if (!card) return;
+
+    const categoryTag = card.querySelector('.quest-category-tag');
+    if (!categoryTag) return;
+
+    const item = state.items.find(i => i.id === itemId);
+    if (!item) return;
+
+    const currentCategory = item.category;
+
+    // Create select element
+    const select = document.createElement('select');
+    select.className = 'category-edit-select';
+
+    // Populate with categories
+    state.categories.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat;
+        option.textContent = cat;
+        if (cat === currentCategory) option.selected = true;
+        select.appendChild(option);
+    });
+
+    // Style the select to look like the tag
+    select.style.cssText = `
+        font-size: 0.65rem;
+        padding: 0 4px;
+        border-radius: 4px;
+        background: var(--clr-bg-elevated);
+        border: 1px solid var(--clr-accent-primary);
+        color: var(--clr-text-primary);
+        margin-right: 0.5rem;
+        cursor: pointer;
+    `;
+
+    // Replace tag with select
+    categoryTag.replaceWith(select);
+    select.focus();
+
+    // Auto-open the dropdown
+    try {
+        if (select.showPicker) {
+            select.showPicker();
+        }
+    } catch (err) {
+        console.log('Auto-open dropdown failed:', err);
+    }
+
+    // Handle change/blur
+    const finishEdit = () => {
+        const newCategory = select.value;
+        if (newCategory && newCategory !== currentCategory) {
+            updateItemField(itemId, 'category', newCategory);
+
+            // Move item in DOM immediately
+            const oldCategory = currentCategory;
+
+            // 1. Remove from current position
+            card.remove();
+
+            // 2. Clean up old category if empty
+            cleanupEmptyCategory(oldCategory);
+
+            // 3. Re-insert into new location
+            // The item object in state has already been updated by updateItemField
+            // We need to fetch the updated item to ensure we have the latest data
+            const updatedItem = state.items.find(i => i.id === itemId);
+            if (updatedItem) {
+                insertItemIntoDOM(updatedItem);
+            }
+        } else {
+            // Restore original tag if no change - with all attributes!
+            const span = document.createElement('span');
+            span.className = 'quest-category-tag clickable'; // Added clickable class
+            span.dataset.action = 'start-category-edit'; // Added action
+            span.title = 'Change category'; // Added title
+            span.textContent = currentCategory;
+            select.replaceWith(span);
+        }
+    };
+
+    select.addEventListener('change', () => {
+        finishEdit();
+        select.blur();
+    });
+
+    select.addEventListener('blur', () => {
+        // If still in DOM (not replaced by change event), revert
+        if (select.parentNode) {
+            finishEdit();
+        }
+    });
+
+    select.addEventListener('click', (e) => e.stopPropagation());
+    select.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') select.blur();
+        if (e.key === 'Escape') {
+            const span = document.createElement('span');
+            span.className = 'quest-category-tag clickable'; // Added clickable class
+            span.dataset.action = 'start-category-edit'; // Added action
+            span.title = 'Change category'; // Added title
+            span.textContent = currentCategory;
+            select.replaceWith(span);
+        }
+    });
 }

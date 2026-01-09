@@ -137,6 +137,8 @@ export function sortItems(items) {
  * @param {Object} state - State object with categories and items
  * @returns {Array<string>} Sorted array of unique categories
  */
+import { state } from './state.js';
+
 export function getUniqueCategories(state) {
     const fromItems = state.items.map(i => i.category || 'Misc');
     const all = [...new Set([...state.categories, ...fromItems])];
@@ -149,9 +151,29 @@ export function getUniqueCategories(state) {
  * @returns {Object} Object with category names as keys and item arrays as values
  */
 export function groupItemsByCategory(items) {
-    const categories = [...new Set(items.map(i => i.category || 'Misc'))];
+    // Get all unique categories (preserved custom order from settings + implicit ones)
+    const implicitCategories = [...new Set(items.map(i => i.category || 'Misc'))];
+
+    // Sort logic: 
+    // 1. First follow order in state.categories
+    // 2. Then any implicit categories not in state.categories (alphabetical)
+
+    // Create a priority map
+    const orderMap = new Map();
+    state.categories.forEach((cat, index) => orderMap.set(cat, index));
+
+    const allCategories = Array.from(new Set([...state.categories, ...implicitCategories]));
+
+    allCategories.sort((a, b) => {
+        const orderA = orderMap.has(a) ? orderMap.get(a) : 9999;
+        const orderB = orderMap.has(b) ? orderMap.get(b) : 9999;
+
+        if (orderA !== orderB) return orderA - orderB;
+        return a.localeCompare(b);
+    });
+
     const grouped = {};
-    categories.forEach(cat => {
+    allCategories.forEach(cat => {
         const catItems = items.filter(i => (i.category || 'Misc') === cat);
         if (catItems.length > 0) {
             grouped[cat] = catItems;

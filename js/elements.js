@@ -137,7 +137,8 @@ export const elements = {
     btnManageCategories: $('#btn-manage-categories'),
     modalCategories: $('#modal-categories'),
     categoriesList: $('#categories-list'),
-    btnShareProgress: $('#btn-share-progress'),
+    newCategoryName: $('#manage-new-category-name'),
+    btnAddCategoryManage: $('#btn-add-category-manage'),
 
     // Tag manager
     btnManageTags: $('#btn-manage-tags'),
