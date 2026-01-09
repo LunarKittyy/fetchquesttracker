@@ -399,7 +399,7 @@ export function createQuestCardHTML(item) {
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
                             </button>
                             <span class="quest-count">
-                                <span class="quest-count-current">${progress.current}</span>
+                                <span class="quest-count-current" data-action="edit-current" title="Click to edit">${progress.current}</span>
                                 <span class="quest-count-divider">/</span>
                                 <span class="quest-count-target" data-action="edit-goal" title="Click to edit goal">${progress.total}</span>
                             </span>

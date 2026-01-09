@@ -112,6 +112,53 @@ export function handleQuestAction(e) {
             });
             break;
         }
+        case 'edit-current': {
+            const currentEl = e.target.closest('.quest-count-current');
+            if (!currentEl || !item) return;
+            const currentVal = item.current || 0;
+            const targetVal = item.target || 1;
+
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.min = '0';
+            input.max = targetVal;
+            input.className = 'quest-current-edit';
+            input.value = currentVal;
+            input.style.cssText = 'width: 3em; text-align: center; font-size: inherit; padding: 2px 4px; border-radius: 4px; border: 1px solid var(--clr-accent-primary, #4ecdb4); background: var(--clr-bg-tertiary, #1a1a2e); color: inherit;';
+
+            currentEl.replaceWith(input);
+            input.focus();
+            input.select();
+
+            const finishEdit = () => {
+                let newVal = parseInt(input.value);
+                if (isNaN(newVal)) newVal = currentVal;
+                newVal = Math.min(targetVal, Math.max(0, newVal));
+
+                updateItemField(itemId, 'current', newVal);
+
+                const span = document.createElement('span');
+                span.className = 'quest-count-current';
+                span.dataset.action = 'edit-current';
+                span.title = 'Click to edit';
+                span.textContent = newVal;
+
+                if (input.parentNode) input.replaceWith(span);
+                updateCardProgress(itemId, archiveItem);
+            };
+
+            input.addEventListener('blur', finishEdit);
+            input.addEventListener('keydown', (ev) => {
+                if (ev.key === 'Enter') {
+                    input.blur();
+                }
+                if (ev.key === 'Escape') {
+                    input.value = currentVal;
+                    input.blur();
+                }
+            });
+            break;
+        }
         case 'edit-goal': {
             const targetEl = e.target.closest('.quest-count-target');
             if (!targetEl || !item) return;
