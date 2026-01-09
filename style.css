@@ -2714,6 +2714,43 @@ body.shake {
   margin-left: 0;
 }
 
+/* Auth Legal Notice (in auth modal) */
+.auth-legal-notice {
+  text-align: center;
+  font-size: 0.65rem;
+  color: var(--clr-text-muted);
+  margin: 0.75rem 0;
+  line-height: 1.5;
+}
+
+.auth-legal-notice a {
+  color: var(--clr-accent-secondary);
+  text-decoration: none;
+}
+
+.auth-legal-notice a:hover {
+  text-decoration: underline;
+}
+
+/* Policy Update Modal Message */
+.policy-update-message {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--clr-text-secondary);
+  line-height: 1.7;
+  padding: 0.5rem 0;
+}
+
+.policy-update-message a {
+  color: var(--clr-accent-secondary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.policy-update-message a:hover {
+  text-decoration: underline;
+}
+
 /* Color Presets for Space Edit */
 .color-presets {
   display: flex;

@@ -7,6 +7,7 @@ import {
     doc, setDoc, getDoc, getDocFromServer, collection, getDocs,
     writeBatch, onSnapshot, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import { CURRENT_POLICY_VERSION } from './firebase-bridge.js';
 
 // ============================================================================
 // SYNC LOGGING
@@ -200,7 +201,7 @@ export class SyncManager {
 
         if (!this.lastSyncTime || globalMod > lastGlobalSync) {
             const userRef = doc(this.db, 'users', this.user.uid);
-            batch.set(userRef, {
+            const userData = {
                 email: this.user.email,
                 displayName: this.user.displayName || '',
                 settings: {
@@ -212,7 +213,14 @@ export class SyncManager {
                 tags: state.tags || [],
                 activeSpaceId: state.activeSpaceId,
                 lastModified: serverTimestamp()
-            }, { merge: true });
+            };
+
+            // Set policy version on first save (new users)
+            if (!this.lastSyncTime) {
+                userData.acceptedPolicyVersion = CURRENT_POLICY_VERSION;
+            }
+
+            batch.set(userRef, userData, { merge: true });
             globalSaved = true;
             this._syncingGlobalTimestamp = globalMod;
         }

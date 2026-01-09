@@ -845,6 +845,10 @@
               </button>
             </div>
           </form>
+          <p class="auth-legal-notice">
+            By signing in, you agree to our <a href="terms.html" target="_blank">Terms</a> and
+            <a href="privacy.html" target="_blank">Privacy Policy</a>.
+          </p>
           <div class="auth-divider" id="auth-divider"><span>or</span></div>
           <button type="button" id="btn-google-signin" class="btn btn-google">
             <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
@@ -896,6 +900,28 @@
           </button>
           <button type="button" class="btn btn-primary" id="btn-migrate-upload">
             UPLOAD LOCAL DATA
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Policy Update Modal -->
+    <div id="modal-policy" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title">POLICY UPDATE</h3>
+        </div>
+        <div class="modal-body">
+          <p class="policy-update-message">
+            We've updated our <a href="privacy.html" target="_blank">Privacy Policy</a> and
+            <a href="terms.html" target="_blank">Terms of Service</a>.
+            Please review them before continuing.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" id="btn-accept-policy">
+            I ACCEPT
           </button>
         </div>
       </div>

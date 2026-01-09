@@ -179,7 +179,7 @@ export function showPrompt(message, title = 'INPUT', defaultValue = '') {
 /**
  * Show a toast notification
  * @param {string} message - Message to display
- * @param {number} [duration=3000] - Duration in ms
+ * @param {number} [duration=3000] - Duration in ms (0 = no auto-hide, for loading toasts)
  */
 export function showToast(message, duration = 3000) {
     let toast = document.getElementById('toast-notification');
@@ -187,66 +187,113 @@ export function showToast(message, duration = 3000) {
     if (!toast) {
         toast = document.createElement('div');
         toast.id = 'toast-notification';
-        toast.style.cssText = `
-            position: fixed;
-            bottom: 24px;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: rgba(30, 30, 30, 0.9);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 8px;
-            border: 1px solid var(--clr-accent-primary, #4ecdb4);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-            z-index: 10000;
-            font-family: var(--font-action, sans-serif);
-            font-size: 14px;
-            pointer-events: none;
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
-            opacity: 0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        `;
         document.body.appendChild(toast);
     }
 
     // Reset state
-    toast.style.transition = 'none';
-    toast.style.transform = 'translateX(-50%) translateY(100px)';
-    toast.style.opacity = '0';
+    toast.className = '';
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%) translateY(100px);
+        background: rgba(30, 30, 30, 0.95);
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        border: 1px solid var(--clr-accent-primary, #4ecdb4);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        z-index: 10000;
+        font-family: var(--font-action, sans-serif);
+        font-size: 14px;
+        pointer-events: none;
+        opacity: 0;
+        overflow: hidden;
+    `;
 
-    // Set content (spinner only for loading messages that end with "...")
     const isLoading = message.endsWith('...');
-    toast.innerHTML = isLoading
-        ? `<div class="spinner-small" style="width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: var(--clr-accent-primary, #4ecdb4); border-radius: 50%; animation: spin 1s linear infinite;"></div><span>${message}</span>`
-        : `<span>${message}</span>`;
 
-    // Needed for animation restart
-    void toast.offsetWidth;
+    // Build content
+    toast.innerHTML = `
+        ${isLoading ? '<div class="toast-progress"></div>' : ''}
+        <span class="toast-text">${message}</span>
+    `;
 
-    // Animate in
-    requestAnimationFrame(() => {
-        toast.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease';
-        toast.style.transform = 'translateX(-50%) translateY(0)';
-        toast.style.opacity = '1';
-    });
-
-    // Global spin keyframe if not exists
+    // Add styles if not exists
     if (!document.getElementById('toast-style')) {
         const style = document.createElement('style');
         style.id = 'toast-style';
         style.textContent = `
-            @keyframes spin { to { transform: rotate(360deg); } }
+            #toast-notification {
+                transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+            }
+            #toast-notification .toast-progress {
+                position: absolute;
+                top: 0;
+                left: 0;
+                height: 3px;
+                background: var(--clr-accent-primary, #4ecdb4);
+                width: 0%;
+                transition: width 5s cubic-bezier(0.1, 0.4, 0.2, 1);
+            }
+            #toast-notification .toast-progress.complete {
+                transition: width 0.3s ease-out;
+                width: 100% !important;
+            }
+            #toast-notification .toast-text {
+                display: block;
+            }
         `;
         document.head.appendChild(style);
     }
 
-    // Auto hide
-    if (duration > 0) {
+    // Animate in
+    requestAnimationFrame(() => {
+        toast.style.transform = 'translateX(-50%) translateY(0)';
+        toast.style.opacity = '1';
+
+        // Start progress bar animation
+        if (isLoading) {
+            const progress = toast.querySelector('.toast-progress');
+            if (progress) {
+                requestAnimationFrame(() => {
+                    progress.style.width = '85%'; // Goes to 85% over 5 seconds
+                });
+            }
+        }
+    });
+
+    // Auto hide for non-loading toasts
+    if (duration > 0 && !isLoading) {
         setTimeout(() => {
             toast.style.transform = 'translateX(-50%) translateY(100px)';
             toast.style.opacity = '0';
         }, duration);
     }
+}
+
+/**
+ * Complete a loading toast - updates text and finishes progress bar
+ * @param {string} message - New message to display
+ * @param {number} [hideDelay=2000] - How long to show before hiding
+ */
+export function completeToast(message, hideDelay = 2000) {
+    const toast = document.getElementById('toast-notification');
+    if (!toast) return;
+
+    // Update text
+    const textEl = toast.querySelector('.toast-text');
+    if (textEl) textEl.textContent = message;
+
+    // Complete progress bar
+    const progress = toast.querySelector('.toast-progress');
+    if (progress) {
+        progress.classList.add('complete');
+    }
+
+    // Hide after delay
+    setTimeout(() => {
+        toast.style.transform = 'translateX(-50%) translateY(100px)';
+        toast.style.opacity = '0';
+    }, hideDelay);
 }

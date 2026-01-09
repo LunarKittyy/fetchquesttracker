@@ -8,6 +8,7 @@ import { $, $$ } from './utils.js';
 import { saveState, loadState, updateLastSyncedDisplay, updateStorageDisplay, startSyncTimeInterval } from './storage.js';
 import { sortItems } from './utils.js';
 import { syncManager } from './sync-manager.js';
+import { CURRENT_POLICY_VERSION } from './firebase-bridge.js';
 
 // Callbacks
 let renderCallback = null;
@@ -192,6 +193,9 @@ export async function updateAuthUI(user) {
         await window.FirebaseBridge?.fetchStorageUsage?.();
         updateLastSyncedDisplay();
         updateStorageDisplay();
+
+        // Check if user needs to accept updated policies
+        await checkPolicyVersion();
     } else {
         if (elements.btnLogin) elements.btnLogin.classList.remove('hidden');
         if (elements.userMenu) elements.userMenu.classList.add('hidden');
@@ -439,4 +443,57 @@ function handleRealtimeUpdate(data) {
     }, 100);
 
     updateLastSyncedDisplay();
+}
+
+/**
+ * Check if user's accepted policy version is current
+ * Shows policy update modal if outdated
+ */
+async function checkPolicyVersion() {
+    if (!window.FirebaseBridge?.currentUser || !window.FirebaseBridge?.getDb) return;
+
+    const { doc, getDoc, setDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js');
+    const db = window.FirebaseBridge.getDb();
+    const uid = window.FirebaseBridge.currentUser.uid;
+
+    try {
+        const userRef = doc(db, 'users', uid);
+        const userSnap = await getDoc(userRef);
+        const userData = userSnap.exists() ? userSnap.data() : {};
+        const acceptedVersion = userData.acceptedPolicyVersion || 0;
+
+        if (acceptedVersion < CURRENT_POLICY_VERSION) {
+            // Show policy update modal
+            const modal = $('#modal-policy');
+            if (modal) {
+                modal.classList.remove('hidden');
+
+                // Setup accept button handler
+                const acceptBtn = $('#btn-accept-policy');
+                if (acceptBtn) {
+                    acceptBtn.onclick = async () => {
+                        await handlePolicyAccept(userRef, setDoc, serverTimestamp);
+                        modal.classList.add('hidden');
+                    };
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Policy version check failed:', error);
+    }
+}
+
+/**
+ * Handle policy accept button click
+ */
+async function handlePolicyAccept(userRef, setDoc, serverTimestamp) {
+    try {
+        await setDoc(userRef, {
+            acceptedPolicyVersion: CURRENT_POLICY_VERSION,
+            policyAcceptedAt: serverTimestamp()
+        }, { merge: true });
+        console.log('Policy accepted, version:', CURRENT_POLICY_VERSION);
+    } catch (error) {
+        console.error('Failed to update policy acceptance:', error);
+    }
 }

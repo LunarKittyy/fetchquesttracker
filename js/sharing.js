@@ -3,7 +3,7 @@
  * Handles invite creation, acceptance, and shared spaces UI
  */
 
-import { showAlert, showConfirm, showToast } from './popup.js';
+import { showAlert, showConfirm, showToast, completeToast } from './popup.js';
 import { Logger } from './logger.js';
 
 const log = Logger.module('Sharing');
@@ -171,8 +171,9 @@ export async function leaveSharedSpace(ownerId, spaceId, spaceName) {
     if (!confirmed) return null;
 
     try {
-        showToast(`Leaving "${spaceName}"...`);
+        showToast(`Leaving...`);
         await callFunction("leaveSpace", { ownerId, spaceId });
+        completeToast(`Left "${spaceName}"`);
         return { success: true };
     } catch (error) {
         log.error('Failed to leave space', error.message);
@@ -231,7 +232,7 @@ export async function revokeInviteLink(inviteCode) {
 
     try {
         await callFunction("revokeInvite", { inviteCode });
-        showToast("✓ Invite revoked");
+        completeToast("Invite revoked");
         return { success: true };
     } catch (error) {
         log.error('Failed to revoke invite', error.message);

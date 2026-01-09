@@ -46,6 +46,10 @@ import { Logger } from './logger.js';
 
 const log = Logger.module('Firebase');
 
+// Current policy version - increment when Privacy Policy or Terms of Service are updated
+// Users will be prompted to accept updated policies when this increases
+export const CURRENT_POLICY_VERSION = 1;
+
 // Firebase Configuration - FetchQuest Project
 const firebaseConfig = {
     apiKey: "AIzaSyCkMgwo6oujPMhqUrAnIQMwbzV582MFglA",
