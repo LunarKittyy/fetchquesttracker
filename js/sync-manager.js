@@ -178,17 +178,17 @@ export class SyncManager {
             return { success: false, error: 'Not logged in' };
         }
 
-        // Check if user is hovering on a quest card (desktop only)
-        if (!window.FirebaseBridge?.isMobile) {
-            const hoveredCard = document.querySelector('.quest-card:hover');
-            if (hoveredCard) {
-                SyncLog.debug('Delaying save (user hovering on card)');
-                hoveredCard.addEventListener('mouseleave', () => {
-                    this.save(state);
-                }, { once: true });
-                return { success: false, error: 'Delayed for hover' };
-            }
-        }
+        // Check if user is hovering on a quest card (desktop only) - DISABLED as requested
+        // if (!window.FirebaseBridge?.isMobile) {
+        //     const hoveredCard = document.querySelector('.quest-card:hover');
+        //     if (hoveredCard) {
+        //         SyncLog.debug('Delaying save (user hovering on card)');
+        //         hoveredCard.addEventListener('mouseleave', () => {
+        //             this.save(state);
+        //         }, { once: true });
+        //         return { success: false, error: 'Delayed for hover' };
+        //     }
+        // }
 
         const startTime = Date.now();
         const batch = writeBatch(this.db);
