@@ -49,7 +49,7 @@ export function archiveItem(itemId) {
     // Try current space first, then search all spaces (for cross-space search results)
     let itemIndex = state.items.findIndex(i => i.id === itemId);
     let targetSpace = null;
-    
+
     if (itemIndex === -1) {
         // Search all spaces
         for (const space of state.spaces) {
@@ -65,12 +65,13 @@ export function archiveItem(itemId) {
 
     const items = targetSpace ? targetSpace.items : state.items;
     const archivedItems = targetSpace ? targetSpace.archivedItems : state.archivedItems;
-    
+
     const item = items[itemIndex];
     item.archivedAt = Date.now();
     archivedItems.unshift(item);
     items.splice(itemIndex, 1);
-    saveState();
+    const spaceId = targetSpace ? targetSpace.id : state.activeSpaceId;
+    saveState(spaceId);
 
     // Remove from DOM
     const card = $(`.quest-card[data-id="${itemId}"]`);
@@ -111,7 +112,7 @@ export function restoreItem(itemId) {
 
     state.items.push(item);
     state.archivedItems.splice(itemIndex, 1);
-    saveState();
+    saveState(); // active space
 
     if (insertItemIntoDOMCallback) insertItemIntoDOMCallback(item);
     renderArchive();
@@ -149,7 +150,7 @@ export function deleteArchivedItem(itemId) {
     }
 
     state.archivedItems.splice(itemIndex, 1);
-    saveState();
+    saveState(); // active space
     renderArchive();
 }
 
@@ -168,7 +169,7 @@ export async function deleteAllArchived() {
         const itemsWithStorageImages = state.archivedItems.filter(
             item => item.imageUrl && window.FirebaseBridge.isStorageUrl(item.imageUrl)
         );
-        
+
         // Delete in background, don't block the UI
         if (itemsWithStorageImages.length > 0) {
             Promise.all(

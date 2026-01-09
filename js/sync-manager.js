@@ -317,14 +317,17 @@ export class SyncManager {
         }
 
         const startTime = Date.now();
-        SyncLog.info('Starting cloud save...');
-        this.setStatus('syncing');
+        const batch = writeBatch(this.db);
+        let savedCount = 0;
+        let globalSaved = false;
 
-        try {
+        // Check if global settings need saving
+        const globalMod = state._localModified || 0;
+        const lastGlobalSync = this.lastGlobalSyncedLocal || 0;
+
+        if (!this.lastSyncTime || globalMod > lastGlobalSync) {
             const userRef = doc(this.db, 'users', this.user.uid);
-
-            // Save user document
-            await setDoc(userRef, {
+            batch.set(userRef, {
                 email: this.user.email,
                 displayName: this.user.displayName || '',
                 settings: {
@@ -337,47 +340,77 @@ export class SyncManager {
                 activeSpaceId: state.activeSpaceId,
                 lastModified: serverTimestamp()
             }, { merge: true });
+            globalSaved = true;
+            this._syncingGlobalTimestamp = globalMod;
+        }
 
-            // Save spaces (skip shared spaces)
-            const batch = writeBatch(this.db);
-            let savedCount = 0;
+        // Check each owned space for changes
+        for (const space of state.spaces) {
+            // Skip shared spaces - only save owned spaces
+            if (space.isShared === true || space.isOwned === false) continue;
 
-            for (const space of state.spaces) {
-                // Skip shared spaces - only save owned spaces
-                if (space.isShared === true || space.isOwned === false) {
-                    continue;
-                }
+            const localMod = space._localModified || 0;
+            const lastSync = space._lastSyncedLocal || 0;
 
-                // Process images if bridge has the function
-                let processedItems = space.items || [];
-                let processedArchived = space.archivedItems || [];
+            // Only save if it's never been saved or has local changes
+            if (this.lastSyncTime && localMod <= lastSync && lastSync !== 0) continue;
 
-                if (window.FirebaseBridge?.processItemsForUpload) {
-                    processedItems = await window.FirebaseBridge.processItemsForUpload(
-                        space.items || [], space.id, 'items'
-                    );
-                    processedArchived = await window.FirebaseBridge.processItemsForUpload(
-                        space.archivedItems || [], space.id, 'archived'
-                    );
-                }
+            // Process images if bridge has the function
+            let processedItems = space.items || [];
+            let processedArchived = space.archivedItems || [];
 
-                const spaceRef = doc(this.db, 'users', this.user.uid, 'spaces', space.id);
-                batch.set(spaceRef, {
-                    name: space.name,
-                    color: space.color,
-                    items: processedItems,
-                    archivedItems: processedArchived,
-                    categories: space.categories || [],
-                    collaborators: space.collaborators || null,
-                    lastModified: serverTimestamp()
-                });
-                savedCount++;
+            if (window.FirebaseBridge?.processItemsForUpload) {
+                processedItems = await window.FirebaseBridge.processItemsForUpload(
+                    space.items || [], space.id, 'items'
+                );
+                processedArchived = await window.FirebaseBridge.processItemsForUpload(
+                    space.archivedItems || [], space.id, 'archived'
+                );
             }
 
+            const spaceRef = doc(this.db, 'users', this.user.uid, 'spaces', space.id);
+            batch.set(spaceRef, {
+                name: space.name,
+                color: space.color,
+                items: processedItems,
+                archivedItems: processedArchived,
+                categories: space.categories || [],
+                collaborators: space.collaborators || null,
+                lastModified: serverTimestamp()
+            });
+
+            space._syncingTimestamp = localMod || Date.now();
+            savedCount++;
+        }
+
+        if (savedCount === 0 && !globalSaved) {
+            SyncLog.debug('No changes to save');
+            this.pendingChanges = false;
+            this.setStatus('synced');
+            return { success: true };
+        }
+
+        SyncLog.info(`Syncing ${globalSaved ? 'settings + ' : ''}${savedCount} space(s)...`);
+        this.setStatus('syncing');
+
+        try {
             await batch.commit();
 
             const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
-            SyncLog.success(`Saved ${savedCount} space(s) to cloud (${elapsed}s)`);
+            SyncLog.success(`Cloud save complete (${elapsed}s)`);
+
+            // Update sync markers
+            if (globalSaved) {
+                this.lastGlobalSyncedLocal = this._syncingGlobalTimestamp;
+                delete this._syncingGlobalTimestamp;
+            }
+
+            for (const space of state.spaces) {
+                if (space._syncingTimestamp) {
+                    space._lastSyncedLocal = space._syncingTimestamp;
+                    delete space._syncingTimestamp;
+                }
+            }
 
             this.lastSyncTime = Date.now();
             this.setStatus('synced');
@@ -392,6 +425,9 @@ export class SyncManager {
         } catch (error) {
             SyncLog.error('Cloud save failed', error.message);
             this.setStatus('error');
+            // Clean up markers
+            delete this._syncingGlobalTimestamp;
+            state.spaces.forEach(s => delete s._syncingTimestamp);
             return { success: false, error: error.message };
         }
     }
@@ -433,7 +469,8 @@ export class SyncManager {
                     id: docSnap.id,
                     ...docSnap.data(),
                     isOwned: true,
-                    _cloudTimestamp: docSnap.data().lastModified?.toMillis?.() || Date.now()
+                    _cloudTimestamp: docSnap.data().lastModified?.toMillis?.() || Date.now(),
+                    _lastSyncedLocal: Date.now()
                 });
             });
 
@@ -472,6 +509,7 @@ export class SyncManager {
 
             SyncLog.success(`Loaded ${spaces.length} space(s) from cloud`);
             this.lastSyncTime = Date.now();
+            this.lastGlobalSyncedLocal = Date.now();
             this.setStatus('synced');
             this.isInitializing = false;
 

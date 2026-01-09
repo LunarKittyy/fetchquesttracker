@@ -271,7 +271,8 @@ export function handleSaveSpace() {
         syncActiveSpace();
     }
 
-    saveState();
+    const targetSaveId = spaceId || (state.activeSpaceId);
+    saveState(targetSaveId);
     if (renderCallback) renderCallback();
     if (renderArchiveCallback) renderArchiveCallback();
     renderSpaces();
@@ -303,7 +304,7 @@ export async function handleDeleteSpace() {
                 state.activeSpaceId = state.spaces[0]?.id;
             }
             syncActiveSpace();
-            saveState();
+            saveState(); // active space became the new one or fallback
             if (renderCallback) renderCallback();
             if (renderArchiveCallback) renderArchiveCallback();
             renderSpaces();
@@ -362,7 +363,7 @@ export async function handleDeleteSpace() {
     state.activeSpaceId = state.spaces[0].id;
     syncActiveSpace();
 
-    saveState();
+    saveState(); // active space became the new one or fallback
     if (renderCallback) renderCallback();
     if (renderArchiveCallback) renderArchiveCallback();
     renderSpaces();

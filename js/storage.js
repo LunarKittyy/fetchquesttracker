@@ -36,13 +36,18 @@ export function initStorage(domElements, callbacks) {
 
 /**
  * Save state to both localStorage and cloud (if logged in)
+ * @param {string} modifiedSpaceId - Optional ID of the space that was modified
  */
-export function saveState() {
+export function saveState(modifiedSpaceId = null) {
+    // Set global modification timestamp
+    state._localModified = Date.now();
+
     // Set local modification timestamp for sync comparison
-    const activeSpace = state.spaces.find(s => s.id === state.activeSpaceId);
-    const canEdit = activeSpace && (activeSpace.isOwned !== false || activeSpace.myRole === 'editor');
-    if (canEdit) {
-        activeSpace._localModified = Date.now();
+    const targetId = modifiedSpaceId || state.activeSpaceId;
+    const space = state.spaces.find(s => s.id === targetId);
+
+    if (space && (space.isOwned !== false || space.myRole === 'editor')) {
+        space._localModified = Date.now();
     }
 
     saveStateLocal();

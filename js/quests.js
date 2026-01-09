@@ -54,9 +54,12 @@ export function addItem(data) {
 export function updateItemField(id, field, value, objectiveId = null) {
     // Try current space first, then search all spaces (for cross-space search results)
     let item = state.items.find(i => i.id === id);
+    let spaceId = state.activeSpaceId;
+
     if (!item) {
         const result = findItemAcrossSpaces(state, id);
         item = result.item;
+        if (result.space) spaceId = result.space.id;
     }
     if (!item) return;
 
@@ -82,7 +85,7 @@ export function updateItemField(id, field, value, objectiveId = null) {
         item.completedAt = null;
     }
 
-    saveState();
+    saveState(spaceId);
     return { wasComplete, isNowComplete };
 }
 
@@ -131,7 +134,7 @@ export function deleteItem(id) {
     } else {
         state.items = state.items.filter(i => i.id !== id);
     }
-    saveState();
+    saveState(spaceId);
 
     if (card) {
         card.style.transition = 'all 0.3s ease';
@@ -298,7 +301,7 @@ export function insertItemIntoDOM(item) {
 function renderCustomTags(item) {
     if (!item.tags || item.tags.length === 0) return '';
     if (!state.tags || state.tags.length === 0) return '';
-    
+
     return item.tags.map(tagId => {
         const tag = state.tags.find(t => t.id === tagId);
         if (!tag) return '';
@@ -546,7 +549,7 @@ export function updateCardProgress(id, archiveItemCallback) {
                     }, 800);
                 }
             };
-            
+
             // On mobile, use touchend since mouseleave doesn't fire properly
             if (window.FirebaseBridge?.isMobile) {
                 // Use a short delay to let touch sequence complete
