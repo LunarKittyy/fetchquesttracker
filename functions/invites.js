@@ -119,7 +119,16 @@ exports.acceptInvite = functions
 
         // 4. Check not already used
         if (invite.usedBy) {
-            throw new functions.https.HttpsError("already-exists", "Invite already used");
+            // If used by THIS user, return success (idempotent)
+            if (invite.usedBy === userId) {
+                return {
+                    success: true,
+                    spaceName: invite.spaceName,
+                    role: invite.role,
+                    alreadyJoined: true,
+                };
+            }
+            throw new functions.https.HttpsError("already-exists", "This invite was already used by someone else");
         }
 
         // 5. Can't join your own space

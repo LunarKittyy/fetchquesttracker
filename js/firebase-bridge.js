@@ -478,7 +478,8 @@ window.FirebaseBridge = {
             const batch = writeBatch(db);
             for (const space of state.spaces) {
                 // Skip shared spaces - don't save to our own collection
-                if (space.isOwned === false) {
+                // Check isShared flag since isOwned might be undefined
+                if (space.isShared === true) {
                     continue;
                 }
 
