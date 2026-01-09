@@ -60,14 +60,14 @@
 
 ## In Progress
 
-- [/] Bulk Entry Enhancements
+- [x] Bulk Entry Enhancements
   - [x] OCR text extraction (Tesseract.js)
   - [x] CSP update for WebAssembly support
   - [x] Pin button to keep form open when adding multiple items
   - [x] X buttons in preview list (event delegation + renderPreview)
-  - [/] Real-time preview update (live typing)
-  - [/] OCR character filtering (letters + basic punctuation only)
-  - [/] Form overlay instead of push down when expanded
+  - [x] Real-time preview update (live typing)
+  - [x] OCR character filtering (letters + basic punctuation only)
+  - [x] Form overlay instead of push down when expanded
 
 ## Deferred
 

@@ -54,7 +54,7 @@ export async function openAuthModal() {
     document.querySelectorAll('.modal:not(.hidden)').forEach(modal => {
         modal.classList.add('hidden');
     });
-    
+
     if (elements.modalAuth) {
         elements.modalAuth.classList.remove('hidden');
         switchAuthTab('signin');
@@ -304,7 +304,7 @@ export async function handleGoogleSignIn() {
 
     clearAuthErrors();
     const result = await window.FirebaseBridge.signInWithGoogle();
-    
+
     if (!result.success) {
         showAuthError('signin', result.error);
     }
