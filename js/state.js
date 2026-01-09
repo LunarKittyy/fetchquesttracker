@@ -86,8 +86,9 @@ export function syncActiveSpace() {
  */
 export function isViewOnly() {
     if (!activeSpace) return false;
-    // Owned spaces are always editable
-    if (!activeSpace.isShared) return false;
+    // Owned spaces are always editable (isOwned is undefined or true)
+    // Only spaces explicitly marked as not owned (isOwned === false) can be view-only
+    if (activeSpace.isOwned !== false) return false;
     // Shared spaces: only editors can edit, viewers are read-only
     return activeSpace.myRole !== 'editor';
 }

@@ -3,7 +3,7 @@
  * Handles space creation, editing, switching
  */
 
-import { state, syncActiveSpace, DEFAULT_CATEGORIES } from './state.js';
+import { state, syncActiveSpace, DEFAULT_CATEGORIES, isViewOnly } from './state.js';
 import { $, $$, escapeHtml, getItemProgress } from './utils.js';
 import { saveState, saveStateLocal } from './storage.js';
 import { showConfirm, showAlert } from './popup.js';
@@ -105,6 +105,9 @@ export function switchSpace(spaceId) {
     state.activeSpaceId = spaceId;
     syncActiveSpace();
     saveStateLocal(); // Local only - don't sync just for switching spaces
+
+    // Update view-only mode class for shared spaces
+    document.body.classList.toggle('view-only', isViewOnly());
 
     // Complete re-render
     if (renderCallback) renderCallback();

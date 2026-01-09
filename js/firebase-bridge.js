@@ -499,7 +499,6 @@ window.FirebaseBridge = {
                     archivedItems: processedArchived,
                     categories: space.categories || [],
                     collaborators: space.collaborators || null,
-                    isShared: space.isShared || false,
                     lastModified: serverTimestamp()
                 });
             }
