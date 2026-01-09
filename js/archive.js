@@ -3,7 +3,7 @@
  * Handles archive panel functionality
  */
 
-import { state } from './state.js';
+import { state, isViewOnly } from './state.js';
 import { $, escapeHtml, getTimeAgo } from './utils.js';
 import { saveState } from './storage.js';
 import { showConfirm } from './popup.js';
@@ -219,15 +219,19 @@ export function renderArchive() {
     }
 
     // Add delete all button at top
-    let html = `
-        <button class="btn btn-danger archive-delete-all" data-action="delete-all" style="margin-bottom: 1rem; width: 100%;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="3 6 5 6 21 6"/>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-            </svg>
-            DELETE ALL
-        </button>
-    `;
+    let html = '';
+
+    if (!isViewOnly()) {
+        html += `
+            <button class="btn btn-danger archive-delete-all" data-action="delete-all" style="margin-bottom: 1rem; width: 100%;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+                DELETE ALL
+            </button>
+        `;
+    }
 
     html += state.archivedItems.map(item => {
         const timeAgo = getTimeAgo(item.archivedAt || item.completedAt);
@@ -245,6 +249,7 @@ export function renderArchive() {
                         <span>${timeAgo}</span>
                     </div>
                 </div>
+                ${!isViewOnly() ? `
                 <button class="archive-card-restore" data-action="restore" title="Restore to active">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="1 4 1 10 7 10"/>
@@ -257,6 +262,7 @@ export function renderArchive() {
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                     </svg>
                 </button>
+                ` : ''}
             </div>
         `;
     }).join('');

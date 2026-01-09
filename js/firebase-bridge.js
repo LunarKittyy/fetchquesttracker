@@ -194,12 +194,15 @@ window.FirebaseBridge = {
     // Auth state
     currentUser: null,
     authStateListeners: [],
+    authInitialized: false,
 
     // Subscribe to auth changes
     onAuthChange(callback) {
         this.authStateListeners.push(callback);
-        // Call immediately with current state
-        callback(this.currentUser);
+        // Call immediately with current state ONLY if we've received an update from Firebase
+        if (this.authInitialized) {
+            callback(this.currentUser);
+        }
         return () => {
             this.authStateListeners = this.authStateListeners.filter(cb => cb !== callback);
         };
@@ -735,6 +738,7 @@ window.FirebaseBridge = {
 if (auth) {
     onAuthStateChanged(auth, (user) => {
         window.FirebaseBridge.currentUser = user;
+        window.FirebaseBridge.authInitialized = true;
         console.log('Auth state changed:', user ? user.email : 'signed out');
         window.FirebaseBridge.authStateListeners.forEach(cb => cb(user));
     });

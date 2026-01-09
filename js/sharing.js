@@ -93,10 +93,11 @@ export async function acceptInvite(inviteCode) {
     try {
         const result = await callFunction("acceptInvite", { inviteCode });
 
-        showAlert(
+        await showAlert(
             `You now have ${result.data.role} access to "${result.data.spaceName}".`,
             "JOINED SPACE"
         );
+        window.location.reload();
 
         return result.data;
     } catch (error) {
