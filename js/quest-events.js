@@ -196,6 +196,140 @@ export function handleQuestAction(e) {
         case 'start-category-edit':
             startCategoryEdit(itemId);
             break;
+        case 'edit-obj-name': {
+            const nameEl = e.target.closest('.objective-name');
+            const objEl = e.target.closest('.objective-row');
+            const objId = objEl?.dataset.objectiveId;
+            const objective = item?.objectives.find(o => o.id === objId);
+
+            if (!nameEl || !objective) return;
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'objective-name-edit';
+            input.value = objective.name;
+            input.style.cssText = 'width: 100%; font-size: inherit; padding: 2px 4px; border-radius: 4px; border: 1px solid var(--clr-accent-primary); background: var(--clr-bg-tertiary); color: inherit;';
+
+            nameEl.replaceWith(input);
+            input.focus();
+            input.select();
+
+            const finishEdit = () => {
+                const newName = input.value.trim() || objective.name;
+                updateItemField(itemId, 'name', newName, objId); // Calls specific objective update
+
+                const span = document.createElement('span');
+                span.className = 'objective-name';
+                span.dataset.action = 'edit-obj-name';
+                span.textContent = newName;
+                if (input.parentNode) input.replaceWith(span);
+            };
+
+            input.addEventListener('blur', finishEdit);
+            input.addEventListener('keydown', (ev) => {
+                if (ev.key === 'Enter') input.blur();
+                if (ev.key === 'Escape') {
+                    input.value = objective.name;
+                    input.blur();
+                }
+            });
+            break;
+        }
+        case 'edit-obj-current': {
+            const currentEl = e.target.closest('.objective-current');
+            const objEl = e.target.closest('.objective-row');
+            const objId = objEl?.dataset.objectiveId;
+            const objective = item?.objectives.find(o => o.id === objId);
+
+            if (!currentEl || !objective) return;
+
+            const currentVal = objective.current || 0;
+            const targetVal = objective.target || 1;
+
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.min = '0';
+            input.max = targetVal;
+            input.className = 'objective-current-edit';
+            input.value = currentVal;
+            input.style.cssText = 'width: 3em; text-align: center; font-size: inherit; padding: 0 2px; border-radius: 4px; border: 1px solid var(--clr-accent-primary); background: var(--clr-bg-tertiary); color: inherit;';
+
+            currentEl.replaceWith(input);
+            input.focus();
+            input.select();
+
+            const finishEdit = () => {
+                let newVal = parseInt(input.value);
+                if (isNaN(newVal)) newVal = currentVal;
+                newVal = Math.min(targetVal, Math.max(0, newVal));
+
+                updateItemField(itemId, 'current', newVal, objId);
+
+                const span = document.createElement('span');
+                span.className = 'objective-current';
+                span.dataset.action = 'edit-obj-current';
+                span.title = 'Edit current';
+                span.textContent = newVal;
+
+                if (input.parentNode) input.replaceWith(span);
+                updateObjectiveDisplay(itemId, objId, archiveItem);
+            };
+
+            input.addEventListener('blur', finishEdit);
+            input.addEventListener('keydown', (ev) => {
+                if (ev.key === 'Enter') input.blur();
+                if (ev.key === 'Escape') {
+                    input.value = currentVal;
+                    input.blur();
+                }
+            });
+            break;
+        }
+        case 'edit-obj-goal': {
+            const targetEl = e.target.closest('.objective-target');
+            const objEl = e.target.closest('.objective-row');
+            const objId = objEl?.dataset.objectiveId;
+            const objective = item?.objectives.find(o => o.id === objId);
+
+            if (!targetEl || !objective) return;
+
+            const currentTarget = objective.target || 1;
+
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.min = '1';
+            input.className = 'objective-goal-edit';
+            input.value = currentTarget;
+            input.style.cssText = 'width: 3em; text-align: center; font-size: inherit; padding: 0 2px; border-radius: 4px; border: 1px solid var(--clr-accent-primary); background: var(--clr-bg-tertiary); color: inherit;';
+
+            targetEl.replaceWith(input);
+            input.focus();
+            input.select();
+
+            const finishEdit = () => {
+                const newTarget = Math.max(1, parseInt(input.value) || currentTarget);
+                updateItemField(itemId, 'target', newTarget, objId);
+
+                const span = document.createElement('span');
+                span.className = 'objective-target';
+                span.dataset.action = 'edit-obj-goal';
+                span.title = 'Edit goal';
+                span.textContent = newTarget;
+
+                if (input.parentNode) input.replaceWith(span);
+                updateObjectiveDisplay(itemId, objId, archiveItem);
+            };
+
+            input.addEventListener('blur', finishEdit);
+            input.addEventListener('keydown', (ev) => {
+                if (ev.key === 'Enter') input.blur();
+                if (ev.key === 'Escape') {
+                    input.value = currentTarget;
+                    input.blur();
+                }
+            });
+            break;
+        }
         case 'open-edit-tags':
             openEditTagsModal(itemId);
             break;

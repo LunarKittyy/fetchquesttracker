@@ -98,7 +98,18 @@ body {
   min-height: 100vh;
   line-height: 1.5;
   position: relative;
+  /* Disable text selection for app-like feel */
+  -webkit-user-select: none;
+  user-select: none;
   overflow-x: hidden;
+}
+
+/* Re-enable selection for inputs and textareas */
+input,
+textarea,
+[contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 /* --- CRT Effects --- */
@@ -2486,7 +2497,7 @@ body.shake {
 }
 
 .btn-control:disabled {
-  opacity: 0.25;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
@@ -2648,6 +2659,49 @@ body.shake {
   font-size: 0.85rem;
   color: var(--clr-text-primary);
   transition: all 0.2s ease;
+  cursor: pointer;
+  padding: 0 4px;
+  border-radius: 4px;
+}
+
+.objective-name:hover {
+  background: var(--clr-bg-eleveated);
+  color: var(--clr-accent-primary);
+}
+
+.objective-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 0.5rem;
+}
+
+.objective-count {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  color: var(--clr-text-secondary);
+  min-width: 40px;
+  text-align: center;
+}
+
+.objective-current,
+.objective-target {
+  cursor: pointer;
+  padding: 0 2px;
+  border-radius: 2px;
+  transition: all 0.2s ease;
+}
+
+.objective-current:hover,
+.objective-target:hover {
+  color: var(--clr-accent-primary);
+  background: var(--clr-bg-elevated);
+}
+
+.objective-divider {
+  color: var(--clr-text-muted);
+  margin: 0 1px;
 }
 
 .objective-item.complete .objective-name {

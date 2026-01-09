@@ -807,7 +807,7 @@ async function init() {
 
     // Context menu
     elements.contextMenu?.addEventListener('click', handleContextMenuAction);
-    elements.questContainer?.addEventListener('contextmenu', handleQuestContextMenu);
+    // elements.questContainer?.addEventListener('contextmenu', handleQuestContextMenu); // Disabled as requested
     document.addEventListener('click', hideContextMenu);
 
     // Space modal

@@ -81,6 +81,9 @@ function handleMouseDown(e) {
     const handle = e.target.closest('.drag-handle');
     if (!handle) return;
 
+    // Disable on mobile
+    if (document.body.classList.contains('is-mobile')) return;
+
     const card = handle.closest('.quest-card');
     if (!card) return;
 

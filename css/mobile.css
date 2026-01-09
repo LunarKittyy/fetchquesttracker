@@ -347,6 +347,11 @@ body.is-mobile .quest-card {
   /* Prevent button cutoff */
 }
 
+/* Hide drag handle on mobile */
+body.is-mobile .drag-handle {
+  display: none !important;
+}
+
 body.is-mobile .quest-content {
   padding: 0;
   min-width: 0;

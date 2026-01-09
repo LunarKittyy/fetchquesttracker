@@ -341,17 +341,25 @@ export function createQuestCardHTML(item) {
                         </svg>
                     </div>
                     <div class="objective-info">
-                        <div class="objective-item" data-objective-id="${obj.id}">
-                    <div class="objective-header">
-                        <span class="objective-name">${escapeHtml(obj.name)}</span>
-                        ${obj.imageUrl ? `<button class="btn-image-preview" onclick="event.stopPropagation(); window.open('${obj.imageUrl}', '_blank')">📷</button>` : ''}
-                    </div>
-                    <div class="objective-controls">
-                        <button class="btn-control btn-obj-decrement" data-action="obj-decrement" ${obj.current <= 0 ? 'disabled' : ''}>-</button>
-                        <span class="objective-count">${formatBigNumber(obj.current)} / ${formatBigNumber(obj.target)}</span>
-                        <button class="btn-control btn-obj-increment" data-action="obj-increment" ${obj.current >= obj.target ? 'disabled' : ''}>+</button>
-                    </div>
-                </div>
+                        <div class="objective-row" data-objective-id="${obj.id}">
+                            <div class="objective-header">
+                                <span class="objective-name" data-action="edit-obj-name" title="Edit name">${escapeHtml(obj.name)}</span>
+                                ${obj.imageUrl ? `<button class="btn-image-preview" onclick="event.stopPropagation(); window.open('${obj.imageUrl}', '_blank')">📷</button>` : ''}
+                            </div>
+                            <div class="objective-controls">
+                                <button class="btn-control btn-obj-decrement" data-action="obj-decrement" ${obj.current <= 0 ? 'disabled' : ''}>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                </button>
+                                <span class="objective-count">
+                                    <span class="objective-current" data-action="edit-obj-current" title="Edit current">${formatBigNumber(obj.current)}</span>
+                                    <span class="objective-divider">/</span>
+                                    <span class="objective-target" data-action="edit-obj-goal" title="Edit goal">${formatBigNumber(obj.target)}</span>
+                                </span>
+                                <button class="btn-control btn-obj-increment" data-action="obj-increment" ${obj.current >= obj.target ? 'disabled' : ''}>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
