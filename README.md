@@ -9,6 +9,7 @@ A stylish quest/item tracker web application with Firebase cloud sync support.
 ### Core Functionality
 
 - **Spaces** - Organize quests into separate spaces with custom colors
+- **Collaborative Spaces** - Invite others to your spaces via link. Real-time sync with role-based access (Viewer/Editor)
 - **Quest Types** - Track items (count-based) or objectives (checkbox-based)
 - **Categories** - Group quests within spaces, with category manager to remove unused ones
 - **Custom Tags** - Create colored tags for flexible organization. Assign multiple tags per quest.
@@ -144,6 +145,7 @@ See [TASKS.md](TASKS.md) for detailed progress tracking.
 
 ### Recently Completed
 
+- **Collaborative Spaces**: Share spaces via invite links, role-based permissions (Viewer/Editor), real-time collaboration (a bit flaky sometimes but it Works™)
 - **Mobile Interface**: Full mobile support with bottom navigation, touch gestures, and long-press context menus
 - **Cross-Space Search**: Search across all spaces at once, with space tags on results
 - **Custom Tagging System**: Create & assign colored tags to quests, search via `tag:` prefix, bulk select by tag
