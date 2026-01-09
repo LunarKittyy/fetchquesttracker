@@ -384,7 +384,11 @@ export function handleRealtimeUpdate(data, pendingLocalChange, callbacks) {
     document.body.classList.add('sync-update');
 
     if (data.spaces) {
-        state.spaces = data.spaces;
+        // Preserve shared spaces (isOwned === false) and merge with updated owned spaces
+        const sharedSpaces = state.spaces.filter(s => s.isOwned === false);
+        const updatedOwnedSpaces = data.spaces.map(s => ({ ...s, isOwned: true }));
+        state.spaces = [...updatedOwnedSpaces, ...sharedSpaces];
+
         // Only update activeSpaceId if the current one no longer exists
         const currentSpaceExists = state.spaces.some(s => s.id === state.activeSpaceId);
         if (!currentSpaceExists) {
