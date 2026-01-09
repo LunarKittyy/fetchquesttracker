@@ -38,9 +38,11 @@ export function initStorage(domElements, callbacks) {
  * Save state to both localStorage and cloud (if logged in)
  */
 export function saveState() {
-    // Set local modification timestamp on active space for sync comparison
+    // Set local modification timestamp for sync comparison
+    // For owned spaces and shared spaces where user is editor
     const activeSpace = state.spaces.find(s => s.id === state.activeSpaceId);
-    if (activeSpace) {
+    const canEdit = activeSpace && (activeSpace.isOwned !== false || activeSpace.myRole === 'editor');
+    if (canEdit) {
         activeSpace._localModified = Date.now();
     }
 

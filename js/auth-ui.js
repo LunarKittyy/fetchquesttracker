@@ -433,16 +433,27 @@ export function handleRealtimeUpdate(data, pendingLocalChange, callbacks) {
         };
 
         if (existingIndex >= 0) {
-            // Compare timestamps - only update if incoming is newer
             const existingSpace = state.spaces[existingIndex];
-            const incomingTime = update.data.lastModified?.toMillis?.() ||
-                update.data.lastModified?.seconds * 1000 || 0;
-            const localTime = existingSpace.lastModified?.toMillis?.() ||
-                existingSpace.lastModified?.seconds * 1000 || 0;
+            const isViewer = existingSpace.myRole === 'viewer';
 
-            if (incomingTime >= localTime) {
-                console.log(`📡 Updating shared space "${update.data.name}"`);
+            if (isViewer) {
+                // Viewers can't edit, always accept incoming data
+                console.log(`📡 Updating shared space "${update.data.name}" (viewer)`);
                 state.spaces[existingIndex] = updatedSpace;
+            } else {
+                // Editors can make changes - use timestamp comparison
+                const incomingTime = update.data.lastModified?.toMillis?.() ||
+                    update.data.lastModified?.seconds * 1000 || 0;
+                const localTime = existingSpace._localModified ||
+                    existingSpace.lastModified?.toMillis?.() ||
+                    existingSpace.lastModified?.seconds * 1000 || 0;
+
+                if (incomingTime >= localTime) {
+                    console.log(`📡 Updating shared space "${update.data.name}" (editor, newer data)`);
+                    state.spaces[existingIndex] = updatedSpace;
+                } else {
+                    console.log(`📡 Keeping local shared space "${update.data.name}" (editor, local newer)`);
+                }
             }
         } else {
             // New shared space
