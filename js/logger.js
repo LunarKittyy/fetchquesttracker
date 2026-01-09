@@ -439,14 +439,40 @@ function toggleDebugPanel() {
 // ERROR BOUNDARY
 // ============================================================================
 
+// Rate limit: max 1 error per 5 seconds to prevent spamming Firestore
+let lastErrorTime = 0;
+function reportError(msg, data = {}) {
+    const now = Date.now();
+    if (now - lastErrorTime < 5000) return;
+    lastErrorTime = now;
+
+    if (window.FirebaseBridge && window.FirebaseBridge.logErrorToCloud) {
+        window.FirebaseBridge.logErrorToCloud({
+            message: msg,
+            stack: data.stack || '',
+            file: data.file || '',
+            line: data.line || ''
+        });
+    }
+}
+
 function setupErrorBoundary() {
     window.addEventListener('error', (e) => {
-        Logger.error(`Uncaught: ${e.message}`, { file: e.filename, line: e.lineno });
+        const errorMsg = e.message || 'Unknown error';
+        Logger.error(`Uncaught: ${errorMsg}`, { file: e.filename, line: e.lineno });
+        reportError(errorMsg, {
+            file: e.filename,
+            line: e.lineno,
+            stack: e.error ? e.error.stack : ''
+        });
     });
 
     window.addEventListener('unhandledrejection', (e) => {
         const reason = e.reason?.message || e.reason || 'Unknown';
         Logger.error(`Unhandled Promise: ${reason}`);
+        reportError(`Unhandled Promise: ${reason}`, {
+            stack: e.reason ? e.reason.stack : ''
+        });
     });
 }
 

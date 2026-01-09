@@ -19,6 +19,7 @@ import {
 import {
     getFirestore,
     doc,
+    addDoc,
     getDoc,
     setDoc,
     updateDoc,
@@ -742,6 +743,35 @@ window.FirebaseBridge = {
         } catch (error) {
             console.error('Delete space error:', error);
             return { success: false, error: error.message };
+        }
+    },
+
+    // Log error to Firestore (Privacy-First Crash Reporter)
+    async logErrorToCloud(errorInfo) {
+        if (!db || !this.currentUser) return; // Only log if logged in and initialized
+
+        try {
+            const logsRef = collection(db, 'crash_reports');
+            await addDoc(logsRef, {
+                userId: this.currentUser.uid,
+                userEmail: this.currentUser.email,
+                timestamp: serverTimestamp(),
+                error: {
+                    message: errorInfo.message || 'Unknown error',
+                    stack: errorInfo.stack || '',
+                    file: errorInfo.file || '',
+                    line: errorInfo.line || ''
+                },
+                device: {
+                    userAgent: navigator.userAgent,
+                    platform: navigator.platform,
+                    url: window.location.href
+                },
+                appVersion: '5.1.0' // Match version in CHANGELOG
+            });
+            console.log('🐞 Error report sent securely to your database.');
+        } catch (e) {
+            console.error('Failed to send error report:', e);
         }
     }
 };
