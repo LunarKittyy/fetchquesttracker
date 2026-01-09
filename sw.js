@@ -3,12 +3,12 @@
  * Caches static assets for offline access
  */
 
-const CACHE_NAME = 'fetchquest-v4.2';
+const CACHE_NAME = 'fetchquest-v4.3';
 const STATIC_ASSETS = [
     '/',
     '/index.html',
-    '/style.css',
-    '/mobile.css',
+    '/css/style.css',
+    '/css/mobile.css',
     '/app.js',
     '/favicon.svg',
     '/manifest.json',

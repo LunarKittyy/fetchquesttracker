@@ -51,7 +51,7 @@ export function initMobileNav() {
 function loadMobileCSS() {
   const link = document.createElement("link");
   link.rel = "stylesheet";
-  link.href = "mobile.css";
+  link.href = "css/mobile.css";
   link.id = "mobile-styles";
   document.head.appendChild(link);
 }
