@@ -1210,6 +1210,49 @@ function openShareModal(spaceId) {
     const titleEl = modal?.querySelector('.modal-title');
     if (titleEl) titleEl.textContent = `SHARE: ${space.name}`;
 
+    // Show collaborators section if there are any
+    const collabSection = $('#collaborators-section');
+    const collabList = $('#collaborators-list');
+
+    if (collabSection && collabList) {
+        const collaborators = space.collaborators || {};
+        const collabEntries = Object.entries(collaborators);
+
+        if (collabEntries.length > 0) {
+            collabSection.classList.remove('hidden');
+            collabList.innerHTML = collabEntries.map(([userId, data]) => `
+                <div class="collaborator-item" data-user-id="${userId}">
+                    <div class="collaborator-info">
+                        <span class="collaborator-email">${escapeHtml(data.displayName || data.email || 'Unknown')}</span>
+                        <span class="collaborator-role ${data.role}">${data.role}</span>
+                    </div>
+                    <button type="button" class="btn-remove-collaborator" data-user-id="${userId}" title="Remove access">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                    </button>
+                </div>
+            `).join('');
+
+            // Add click handlers for remove buttons
+            collabList.querySelectorAll('.btn-remove-collaborator').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const targetUserId = btn.dataset.userId;
+                    const { revokeAccess } = await import('./js/sharing.js');
+                    const result = await revokeAccess(spaceId, targetUserId);
+                    if (result && result.success) {
+                        // Remove from local state and re-render
+                        delete space.collaborators[targetUserId];
+                        openShareModal(spaceId); // Refresh the modal
+                    }
+                });
+            });
+        } else {
+            collabSection.classList.add('hidden');
+        }
+    }
+
     modal?.classList.remove('hidden');
 }
 

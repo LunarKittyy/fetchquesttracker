@@ -162,22 +162,51 @@ export function openSpaceEditModal(spaceId) {
     const modal = $('#modal-space');
     if (!modal) return;
 
-    $('#edit-space-id').value = spaceId;
-    $('#edit-space-name').value = space.name;
-    $('#edit-space-color').value = space.color;
-
-    // Update modal title
-    modal.querySelector('.modal-title').textContent = 'EDIT SPACE';
-
-    // Show delete button only if not the last space
+    const isShared = space.isShared === true;
+    const saveBtn = $('#btn-save-space');
     const deleteBtn = $('#btn-delete-space');
-    deleteBtn.style.display = state.spaces.length > 1 ? 'block' : 'none';
+    const nameInput = $('#edit-space-name');
+    const colorPresets = $('#color-presets');
+
+    $('#edit-space-id').value = spaceId;
+    nameInput.value = space.name;
+    $('#edit-space-color').value = space.color;
+    // Store ownerId for leave action
+    modal.dataset.ownerId = space.ownerId || '';
+
+    if (isShared) {
+        // Shared space - user is a guest
+        modal.querySelector('.modal-title').textContent = 'SHARED SPACE';
+        // Make name and color read-only
+        nameInput.disabled = true;
+        colorPresets.style.pointerEvents = 'none';
+        colorPresets.style.opacity = '0.5';
+        // Hide save button
+        if (saveBtn) saveBtn.style.display = 'none';
+        // Show leave button instead of delete
+        deleteBtn.textContent = 'LEAVE SPACE';
+        deleteBtn.classList.remove('btn-danger');
+        deleteBtn.classList.add('btn-warning');
+        deleteBtn.style.display = 'block';
+    } else {
+        // Owned space - normal edit
+        modal.querySelector('.modal-title').textContent = 'EDIT SPACE';
+        nameInput.disabled = false;
+        colorPresets.style.pointerEvents = '';
+        colorPresets.style.opacity = '';
+        if (saveBtn) saveBtn.style.display = '';
+        deleteBtn.textContent = 'DELETE';
+        deleteBtn.classList.add('btn-danger');
+        deleteBtn.classList.remove('btn-warning');
+        // Show delete button only if not the last space
+        deleteBtn.style.display = state.spaces.length > 1 ? 'block' : 'none';
+    }
 
     // Highlight selected color
     updateColorSwatchSelection(space.color);
 
     modal.classList.remove('hidden');
-    $('#edit-space-name').focus();
+    if (!isShared) nameInput.focus();
 }
 
 /**
@@ -250,7 +279,7 @@ export function handleSaveSpace() {
 }
 
 /**
- * Handle deleting a space
+ * Handle deleting a space (or leaving if it's a shared space)
  */
 export async function handleDeleteSpace() {
     const spaceId = $('#edit-space-id').value;
@@ -259,6 +288,30 @@ export async function handleDeleteSpace() {
     const space = state.spaces.find(s => s.id === spaceId);
     if (!space) return;
 
+    // If it's a shared space, handle as "leave" instead of "delete"
+    if (space.isShared === true) {
+        const { leaveSharedSpace } = await import('./sharing.js');
+        const result = await leaveSharedSpace(space.ownerId, spaceId, space.name);
+
+        if (result && result.success) {
+            // Remove from local state
+            state.spaces = state.spaces.filter(s => s.id !== spaceId);
+            if (state.activeSpaceId === spaceId) {
+                state.activeSpaceId = state.spaces[0]?.id;
+            }
+            syncActiveSpace();
+            saveState();
+            if (renderCallback) renderCallback();
+            if (renderArchiveCallback) renderArchiveCallback();
+            renderSpaces();
+            if (updateCategoryDropdownCallback) updateCategoryDropdownCallback();
+            $('#modal-space').classList.add('hidden');
+            playSound('tick');
+        }
+        return;
+    }
+
+    // Regular delete flow for owned spaces
     if (state.spaces.length <= 1) {
         await showAlert('Cannot delete the last remaining space.', 'ERROR');
         return;

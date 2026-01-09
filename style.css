@@ -4628,3 +4628,102 @@ body.view-only .view-only-badge {
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
+
+/* Warning Button */
+.btn-warning {
+  background: transparent;
+  color: var(--clr-accent-primary);
+  border: 1px solid var(--clr-accent-primary);
+}
+
+.btn-warning:hover {
+  background: rgba(232, 184, 74, 0.1);
+}
+
+/* Collaborators Section */
+.collaborators-section {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: var(--border-subtle);
+}
+
+.collaborators-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--clr-text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.collaborators-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.collaborator-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: var(--clr-bg-tertiary);
+  border-radius: var(--radius-sm);
+  border: var(--border-subtle);
+}
+
+.collaborator-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.collaborator-email {
+  font-size: 0.75rem;
+  color: var(--clr-text-primary);
+}
+
+.collaborator-role {
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 0.15rem 0.4rem;
+  background: var(--clr-bg-elevated);
+  border-radius: var(--radius-sm);
+  color: var(--clr-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.collaborator-role.editor {
+  color: var(--clr-accent-secondary);
+}
+
+.btn-remove-collaborator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: none;
+  border: none;
+  color: var(--clr-text-muted);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all 0.15s ease;
+}
+
+.btn-remove-collaborator:hover {
+  color: var(--clr-accent-danger);
+  background: rgba(212, 84, 84, 0.1);
+}
+
+.btn-remove-collaborator svg {
+  width: 14px;
+  height: 14px;
+}
+
+.collaborators-empty {
+  font-size: 0.75rem;
+  color: var(--clr-text-muted);
+  text-align: center;
+  padding: 1rem;
+}
