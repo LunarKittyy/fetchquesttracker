@@ -220,6 +220,21 @@ export function updateSyncStatusUI(status) {
 }
 
 /**
+ * Check if user has meaningful local data
+ */
+function hasLocalData() {
+    try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (!stored) return false;
+        const data = JSON.parse(stored);
+        // Check if there are any spaces with items
+        return data.spaces?.some(s => s.items && s.items.length > 0);
+    } catch {
+        return false;
+    }
+}
+
+/**
  * Handle sign in form submit
  */
 export async function handleSignIn(e) {
@@ -230,6 +245,17 @@ export async function handleSignIn(e) {
     if (!window.FirebaseBridge?.isConfigured) {
         showAuthError('signin', 'Firebase not configured.');
         return;
+    }
+
+    // Warn if local data exists
+    if (hasLocalData()) {
+        const { showConfirm } = await import('./popup.js');
+        const confirmed = await showConfirm(
+            'Signing in will replace your local data with cloud data. Continue?',
+            'OVERWRITE LOCAL DATA',
+            true
+        );
+        if (!confirmed) return;
     }
 
     clearAuthErrors();
@@ -290,6 +316,17 @@ export async function handleGoogleSignIn() {
         return;
     }
 
+    // Warn if local data exists
+    if (hasLocalData()) {
+        const { showConfirm } = await import('./popup.js');
+        const confirmed = await showConfirm(
+            'Signing in will replace your local data with cloud data. Continue?',
+            'OVERWRITE LOCAL DATA',
+            true
+        );
+        if (!confirmed) return;
+    }
+
     clearAuthErrors();
     const result = await window.FirebaseBridge.signInWithGoogle();
 
@@ -304,6 +341,8 @@ export async function handleGoogleSignIn() {
 export async function handleLogout() {
     if (elements.userDropdown) elements.userDropdown.classList.add('hidden');
     await window.FirebaseBridge?.signOut();
+    localStorage.removeItem(STORAGE_KEY);
+    window.location.reload();
 }
 
 /**
@@ -581,6 +620,16 @@ export async function handleChangeName() {
 
     try {
         await updateProfile(user, { displayName });
+
+        // Sync display name to Firestore for persistence
+        const { doc, setDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js');
+        const db = window.FirebaseBridge.getDb();
+        const userRef = doc(db, 'users', user.uid);
+        await setDoc(userRef, {
+            displayName,
+            displayNameUpdatedAt: serverTimestamp()
+        }, { merge: true });
+
         if (elements.userDisplayName) {
             elements.userDisplayName.textContent = displayName;
         }

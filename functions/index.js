@@ -13,6 +13,7 @@ exports.revokeAccess = invites.revokeAccess;
 exports.leaveSpace = invites.leaveSpace;
 exports.listInvites = invites.listInvites;
 exports.revokeInvite = invites.revokeInvite;
+exports.onSpaceDelete = invites.onSpaceDelete;
 
 /**
  * Triggered when a file is uploaded to Firebase Storage.

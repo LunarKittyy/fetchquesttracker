@@ -406,3 +406,42 @@ exports.revokeInvite = functions
 
         return { success: true };
     });
+
+/**
+ * Firestore trigger: Clean up invites when a space is deleted
+ * Automatically removes all invites associated with the deleted space
+ */
+exports.onSpaceDelete = functions
+    .region("us-east1")
+    .firestore.document("users/{userId}/spaces/{spaceId}")
+    .onDelete(async (snapshot, context) => {
+        const { userId, spaceId } = context.params;
+
+        try {
+            // Find all invites for this space
+            const invitesRef = getDb().collection("invites");
+            const invitesQuery = await invitesRef
+                .where("ownerId", "==", userId)
+                .where("spaceId", "==", spaceId)
+                .get();
+
+            if (invitesQuery.empty) {
+                console.log(`No invites to clean up for space ${spaceId}`);
+                return null;
+            }
+
+            // Delete all matching invites
+            const batch = getDb().batch();
+            invitesQuery.docs.forEach(doc => {
+                batch.delete(doc.ref);
+            });
+
+            await batch.commit();
+            console.log(`Cleaned up ${invitesQuery.size} invite(s) for deleted space ${spaceId}`);
+
+            return { deleted: invitesQuery.size };
+        } catch (error) {
+            console.error(`Failed to cleanup invites for space ${spaceId}:`, error);
+            return null;
+        }
+    });
