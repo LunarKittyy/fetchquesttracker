@@ -7,7 +7,7 @@ import { state, syncActiveSpace, DEFAULT_CATEGORIES, isViewOnly } from './state.
 import { $, $$, escapeHtml, getItemProgress } from './utils.js';
 import { saveState, saveStateLocal } from './storage.js';
 import { showConfirm, showAlert } from './popup.js';
-import { playSound } from './particles.js';
+
 
 // Callback references (set via init)
 let renderCallback = null;
@@ -115,7 +115,7 @@ export function switchSpace(spaceId) {
     renderSpaces();
     if (updateCategoryDropdownCallback) updateCategoryDropdownCallback();
 
-    playSound('tick');
+
 }
 
 /**
@@ -279,7 +279,7 @@ export function handleSaveSpace() {
     if (updateCategoryDropdownCallback) updateCategoryDropdownCallback();
 
     $('#modal-space').classList.add('hidden');
-    playSound('tick');
+
 }
 
 /**
@@ -310,7 +310,7 @@ export async function handleDeleteSpace() {
             renderSpaces();
             if (updateCategoryDropdownCallback) updateCategoryDropdownCallback();
             $('#modal-space').classList.add('hidden');
-            playSound('tick');
+
         }
         return;
     }
@@ -370,5 +370,5 @@ export async function handleDeleteSpace() {
     if (updateCategoryDropdownCallback) updateCategoryDropdownCallback();
 
     $('#modal-space').classList.add('hidden');
-    playSound('tick');
+
 }
