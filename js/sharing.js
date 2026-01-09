@@ -227,9 +227,11 @@ export async function revokeInviteLink(inviteCode) {
 
     if (!confirmed) return null;
 
+    showToast("Revoking...");
+
     try {
         await callFunction("revokeInvite", { inviteCode });
-        showToast("Invite revoked");
+        showToast("✓ Invite revoked");
         return { success: true };
     } catch (error) {
         log.error('Failed to revoke invite', error.message);

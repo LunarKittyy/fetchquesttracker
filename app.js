@@ -21,7 +21,7 @@ import {
     findItemAcrossSpaces
 } from './js/utils.js';
 
-import { initPopup, showPopup, showConfirm, showAlert, showPrompt } from './js/popup.js';
+import { initPopup, showPopup, showConfirm, showAlert, showPrompt, showToast } from './js/popup.js';
 import { initParticleElements, initParticles, celebrate, playSound, resizeCanvas } from './js/particles.js';
 import {
     initStorage, saveState, saveStateLocal, loadState, exportData, importData,
@@ -1257,6 +1257,19 @@ async function openShareModal(spaceId) {
                     }
                 });
             });
+
+            // Add click handlers for invite codes (copy full link)
+            invitesList.querySelectorAll('.invite-code').forEach(codeEl => {
+                codeEl.style.cursor = 'pointer';
+                codeEl.title = 'Click to copy link';
+                codeEl.addEventListener('click', async () => {
+                    const inviteCode = codeEl.textContent;
+                    const baseUrl = window.location.origin + window.location.pathname;
+                    const shareUrl = `${baseUrl}?invite=${inviteCode}`;
+                    await copyToClipboard(shareUrl);
+                    showToast('Link copied!');
+                });
+            });
         } else {
             invitesSection.classList.add('hidden');
         }
@@ -1327,6 +1340,10 @@ async function handleGenerateShareLink() {
         const expiryDate = new Date(result.expiresAt);
         elements.shareLinkExpiry.textContent = `Expires: ${expiryDate.toLocaleDateString()}`;
         elements.shareLinkExpiry?.classList.remove('hidden');
+
+        // Auto-copy to clipboard and show toast
+        await copyToClipboard(result.url);
+        showToast('Link copied to clipboard!');
 
         // Refresh the active invites list
         openShareModal(spaceId);
