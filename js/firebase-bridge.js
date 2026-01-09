@@ -89,11 +89,19 @@ if (isFirebaseConfigured()) {
             }
         });
 
-        // Initialize App Check with reCAPTCHA v3
-        initializeAppCheck(app, {
-            provider: new ReCaptchaV3Provider('6Ld2ETAsAAAAALgMe6039Lu-9s2yl3xZ5I5yhT2e'),
-            isTokenAutoRefreshEnabled: true
-        });
+        // Initialize App Check with reCAPTCHA v3 (skip for localhost)
+        const isLocalhost = window.location.hostname === 'localhost' ||
+            window.location.hostname === '127.0.0.1' ||
+            window.location.hostname.startsWith('192.168.');
+
+        if (!isLocalhost) {
+            initializeAppCheck(app, {
+                provider: new ReCaptchaV3Provider('6Ld2ETAsAAAAALgMe6039Lu-9s2yl3xZ5I5yhT2e'),
+                isTokenAutoRefreshEnabled: true
+            });
+        } else {
+            console.log('⚠️ App Check disabled for local development');
+        }
 
         console.log('🔥 Firebase initialized successfully');
     } catch (error) {

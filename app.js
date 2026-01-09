@@ -62,6 +62,7 @@ import {
 
 import { parseItemInput } from './js/input-parser.js';
 import { initBulkEntry } from './js/bulk-entry.js';
+import { createShareLink, checkAndAcceptInvite, processPendingInvite, copyToClipboard } from './js/sharing.js';
 
 // --- DOM Element References ---
 const elements = {
@@ -220,6 +221,16 @@ const elements = {
     modalFiles: $('#modal-files'),
     filesList: $('#files-list'),
     btnRefreshFiles: $('#btn-refresh-files'),
+
+    // Share modal
+    modalShare: $('#modal-share'),
+    shareSpaceId: $('#share-space-id'),
+    shareRole: $('#share-role'),
+    shareLinkContainer: $('#share-link-container'),
+    shareLinkUrl: $('#share-link-url'),
+    shareLinkExpiry: $('#share-link-expiry'),
+    btnGenerateShareLink: $('#btn-generate-share-link'),
+    btnCopyShareLink: $('#btn-copy-share-link'),
 
     // Context menu
     contextMenu: $('#context-menu'),
@@ -1174,6 +1185,70 @@ function handleSelectByTagClick(e) {
     elements.selectByTagDropdown?.classList.add('hidden');
 }
 
+// --- Share Modal ---
+function openShareModal(spaceId) {
+    if (!window.FirebaseBridge?.currentUser) {
+        showAlert('Sign in to share spaces.', 'SIGN IN REQUIRED');
+        return;
+    }
+
+    const space = state.spaces.find(s => s.id === spaceId);
+    if (!space) return;
+
+    // Reset modal state
+    elements.shareSpaceId.value = spaceId;
+    elements.shareRole.value = 'viewer';
+    elements.shareLinkContainer?.classList.add('hidden');
+    elements.shareLinkExpiry?.classList.add('hidden');
+    elements.shareLinkUrl.value = '';
+
+    // Update modal title
+    const modal = elements.modalShare;
+    const titleEl = modal?.querySelector('.modal-title');
+    if (titleEl) titleEl.textContent = `SHARE: ${space.name}`;
+
+    modal?.classList.remove('hidden');
+}
+
+async function handleGenerateShareLink() {
+    const spaceId = elements.shareSpaceId.value;
+    const role = elements.shareRole.value;
+
+    if (!spaceId) return;
+
+    elements.btnGenerateShareLink.disabled = true;
+    elements.btnGenerateShareLink.textContent = 'GENERATING...';
+
+    const result = await createShareLink(spaceId, role);
+
+    elements.btnGenerateShareLink.disabled = false;
+    elements.btnGenerateShareLink.textContent = 'GENERATE LINK';
+
+    if (result.success) {
+        elements.shareLinkUrl.value = result.url;
+        elements.shareLinkContainer?.classList.remove('hidden');
+
+        const expiryDate = new Date(result.expiresAt);
+        elements.shareLinkExpiry.textContent = `Expires: ${expiryDate.toLocaleDateString()}`;
+        elements.shareLinkExpiry?.classList.remove('hidden');
+    } else {
+        showAlert(result.error || 'Failed to generate link.', 'ERROR');
+    }
+}
+
+async function handleCopyShareLink() {
+    const url = elements.shareLinkUrl.value;
+    if (!url) return;
+
+    const success = await copyToClipboard(url);
+    if (success) {
+        elements.btnCopyShareLink.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
+        setTimeout(() => {
+            elements.btnCopyShareLink.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+        }, 2000);
+    }
+}
+
 // --- Keyboard & Window Handlers ---
 function handleKeydown(e) {
     if (e.key === 'Escape') {
@@ -1209,7 +1284,7 @@ function init() {
     initBulk({ btnBulkMode: elements.btnBulkMode, bulkActionsBar: elements.bulkActionsBar, bulkCount: elements.bulkCount },
         { render, renderArchive });
     initContextMenu({ contextMenu: elements.contextMenu },
-        { openSpaceEditModal, handleDeleteSpace, archiveItem, deleteItem, editTags: openEditTagsModal });
+        { openSpaceEditModal, handleDeleteSpace, archiveItem, deleteItem, editTags: openEditTagsModal, shareSpace: openShareModal });
     initStatistics({
         modalStatistics: elements.modalStatistics, modalSettings: elements.modalSettings,
         statTotal: elements.statTotal, statCompleted: elements.statCompleted,
@@ -1580,6 +1655,14 @@ function init() {
     elements.btnRefreshFiles?.addEventListener('click', loadStorageFiles);
     elements.filesList?.addEventListener('click', handleFileClick);
 
+    // Share modal
+    elements.btnGenerateShareLink?.addEventListener('click', handleGenerateShareLink);
+    elements.btnCopyShareLink?.addEventListener('click', handleCopyShareLink);
+    elements.modalShare?.addEventListener('click', handleCloseModal);
+
+    // Check for invite code in URL
+    checkAndAcceptInvite();
+
     // Window handlers
     window.addEventListener('focus', handleWindowFocus);
     window.addEventListener('blur', handleWindowBlur);
@@ -1587,7 +1670,13 @@ function init() {
 
     // Firebase auth listener
     if (window.FirebaseBridge?.isConfigured) {
-        window.FirebaseBridge.onAuthChange(updateAuthUI);
+        window.FirebaseBridge.onAuthChange(async (user) => {
+            updateAuthUI(user);
+            if (user) {
+                // Process any pending invite after login
+                await processPendingInvite();
+            }
+        });
         startSyncTimeInterval();
         console.log('FETCH QUEST v3.0 initialized. Firebase active.');
     } else {

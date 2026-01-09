@@ -304,6 +304,11 @@
           <span class="status-label">ACQUIRED:</span>
           <span id="status-complete" class="status-value">0</span>
         </div>
+        <div class="legal-links">
+          <a href="privacy.html">Privacy</a>
+          <span class="legal-sep">·</span>
+          <a href="terms.html">Terms</a>
+        </div>
         <span class="version-tag">v4.2</span>
       </footer>
     </div>
@@ -694,6 +699,49 @@
           <button type="button" class="btn btn-primary" id="btn-save-image">
             APPLY
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Share Space Modal -->
+    <div id="modal-share" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title">SHARE SPACE</h3>
+          <button type="button" class="modal-close" aria-label="Close modal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="share-space-id" value="" />
+          <p class="settings-hint">Generate a link to share this space. Anyone with the link can join.</p>
+
+          <div class="settings-row">
+            <label for="share-role" class="settings-label">Access Level</label>
+            <select id="share-role" class="input-field">
+              <option value="viewer">Viewer (read only)</option>
+              <option value="editor">Editor (can modify items)</option>
+            </select>
+          </div>
+
+          <div id="share-link-container" class="share-link-container hidden">
+            <input type="text" id="share-link-url" class="input-field" readonly aria-label="Share link URL" />
+            <button type="button" id="btn-copy-share-link" class="btn btn-secondary" title="Copy link">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+            </button>
+          </div>
+          <p id="share-link-expiry" class="settings-hint hidden"></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-cancel">CANCEL</button>
+          <button type="button" id="btn-generate-share-link" class="btn btn-primary">GENERATE LINK</button>
         </div>
       </div>
     </div>
@@ -1217,7 +1265,7 @@
   <script type="module" src="app.js?v=4.2"></script>
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {});
+      navigator.serviceWorker.register('/sw.js').catch(() => { });
     }
   </script>
 </body>

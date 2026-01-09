@@ -2654,6 +2654,34 @@ body.shake {
   opacity: 0.5;
 }
 
+.legal-links {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: auto;
+  font-size: 0.55rem;
+  opacity: 0.35;
+}
+
+.legal-links a {
+  color: var(--clr-text-muted);
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.legal-links a:hover {
+  opacity: 1;
+  color: var(--clr-text-secondary);
+}
+
+.legal-sep {
+  color: var(--clr-text-muted);
+}
+
+.legal-links+.version-tag {
+  margin-left: 0;
+}
+
 /* Color Presets for Space Edit */
 .color-presets {
   display: flex;
@@ -4511,4 +4539,21 @@ body.bulk-mode .quest-content {
 
 .bulk-preview-objectives .bulk-preview-item {
   padding-left: 1.5rem;
+}
+
+/* Share Modal */
+.share-link-container {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.share-link-container .input-field {
+  flex: 1;
+  font-size: 0.75rem;
+}
+
+.share-link-container .btn {
+  flex-shrink: 0;
+  padding: 0.5rem 0.75rem;
 }

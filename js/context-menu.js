@@ -19,6 +19,7 @@ let handleDeleteSpaceCallback = null;
 let archiveItemCallback = null;
 let deleteItemCallback = null;
 let editTagsCallback = null;
+let shareSpaceCallback = null;
 
 /**
  * Initialize context menu module
@@ -30,6 +31,7 @@ export function initContextMenu(domElements, callbacks) {
     if (callbacks.archiveItem) archiveItemCallback = callbacks.archiveItem;
     if (callbacks.deleteItem) deleteItemCallback = callbacks.deleteItem;
     if (callbacks.editTags) editTagsCallback = callbacks.editTags;
+    if (callbacks.shareSpace) shareSpaceCallback = callbacks.shareSpace;
 }
 
 /**
@@ -100,6 +102,11 @@ export function handleSpaceContextMenu(e) {
             label: 'Edit Space',
             action: 'edit-space',
             icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'
+        },
+        {
+            label: 'Share Space',
+            action: 'share-space',
+            icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>'
         },
         { divider: true },
         {
@@ -180,6 +187,11 @@ export function handleContextMenuAction(e) {
             if (target.type === 'space' && handleDeleteSpaceCallback) {
                 $('#edit-space-id').value = target.id;
                 handleDeleteSpaceCallback();
+            }
+            break;
+        case 'share-space':
+            if (target.type === 'space' && shareSpaceCallback) {
+                shareSpaceCallback(target.id);
             }
             break;
         case 'edit-name':

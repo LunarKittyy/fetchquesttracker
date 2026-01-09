@@ -1,20 +1,54 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Users can only access their own data
+
+    // Helper: Is user a collaborator on this space?
+    function isCollaborator(ownerId, spaceId) {
+      let space = get(/databases/$(database)/documents/users/$(ownerId)/spaces/$(spaceId));
+      return space != null &&
+             space.data.collaborators != null &&
+             request.auth.uid in space.data.collaborators;
+    }
+
+    // Helper: Get collaborator's role
+    function getCollabRole(ownerId, spaceId) {
+      let space = get(/databases/$(database)/documents/users/$(ownerId)/spaces/$(spaceId));
+      return space.data.collaborators[request.auth.uid].role;
+    }
+
+    // Users collection
     match /users/{userId} {
+      // Owner: full access to their doc
       allow read, write: if request.auth != null && request.auth.uid == userId;
-      
-      // Spaces subcollection - users can only access their own spaces
+
+      // Spaces subcollection
       match /spaces/{spaceId} {
+        // Owner: full access
         allow read, write: if request.auth != null && request.auth.uid == userId;
+
+        // Collaborators: read access
+        allow read: if request.auth != null && isCollaborator(userId, spaceId);
+
+        // Editors: can update items only (not name, color, collaborators)
+        allow update: if request.auth != null &&
+                        isCollaborator(userId, spaceId) &&
+                        getCollabRole(userId, spaceId) == 'editor' &&
+                        request.resource.data.diff(resource.data).affectedKeys()
+                          .hasOnly(['items', 'archivedItems', 'lastModified']);
       }
     }
 
-    // userStorage collection - read only for authenticated users
+    // Invites: readable by any authenticated user (for preview)
+    // Writable ONLY by Cloud Functions
+    match /invites/{inviteCode} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // userStorage: read only for owner, write only by Cloud Functions
     match /userStorage/{userId} {
       allow read: if request.auth != null && request.auth.uid == userId;
-      allow write: if false; // Only Cloud Functions can write
+      allow write: if false;
     }
 
     // Deny all other access

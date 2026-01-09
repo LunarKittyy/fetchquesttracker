@@ -5,6 +5,13 @@ admin.initializeApp();
 
 const db = admin.firestore();
 
+// Export invite functions
+const invites = require("./invites.js");
+exports.createInvite = invites.createInvite;
+exports.acceptInvite = invites.acceptInvite;
+exports.revokeAccess = invites.revokeAccess;
+exports.leaveSpace = invites.leaveSpace;
+
 /**
  * Triggered when a file is uploaded to Firebase Storage.
  * Updates the user's storage usage in Firestore.
@@ -14,7 +21,7 @@ exports.onFileUpload = functions
   .storage.object()
   .onFinalize(async (object) => {
     const filePath = object.name;
-    
+
     // Only track files in users/ directory
     if (!filePath || !filePath.startsWith("users/")) {
       return null;
@@ -29,13 +36,13 @@ exports.onFileUpload = functions
     }
 
     const storageRef = db.doc(`userStorage/${userId}`);
-    
+
     try {
       await db.runTransaction(async (transaction) => {
         const doc = await transaction.get(storageRef);
         const currentBytes = doc.exists ? (doc.data().bytesUsed || 0) : 0;
-        
-        transaction.set(storageRef, { 
+
+        transaction.set(storageRef, {
           bytesUsed: currentBytes + fileSize,
           lastUpdated: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
@@ -58,7 +65,7 @@ exports.onFileDelete = functions
   .storage.object()
   .onDelete(async (object) => {
     const filePath = object.name;
-    
+
     // Only track files in users/ directory
     if (!filePath || !filePath.startsWith("users/")) {
       return null;
@@ -73,14 +80,14 @@ exports.onFileDelete = functions
     }
 
     const storageRef = db.doc(`userStorage/${userId}`);
-    
+
     try {
       await db.runTransaction(async (transaction) => {
         const doc = await transaction.get(storageRef);
         const currentBytes = doc.exists ? (doc.data().bytesUsed || 0) : 0;
-        
+
         // Ensure we don't go below 0
-        transaction.set(storageRef, { 
+        transaction.set(storageRef, {
           bytesUsed: Math.max(0, currentBytes - fileSize),
           lastUpdated: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
