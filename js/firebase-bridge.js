@@ -437,9 +437,8 @@ window.FirebaseBridge = {
             // Save spaces with uploaded images (skip shared spaces - only save owned spaces)
             const batch = writeBatch(db);
             for (const space of state.spaces) {
-                // Skip shared spaces - don't save to our own collection
-                // Check isShared flag since isOwned might be undefined
-                if (space.isShared === true) {
+                // Skip shared spaces where we are a guest - don't save to our own collection
+                if (space.isOwned === false) {
                     continue;
                 }
 

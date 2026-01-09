@@ -165,7 +165,7 @@ export function openSpaceEditModal(spaceId) {
     const modal = $('#modal-space');
     if (!modal) return;
 
-    const isShared = space.isShared === true;
+    const isGuest = space.isOwned === false;
     const saveBtn = $('#btn-save-space');
     const deleteBtn = $('#btn-delete-space');
     const nameInput = $('#edit-space-name');
@@ -177,7 +177,7 @@ export function openSpaceEditModal(spaceId) {
     // Store ownerId for leave action
     modal.dataset.ownerId = space.ownerId || '';
 
-    if (isShared) {
+    if (isGuest) {
         // Shared space - user is a guest
         modal.querySelector('.modal-title').textContent = 'SHARED SPACE';
         // Make name and color read-only
@@ -192,7 +192,7 @@ export function openSpaceEditModal(spaceId) {
         deleteBtn.classList.add('btn-warning');
         deleteBtn.style.display = 'block';
     } else {
-        // Owned space - normal edit
+        // Owned space - normal edit (can be shared or personal)
         modal.querySelector('.modal-title').textContent = 'EDIT SPACE';
         nameInput.disabled = false;
         colorPresets.style.pointerEvents = '';
@@ -292,8 +292,8 @@ export async function handleDeleteSpace() {
     const space = state.spaces.find(s => s.id === spaceId);
     if (!space) return;
 
-    // If it's a shared space, handle as "leave" instead of "delete"
-    if (space.isShared === true) {
+    // If it's a shared space we're a guest on, handle as "leave" instead of "delete"
+    if (space.isOwned === false) {
         const { leaveSharedSpace } = await import('./sharing.js');
         const result = await leaveSharedSpace(space.ownerId, spaceId, space.name);
 

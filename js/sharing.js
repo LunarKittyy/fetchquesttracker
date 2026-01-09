@@ -95,7 +95,7 @@ export async function checkAndAcceptInvite() {
 export async function acceptInvite(inviteCode) {
     try {
         showToast("Joining space...");
-        const result = await callFunction("acceptInvite", { inviteCode });
+        completeToast("Joined!", 400);
 
         await showAlert(
             `You now have ${result.data.role} access to "${result.data.spaceName}".`,
@@ -105,6 +105,7 @@ export async function acceptInvite(inviteCode) {
 
         return result.data;
     } catch (error) {
+        completeToast("Failed", 500);
         log.error('Failed to accept invite', error.message);
 
         // User-friendly error messages
@@ -148,10 +149,14 @@ export async function revokeAccess(spaceId, targetUserId) {
 
     if (!confirmed) return null;
 
+    showToast("Removing...");
+
     try {
         await callFunction("revokeAccess", { spaceId, targetUserId });
+        completeToast("Removed", 400);
         return { success: true };
     } catch (error) {
+        completeToast("Failed", 500);
         log.error('Failed to revoke access', error.message);
         showAlert(error.message || "Failed to remove collaborator.", "ERROR");
         return { success: false, error: error.message };

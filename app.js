@@ -1362,14 +1362,14 @@ async function handleGenerateShareLink() {
     if (!spaceId) return;
 
     elements.btnGenerateShareLink.disabled = true;
-    elements.btnGenerateShareLink.textContent = 'GENERATING...';
+    showToast('Generating link...');
 
     const result = await createShareLink(spaceId, role);
 
     elements.btnGenerateShareLink.disabled = false;
-    elements.btnGenerateShareLink.textContent = 'GENERATE LINK';
 
     if (result.success) {
+        completeToast('Link generated!');
         elements.shareLinkUrl.value = result.url;
         elements.shareLinkContainer?.classList.remove('hidden');
 
@@ -1377,13 +1377,14 @@ async function handleGenerateShareLink() {
         elements.shareLinkExpiry.textContent = `Expires: ${expiryDate.toLocaleDateString()}`;
         elements.shareLinkExpiry?.classList.remove('hidden');
 
-        // Auto-copy to clipboard and show toast
+        // Auto-copy to clipboard
         await copyToClipboard(result.url);
-        showToast('Link copied to clipboard!');
+        // We already have the success toast, no need for another one
 
         // Refresh the active invites list
         openShareModal(spaceId);
     } else {
+        completeToast('Failed', 500);
         showAlert(result.error || 'Failed to generate link.', 'ERROR');
     }
 }
