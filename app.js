@@ -577,6 +577,39 @@ function handleQuestAction(e) {
             });
             break;
         }
+        case 'edit-goal': {
+            const targetEl = e.target.closest('.quest-count-target');
+            if (!targetEl || !item) return;
+            const currentTarget = item.target || 1;
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.min = '1';
+            input.className = 'quest-goal-edit';
+            input.value = currentTarget;
+            input.style.cssText = 'width: 3em; text-align: center; font-size: inherit; padding: 2px 4px; border-radius: 4px; border: 1px solid var(--clr-accent-primary, #4ecdb4); background: var(--clr-bg-tertiary, #1a1a2e); color: inherit;';
+            targetEl.replaceWith(input);
+            input.focus();
+            input.select();
+            input.addEventListener('blur', () => {
+                const newTarget = Math.max(1, parseInt(input.value) || currentTarget);
+                updateItemField(itemId, 'target', newTarget);
+                const span = document.createElement('span');
+                span.className = 'quest-count-target';
+                span.dataset.action = 'edit-goal';
+                span.title = 'Click to edit goal';
+                span.textContent = newTarget;
+                input.replaceWith(span);
+                updateCardProgress(itemId, archiveItem);
+            });
+            input.addEventListener('keydown', (ev) => {
+                if (ev.key === 'Enter') input.blur();
+                if (ev.key === 'Escape') {
+                    input.value = currentTarget;
+                    input.blur();
+                }
+            });
+            break;
+        }
     }
 }
 

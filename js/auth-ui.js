@@ -196,6 +196,9 @@ export async function updateAuthUI(user) {
 
         // Check if user needs to accept updated policies
         await checkPolicyVersion();
+
+        // Check if user needs to set a display name
+        await checkDisplayName();
     } else {
         if (elements.btnLogin) elements.btnLogin.classList.remove('hidden');
         if (elements.userMenu) elements.userMenu.classList.add('hidden');
@@ -495,5 +498,45 @@ async function handlePolicyAccept(userRef, setDoc, serverTimestamp) {
         console.log('Policy accepted, version:', CURRENT_POLICY_VERSION);
     } catch (error) {
         console.error('Failed to update policy acceptance:', error);
+    }
+}
+
+/**
+ * Check if user needs to set a display name
+ * Shows prompt after Google sign-in or if missing
+ */
+async function checkDisplayName() {
+    const user = window.FirebaseBridge?.currentUser;
+    if (!user) return;
+
+    // Skip if user already has a display name
+    if (user.displayName && user.displayName.trim()) return;
+
+    const { showPrompt } = await import('./popup.js');
+    const { updateProfile } = await import('https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js');
+
+    const name = await showPrompt(
+        'What should we call you?',
+        'ADD USERNAME',
+        ''
+    );
+
+    let displayName;
+    if (name && name.trim()) {
+        displayName = name.trim();
+    } else {
+        // Skip - use email prefix
+        displayName = user.email?.split('@')[0] || 'User';
+    }
+
+    try {
+        await updateProfile(user, { displayName });
+        // Update UI
+        if (elements.userEmail) {
+            elements.userEmail.textContent = displayName;
+        }
+        console.log('Display name set to:', displayName);
+    } catch (error) {
+        console.error('Failed to set display name:', error);
     }
 }

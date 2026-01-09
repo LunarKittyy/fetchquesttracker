@@ -2366,6 +2366,12 @@ body.shake {
 .quest-count-target {
   color: var(--clr-text-muted);
   font-size: 0.9rem;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.quest-count-target:hover {
+  color: var(--clr-accent-primary);
 }
 
 /* --- Objectives List (inside quest card) --- */
