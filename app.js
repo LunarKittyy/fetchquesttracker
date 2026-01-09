@@ -9,7 +9,7 @@ import {
     currentType, setCurrentType, tempObjectives, setTempObjectives,
     tempImageData, setTempImageData, searchQuery, setSearchQuery,
     bulkMode, selectedItems, addSelectedItem, pendingLocalChange, setPendingLocalChange,
-    selectedTags, setSelectedTags, clearSelectedTags
+    selectedTags, setSelectedTags, clearSelectedTags, isViewOnly
 } from './js/state.js';
 
 import {
@@ -248,6 +248,9 @@ function render() {
     updateCategoryDropdown();
     updateStatusBar();
     renderSpaces();
+
+    // Set view-only mode class for shared spaces where user is viewer
+    document.body.classList.toggle('view-only', isViewOnly());
 
     if (elements.questContainer) {
         elements.questContainer.classList.toggle('multi-column', state.multiColumn);

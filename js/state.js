@@ -81,6 +81,24 @@ export function syncActiveSpace() {
     });
 }
 
+/**
+ * Check if current space is view-only (shared space where user is viewer)
+ */
+export function isViewOnly() {
+    if (!activeSpace) return false;
+    // Owned spaces are always editable
+    if (!activeSpace.isShared) return false;
+    // Shared spaces: only editors can edit, viewers are read-only
+    return activeSpace.myRole !== 'editor';
+}
+
+/**
+ * Check if user can edit the current space
+ */
+export function canEdit() {
+    return !isViewOnly();
+}
+
 // --- UI State (not persisted) ---
 export let currentType = 'item';
 export let tempObjectives = [];

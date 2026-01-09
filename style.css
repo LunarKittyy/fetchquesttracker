@@ -4588,3 +4588,43 @@ body.bulk-mode .quest-content {
   flex-shrink: 0;
   padding: 0.5rem 0.75rem;
 }
+
+/* View-Only Mode (for shared spaces where user is viewer) */
+body.view-only .add-form {
+  display: none;
+}
+
+body.view-only .quest-actions {
+  display: none;
+}
+
+body.view-only .quest-notes {
+  pointer-events: none;
+}
+
+body.view-only .btn-bulk-mode {
+  display: none;
+}
+
+body.view-only .archive-actions {
+  display: none;
+}
+
+body.view-only .view-only-badge {
+  display: inline-flex;
+}
+
+.view-only-badge {
+  display: none;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  background: var(--clr-bg-tertiary);
+  border: 1px solid var(--clr-accent-secondary);
+  border-radius: var(--radius-sm);
+  color: var(--clr-accent-secondary);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
