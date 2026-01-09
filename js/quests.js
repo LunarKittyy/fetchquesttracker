@@ -6,7 +6,7 @@
 import { state, tempObjectives, setTempObjectives, tempImageData, setTempImageData, searchQuery } from './state.js';
 import { $, $$, generateId, escapeHtml, isItemComplete, getItemProgress, sortItems, getCategoryProgress, normalizeItem, groupItemsByCategory, findItemAcrossSpaces } from './utils.js';
 import { saveState } from './storage.js';
-import { celebrate, playSound } from './particles.js';
+import { celebrate } from './particles.js';
 import { showConfirm } from './popup.js';
 
 // Callbacks
@@ -610,7 +610,7 @@ export function updateObjectiveDisplay(itemId, objectiveId, archiveItemCallback)
     if (incrementBtn) incrementBtn.disabled = isObjComplete;
 
     objEl.classList.toggle('complete', isObjComplete);
-    if (isObjComplete) playSound('tick');
+
 
     updateCardProgress(itemId, archiveItemCallback);
 }

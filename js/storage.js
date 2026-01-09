@@ -179,7 +179,7 @@ export function loadState() {
 
         if (parsed) {
             // Ensure global settings are loaded
-            state.soundEnabled = parsed.soundEnabled !== false;
+
             state.shiftAmount = parsed.shiftAmount || 5;
             state.ctrlAmount = parsed.ctrlAmount || 10;
             state.autoArchive = parsed.autoArchive !== false;
@@ -261,7 +261,7 @@ export function loadState() {
         state.spaces.push(defaultSpace);
         state.activeSpaceId = defaultSpace.id;
         state.tags = [];
-        state.soundEnabled = false;
+
         state.shiftAmount = 5;
         state.ctrlAmount = 10;
         state.autoArchive = true;

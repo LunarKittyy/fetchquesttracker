@@ -27,10 +27,6 @@ let animationsPaused = false;
 export function initParticleElements() {
     elements = {
         particlesCanvas: $('#particles-canvas'),
-        celebrationOverlay: $('#celebration-overlay'),
-        soundTick: $('#sound-tick'),
-        soundComplete: $('#sound-complete'),
-        soundFanfare: $('#sound-fanfare')
     };
 }
 
@@ -147,32 +143,9 @@ export function celebrate(element, type = 'item') {
                 elements.celebrationOverlay.classList.remove('active');
             }
         }, 600);
-        playSound('fanfare');
-    } else {
-        playSound('complete');
     }
 }
 
-/**
- * Play a sound effect
- * @param {string} type - Sound type: 'tick', 'complete', or 'fanfare'
- */
-export function playSound(type) {
-    if (!state.soundEnabled) return;
-
-    const sounds = {
-        tick: elements.soundTick,
-        complete: elements.soundComplete,
-        fanfare: elements.soundFanfare
-    };
-
-    const sound = sounds[type];
-    if (sound) {
-        sound.currentTime = 0;
-        sound.volume = type === 'fanfare' ? 0.3 : 0.5;
-        sound.play().catch(() => { });
-    }
-}
 
 /**
  * Pause animations (for window blur)

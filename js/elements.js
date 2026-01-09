@@ -179,8 +179,5 @@ export const elements = {
 
     // Particles & sounds
     particlesCanvas: $('#particles-canvas'),
-    celebrationOverlay: $('#celebration-overlay'),
-    soundTick: $('#sound-tick'),
-    soundComplete: $('#sound-complete'),
-    soundFanfare: $('#sound-fanfare')
+    celebrationOverlay: $('#celebration-overlay')
 };

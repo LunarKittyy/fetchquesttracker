@@ -53,7 +53,7 @@ export function handleQuestAction(e) {
             updateItemField(itemId, 'current', newVal);
             updateCardProgress(itemId, archiveItem);
             if (action === 'increment') {
-                // Sound removed
+
             }
             break;
         }

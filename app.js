@@ -22,7 +22,7 @@ import {
 } from './js/utils.js';
 
 import { initPopup, showPopup, showConfirm, showAlert, showPrompt, showToast, completeToast } from './js/popup.js';
-import { initParticleElements, initParticles, celebrate, playSound, resizeCanvas } from './js/particles.js';
+import { initParticleElements, initParticles, celebrate, resizeCanvas } from './js/particles.js';
 import {
     initStorage, saveState, saveStateLocal, loadState, exportData, importData,
     updateLastSyncedDisplay, updateStorageDisplay, startSyncTimeInterval, showSaveIndicator
@@ -692,7 +692,7 @@ async function init() {
     elements.btnImageLocal?.addEventListener('click', handleImageLocalOption);
     elements.imageUrlField?.addEventListener('input', handleImageUrlChange);
     elements.imageFileInput?.addEventListener('change', handleImageFileSelect);
-    elements.btnRemoveImage?.addEventListener('click', handleRemovePreviewImage);
+    elements.btnRemoveImage?.addEventListener('click', handleRemoveImage);
     elements.btnSaveImage?.addEventListener('click', handleSaveImage);
     elements.modalImage?.addEventListener('click', handleCloseModal);
 

@@ -12,7 +12,7 @@ export const state = {
     spaces: [],
     activeSpaceId: null,
     tags: [],  // Global tags (cross-space)
-    soundEnabled: false,
+
     shiftAmount: 5,
     ctrlAmount: 10,
     autoArchive: true,
