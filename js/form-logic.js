@@ -14,7 +14,7 @@ import { generateId, escapeHtml } from './utils.js';
 import { parseItemInput } from './input-parser.js';
 import { addItem } from './quests.js';
 import { closeAllModals } from './modals.js';
-import { updateTagIndicator, updateTagPickerDropdown } from './tags.js'; // Note: tags.js might need to be created/checked, assumption based on app.js calls
+
 
 // We need to import these update functions from somewhere. 
 // Looking at app.js, `updateTagIndicator` and `updateTagPickerDropdown` are likely defined there too.
