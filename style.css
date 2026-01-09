@@ -3616,13 +3616,43 @@ body.bulk-mode .quest-content {
   margin-bottom: 0.5rem;
 }
 
-.user-email {
+.user-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+  gap: 0.5rem;
+}
+
+.user-display-name {
   display: block;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   color: var(--clr-text-primary);
   font-weight: 600;
-  margin-bottom: 0.25rem;
   word-break: break-all;
+}
+
+.btn-show-info {
+  background: none;
+  border: none;
+  padding: 4px;
+  color: var(--clr-text-muted);
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.btn-show-info:hover {
+  color: var(--clr-accent-primary);
+  background: var(--clr-bg-tertiary);
+}
+
+.btn-show-info svg {
+  width: 16px;
+  height: 16px;
 }
 
 .sync-status {

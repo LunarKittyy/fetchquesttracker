@@ -60,7 +60,8 @@ import {
 import {
     initAuthUI, openAuthModal, closeAuthModal, switchAuthTab, showPasswordReset,
     updateAuthUI, updateSyncStatusUI, handleSignIn, handleSignUp, handlePasswordReset,
-    handleGoogleSignIn, handleLogout, handleExportData, handleDeleteAccount, handleChangeName
+    handleGoogleSignIn, handleLogout, handleExportData, handleDeleteAccount, handleChangeName,
+    handleShowInfo
 } from './js/auth-ui.js';
 
 import { parseItemInput } from './js/input-parser.js';
@@ -160,7 +161,8 @@ const elements = {
     btnLogin: $('#btn-login'),
     userMenu: $('#user-menu'),
     btnUserMenu: $('#btn-user-menu'),
-    userEmail: $('#user-email'),
+    userDisplayName: $('#user-display-name'),
+    btnShowInfo: $('#btn-show-info'),
     userDropdown: $('#user-dropdown'),
     btnLogout: $('#btn-logout'),
     btnExportData: $('#btn-export-data'),
@@ -1451,7 +1453,7 @@ function init() {
         signupError: elements.signupError, resetError: elements.resetError,
         resetMessage: elements.resetMessage, authDivider: elements.authDivider,
         btnGoogleSignin: elements.btnGoogleSignin, btnLogin: elements.btnLogin,
-        userMenu: elements.userMenu, userEmail: elements.userEmail,
+        userMenu: elements.userMenu, userDisplayName: elements.userDisplayName,
         userDropdown: elements.userDropdown, syncStatus: elements.syncStatus
     }, { render, renderArchive, renderSpaces });
 
@@ -1717,6 +1719,7 @@ function init() {
     elements.btnGoogleSignin?.addEventListener('click', handleGoogleSignIn);
     elements.btnExportData?.addEventListener('click', handleExportData);
     elements.btnChangeName?.addEventListener('click', handleChangeName);
+    elements.btnShowInfo?.addEventListener('click', handleShowInfo);
     elements.btnDeleteAccount?.addEventListener('click', handleDeleteAccount);
 
     // Category manager

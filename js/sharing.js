@@ -183,6 +183,34 @@ export async function leaveSharedSpace(ownerId, spaceId, spaceName) {
 }
 
 /**
+ * Clean up all shared spaces before account deletion
+ * Silently leaves all spaces where isOwned is false
+ */
+export async function cleanupSharedSpaces(spaces) {
+    if (!spaces || spaces.length === 0) return;
+
+    const sharedSpaces = spaces.filter(s => s.isOwned === false);
+    if (sharedSpaces.length === 0) return;
+
+    const { showToast, completeToast } = await import('./popup.js');
+    showToast(`Cleaning up ${sharedSpaces.length} shared spaces...`);
+
+    for (const space of sharedSpaces) {
+        try {
+            log.info(`Auto-leaving space: ${space.name}`);
+            await callFunction("leaveSpace", {
+                ownerId: space.ownerId,
+                spaceId: space.id
+            });
+        } catch (error) {
+            log.warn(`Failed to auto-leave space ${space.id}:`, error.message);
+        }
+    }
+
+    completeToast("Cleanup complete", 1000);
+}
+
+/**
  * Copy text to clipboard with fallback
  */
 export async function copyToClipboard(text) {

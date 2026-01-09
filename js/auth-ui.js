@@ -154,7 +154,7 @@ export async function updateAuthUI(user) {
     if (user) {
         if (elements.btnLogin) elements.btnLogin.classList.add('hidden');
         if (elements.userMenu) elements.userMenu.classList.remove('hidden');
-        if (elements.userEmail) elements.userEmail.textContent = user.email || user.displayName || 'User';
+        if (elements.userDisplayName) elements.userDisplayName.textContent = user.displayName || user.email?.split('@')[0] || 'User';
         closeAuthModal();
 
         // Load cloud data via SyncManager
@@ -347,11 +347,26 @@ export async function handleDeleteAccount() {
 
     const result = await window.FirebaseBridge.deleteAccount();
     if (result.success) {
+        // Clean up shared spaces before reload
+        const { cleanupSharedSpaces } = await import('./sharing.js');
+        await cleanupSharedSpaces(state.spaces);
+
         localStorage.removeItem(STORAGE_KEY);
         window.location.reload();
     } else {
         await showAlert('Failed to delete account: ' + result.error, 'ERROR');
     }
+}
+
+/**
+ * Handle show info button click (streamer privacy)
+ */
+export async function handleShowInfo() {
+    const user = window.FirebaseBridge?.currentUser;
+    if (!user) return;
+
+    const { showAlert } = await import('./popup.js');
+    await showAlert(`Your account email is: ${user.email}`, 'ACCOUNT DETAILS');
 }
 
 /**
@@ -532,8 +547,8 @@ async function checkDisplayName() {
     try {
         await updateProfile(user, { displayName });
         // Update UI
-        if (elements.userEmail) {
-            elements.userEmail.textContent = displayName;
+        if (elements.userDisplayName) {
+            elements.userDisplayName.textContent = displayName;
         }
         console.log('Display name set to:', displayName);
     } catch (error) {
@@ -566,8 +581,8 @@ export async function handleChangeName() {
 
     try {
         await updateProfile(user, { displayName });
-        if (elements.userEmail) {
-            elements.userEmail.textContent = displayName;
+        if (elements.userDisplayName) {
+            elements.userDisplayName.textContent = displayName;
         }
         const { showToast } = await import('./popup.js');
         showToast('Name updated!');
