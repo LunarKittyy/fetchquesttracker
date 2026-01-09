@@ -3,7 +3,7 @@
  * Authentication UI handlers and state management
  */
 
-import { state, STORAGE_KEY, syncActiveSpace, pendingLocalChange, isInitialSyncInProgress, setInitialSyncInProgress } from './state.js';
+import { state, STORAGE_KEY, syncActiveSpace, getPendingLocalChange, isInitialSyncInProgress, setInitialSyncInProgress } from './state.js';
 import { $, $$ } from './utils.js';
 import { saveState, loadState, updateLastSyncedDisplay, updateStorageDisplay, startSyncTimeInterval } from './storage.js';
 import { sortItems } from './utils.js';
@@ -168,7 +168,7 @@ export async function updateAuthUI(user) {
             window.FirebaseBridge.startRealtimeSync();
             // Register callback for realtime updates from other devices
             window.FirebaseBridge.onDataChange((data) => {
-                handleRealtimeUpdate(data, pendingLocalChange, {
+                handleRealtimeUpdate(data, getPendingLocalChange(), {
                     render: renderCallback,
                     renderArchive: renderArchiveCallback,
                     renderSpaces: renderSpacesCallback
@@ -196,7 +196,7 @@ export async function updateAuthUI(user) {
             window.FirebaseBridge.startRealtimeSync();
             // Register callback for realtime updates from other devices
             window.FirebaseBridge.onDataChange((data) => {
-                handleRealtimeUpdate(data, pendingLocalChange, {
+                handleRealtimeUpdate(data, getPendingLocalChange(), {
                     render: renderCallback,
                     renderArchive: renderArchiveCallback,
                     renderSpaces: renderSpacesCallback

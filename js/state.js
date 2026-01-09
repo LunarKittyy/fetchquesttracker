@@ -121,6 +121,7 @@ export function clearSelectedItems() { selectedItems.clear(); }
 export function addSelectedItem(id) { selectedItems.add(id); }
 export function removeSelectedItem(id) { selectedItems.delete(id); }
 export function setPendingLocalChange(val) { pendingLocalChange = val; }
+export function getPendingLocalChange() { return pendingLocalChange; }
 export function setInitialSyncInProgress(val) { isInitialSyncInProgress = val; }
 export function setSelectedTags(tags) { selectedTags = tags; }
 export function clearSelectedTags() { selectedTags = []; }

@@ -326,12 +326,13 @@ body.shake {
 
 /* Shared space indicators */
 .space-tab.shared-space::before {
-  background: var(--clr-accent-secondary);
+  background: var(--space-color, var(--clr-accent-secondary));
   opacity: 0.3;
 }
 
 .space-tab.shared-space.active::before {
   opacity: 0.7;
+  box-shadow: 0 0 10px var(--space-color, var(--clr-accent-secondary));
 }
 
 .space-shared-icon {
@@ -348,7 +349,7 @@ body.shake {
   height: 14px;
   font-size: 0.5rem;
   font-weight: 700;
-  background: var(--clr-accent-secondary);
+  background: var(--space-color, var(--clr-accent-secondary));
   color: var(--clr-bg-deep);
   border-radius: 2px;
   margin-left: 0.25rem;
@@ -4595,6 +4596,14 @@ body.view-only .add-form {
 }
 
 body.view-only .quest-actions {
+  display: none;
+}
+
+body.view-only .quest-controls {
+  display: none;
+}
+
+body.view-only .objective-controls {
   display: none;
 }
 
