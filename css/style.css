@@ -1455,23 +1455,96 @@ body.shake {
   transition: all 0.15s ease;
 }
 
-/* Drag and Drop Styles */
+/* Drag and Drop Styles - Custom Mouse-based System */
+
+/* Original card completely hidden during drag - removed from layout */
 .quest-card.dragging {
-  opacity: 0.4;
-  transform: scale(0.98);
-  box-shadow: none;
+  display: none !important;
 }
 
+/* Card during drop animation - invisible but rendered and ready */
+.quest-card.drop-animating {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+
+/* Floating ghost element */
+.drag-ghost {
+  opacity: 1;
+  border-radius: var(--radius-lg);
+  cursor: grabbing;
+  transform: scale(1);
+  box-shadow: none;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+}
+
+.drag-ghost.lifted {
+  transform: scale(1.06);
+  box-shadow:
+    0 0 30px rgba(255, 255, 255, 0.25),
+    0 0 60px rgba(255, 255, 255, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+/* Drag handle - full height strip on right side of card */
+.drag-handle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 21px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  opacity: 0;
+  color: var(--clr-text-muted);
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  transition: opacity 0.2s ease, background 0.2s ease;
+  z-index: 10;
+}
+
+.drag-handle:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--clr-accent-primary);
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.quest-card:hover .drag-handle {
+  opacity: 0.5;
+}
+
+/* Category highlight when dragging over */
 .category-group.drag-over {
   border-color: var(--clr-accent-primary);
   background: var(--clr-bg-elevated);
-  box-shadow: 0 0 15px rgba(78, 205, 180, 0.1);
+}
+
+/* Drop placeholder - solid dark area */
+.quest-drop-placeholder {
+  height: 80px;
+  background: rgba(30, 40, 50, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-lg);
+  box-sizing: border-box;
+}
+
+/* Cards container uses gap for even spacing */
+.category-items {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .category-group {
   transition: border-color 0.2s ease, background-color 0.2s ease;
   border: 1px solid transparent;
-  /* Prepare for border change */
   border-radius: var(--radius-md);
 }
 
@@ -2009,7 +2082,7 @@ body.shake {
   border-radius: var(--radius-lg);
   padding: 1.25rem;
   position: relative;
-  transition: all 0.3s var(--ease-out-expo);
+  transition: transform 0.3s var(--ease-out-expo), box-shadow 0.3s var(--ease-out-expo), border-color 0.3s ease;
   overflow: hidden;
 }
 

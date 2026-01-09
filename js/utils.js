@@ -106,7 +106,7 @@ export function getItemProgress(item) {
 }
 
 /**
- * Sort items by completion status, priority, then creation time
+ * Sort items by manual order (if set), then completion status, priority, and creation time
  * @param {Array} items - Array of items to sort
  * @returns {Array} Sorted items array (mutates original)
  */
@@ -119,6 +119,19 @@ export function sortItems(items) {
         const aComplete = isItemComplete(a);
         const bComplete = isItemComplete(b);
         if (aComplete !== bComplete) return aComplete ? 1 : -1;
+
+        // If both have sortIndex (manually ordered), use that
+        const aHasSort = a.sortIndex !== undefined;
+        const bHasSort = b.sortIndex !== undefined;
+
+        if (aHasSort && bHasSort) {
+            return a.sortIndex - b.sortIndex;
+        }
+
+        // Items with sortIndex come before those without (within same completion state)
+        if (aHasSort !== bHasSort) {
+            return aHasSort ? -1 : 1;
+        }
 
         // Sort by priority
         const aPriority = priorityOrder[a.priority] ?? 2;
@@ -176,6 +189,8 @@ export function groupItemsByCategory(items) {
     allCategories.forEach(cat => {
         const catItems = items.filter(i => (i.category || 'Misc') === cat);
         if (catItems.length > 0) {
+            // Sort items within each category to respect manual ordering
+            sortItems(catItems);
             grouped[cat] = catItems;
         }
     });

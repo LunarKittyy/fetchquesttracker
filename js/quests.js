@@ -366,7 +366,10 @@ export function createQuestCardHTML(item) {
     }
 
     return `
-        <article class="quest-card ${isComplete ? 'complete' : ''} ${item.imageUrl ? 'has-image' : ''}" draggable="true" data-id="${item.id}" data-type="${item.type}" ${item.color ? `style="--quest-color: ${item.color}" data-color="${item.color}"` : ''}>
+        <article class="quest-card ${isComplete ? 'complete' : ''} ${item.imageUrl ? 'has-image' : ''}" data-id="${item.id}" data-type="${item.type}" ${item.color ? `style="--quest-color: ${item.color}" data-color="${item.color}"` : ''}>
+            <div class="drag-handle" title="Drag to reorder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+            </div>
             <div class="quest-card-inner">
                 <div class="quest-content">
                     <div class="quest-header">
