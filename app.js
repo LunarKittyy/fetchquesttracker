@@ -21,7 +21,7 @@ import {
     findItemAcrossSpaces
 } from './js/utils.js';
 
-import { initPopup, showPopup, showConfirm, showAlert, showPrompt, showToast } from './js/popup.js';
+import { initPopup, showPopup, showConfirm, showAlert, showPrompt, showToast, completeToast } from './js/popup.js';
 import { initParticleElements, initParticles, celebrate, playSound, resizeCanvas } from './js/particles.js';
 import {
     initStorage, saveState, saveStateLocal, loadState, exportData, importData,
@@ -1420,7 +1420,11 @@ function handleWindowBlur() {
 }
 
 // --- Initialization ---
-function init() {
+async function init() {
+    // Start loading bar
+    const { loadingBar } = await import('./js/loading-bar.js');
+    loadingBar.start();
+
     // Initialize modules
     initPopup();
     initParticleElements();
@@ -1430,6 +1434,8 @@ function init() {
         storageFill: elements.storageFill,
         storageText: elements.storageText
     }, { renderSpaces, updateSyncStatusUI });
+
+    loadingBar.set(20);
 
     initSpaces({ render, renderArchive, updateCategoryDropdown });
     initArchive({ archivePanel: elements.archivePanel, archiveContainer: elements.archiveContainer, archiveCount: elements.archiveCount },
@@ -1444,6 +1450,9 @@ function init() {
         statActive: elements.statActive, statRate: elements.statRate,
         statsCategories: elements.statsCategories, statsSpaces: elements.statsSpaces
     });
+
+    loadingBar.set(40);
+
     initFileManager({ modalFiles: elements.modalFiles, filesList: elements.filesList });
     initBulkEntry({ render });
     initQuests({ renderArchive, updateStatusBar });
@@ -1462,9 +1471,14 @@ function init() {
     loadState();
     sortItems(state.items);
     render();
+
+    loadingBar.set(60);
+
     initParticles();
     renderArchive();
     renderSpaces();
+
+    loadingBar.finish();
 
     // Event listeners
     elements.form?.addEventListener('submit', handleFormSubmit);
