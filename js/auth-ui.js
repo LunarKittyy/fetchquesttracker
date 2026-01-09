@@ -540,3 +540,40 @@ async function checkDisplayName() {
         console.error('Failed to set display name:', error);
     }
 }
+
+/**
+ * Handle change name button click (user dropdown)
+ */
+export async function handleChangeName() {
+    if (elements.userDropdown) elements.userDropdown.classList.add('hidden');
+
+    const user = window.FirebaseBridge?.currentUser;
+    if (!user) return;
+
+    const { showPrompt } = await import('./popup.js');
+    const { updateProfile } = await import('https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js');
+
+    const currentName = user.displayName || '';
+    const name = await showPrompt(
+        'Enter your new display name:',
+        'CHANGE NAME',
+        currentName
+    );
+
+    if (name === null) return; // Cancelled
+
+    const displayName = name.trim() || user.email?.split('@')[0] || 'User';
+
+    try {
+        await updateProfile(user, { displayName });
+        if (elements.userEmail) {
+            elements.userEmail.textContent = displayName;
+        }
+        const { showToast } = await import('./popup.js');
+        showToast('Name updated!');
+    } catch (error) {
+        console.error('Failed to change name:', error);
+        const { showAlert } = await import('./popup.js');
+        showAlert('Failed to update name.', 'ERROR');
+    }
+}

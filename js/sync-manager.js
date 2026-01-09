@@ -302,6 +302,9 @@ export class SyncManager {
             this.lastSyncTime = Date.now();
             this.setStatus('synced');
 
+            // Update FirebaseBridge sync time for UI display
+            window.FirebaseBridge?.updateLastSyncTime?.();
+
             setTimeout(() => {
                 this.pendingChanges = false;
             }, 500);

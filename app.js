@@ -60,7 +60,7 @@ import {
 import {
     initAuthUI, openAuthModal, closeAuthModal, switchAuthTab, showPasswordReset,
     updateAuthUI, updateSyncStatusUI, handleSignIn, handleSignUp, handlePasswordReset,
-    handleGoogleSignIn, handleLogout, handleExportData, handleDeleteAccount
+    handleGoogleSignIn, handleLogout, handleExportData, handleDeleteAccount, handleChangeName
 } from './js/auth-ui.js';
 
 import { parseItemInput } from './js/input-parser.js';
@@ -164,6 +164,7 @@ const elements = {
     userDropdown: $('#user-dropdown'),
     btnLogout: $('#btn-logout'),
     btnExportData: $('#btn-export-data'),
+    btnChangeName: $('#btn-change-name'),
     btnDeleteAccount: $('#btn-delete-account'),
     modalAuth: $('#modal-auth'),
     authTabs: $$('.auth-tab'),
@@ -1715,6 +1716,7 @@ function init() {
     elements.btnBackToSignin?.addEventListener('click', () => switchAuthTab('signin'));
     elements.btnGoogleSignin?.addEventListener('click', handleGoogleSignIn);
     elements.btnExportData?.addEventListener('click', handleExportData);
+    elements.btnChangeName?.addEventListener('click', handleChangeName);
     elements.btnDeleteAccount?.addEventListener('click', handleDeleteAccount);
 
     // Category manager
