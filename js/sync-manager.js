@@ -347,8 +347,8 @@ export class SyncManager {
 
         // Check each owned space for changes
         for (const space of state.spaces) {
-            // Skip shared spaces - only save owned spaces
-            if (space.isShared === true || space.isOwned === false) continue;
+            // Skip if not owned AND not an editor (viewers cannot save)
+            if (space.isOwned === false && space.myRole !== 'editor') continue;
 
             const localMod = space._localModified || 0;
             const lastSync = space._lastSyncedLocal || 0;
@@ -369,7 +369,13 @@ export class SyncManager {
                 );
             }
 
-            const spaceRef = doc(this.db, 'users', this.user.uid, 'spaces', space.id);
+            // Determine target path (use ownerId if it's a shared space)
+            const targetOwnerId = (space.isOwned === false && space.ownerId)
+                ? space.ownerId
+                : this.user.uid;
+
+            const spaceRef = doc(this.db, 'users', targetOwnerId, 'spaces', space.id);
+
             batch.set(spaceRef, {
                 name: space.name,
                 color: space.color,
