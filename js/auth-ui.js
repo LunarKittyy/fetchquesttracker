@@ -161,7 +161,7 @@ export async function updateAuthUI(user) {
         console.log('📥 Load result:', result);
 
         // Check if user made local changes during the async load
-        if (pendingLocalChange) {
+        if (getPendingLocalChange()) {
             console.log('⚠️ User made local changes during initial load - preserving local state and syncing to cloud');
             setInitialSyncInProgress(false);
             // User's local changes take priority - sync them to cloud instead
