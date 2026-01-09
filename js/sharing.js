@@ -4,6 +4,9 @@
  */
 
 import { showAlert, showConfirm, showToast } from './popup.js';
+import { Logger } from './logger.js';
+
+const log = Logger.module('Sharing');
 
 // Firebase Functions reference (loaded dynamically)
 let functionsRef = null;
@@ -57,7 +60,7 @@ export async function createShareLink(spaceId, role = "viewer") {
             expiresAt: result.data.expiresAt,
         };
     } catch (error) {
-        console.error("Failed to create share link:", error);
+        log.error('Failed to create share link', error.message);
         return { success: false, error: error.message };
     }
 }
@@ -102,7 +105,7 @@ export async function acceptInvite(inviteCode) {
 
         return result.data;
     } catch (error) {
-        console.error("Failed to accept invite:", error);
+        log.error('Failed to accept invite', error.message);
 
         // User-friendly error messages
         if (error.code === "functions/not-found") {
@@ -149,7 +152,7 @@ export async function revokeAccess(spaceId, targetUserId) {
         await callFunction("revokeAccess", { spaceId, targetUserId });
         return { success: true };
     } catch (error) {
-        console.error("Failed to revoke access:", error);
+        log.error('Failed to revoke access', error.message);
         showAlert(error.message || "Failed to remove collaborator.", "ERROR");
         return { success: false, error: error.message };
     }
@@ -172,7 +175,7 @@ export async function leaveSharedSpace(ownerId, spaceId, spaceName) {
         await callFunction("leaveSpace", { ownerId, spaceId });
         return { success: true };
     } catch (error) {
-        console.error("Failed to leave space:", error);
+        log.error('Failed to leave space', error.message);
         showAlert(error.message || "Failed to leave space.", "ERROR");
         return { success: false, error: error.message };
     }
@@ -198,3 +201,40 @@ export async function copyToClipboard(text) {
         return true;
     }
 }
+
+/**
+ * List active (non-expired, unused) invites for a space
+ */
+export async function listActiveInvites(spaceId) {
+    try {
+        const result = await callFunction("listInvites", { spaceId });
+        return result.data.invites || [];
+    } catch (error) {
+        log.error('Failed to list invites', error.message);
+        return [];
+    }
+}
+
+/**
+ * Revoke an invite link (owner only)
+ */
+export async function revokeInviteLink(inviteCode) {
+    const confirmed = await showConfirm(
+        "Revoke this invite link? It can no longer be used.",
+        "REVOKE LINK",
+        true
+    );
+
+    if (!confirmed) return null;
+
+    try {
+        await callFunction("revokeInvite", { inviteCode });
+        showToast("Invite revoked");
+        return { success: true };
+    } catch (error) {
+        log.error('Failed to revoke invite', error.message);
+        showAlert(error.message || "Failed to revoke invite.", "ERROR");
+        return { success: false, error: error.message };
+    }
+}
+

@@ -7,6 +7,9 @@ import { state, syncActiveSpace, DEFAULT_CATEGORIES, STORAGE_KEY } from './state
 import { normalizeItem } from './utils.js';
 import { showAlert } from './popup.js';
 import { syncManager } from './sync-manager.js';
+import { Logger } from './logger.js';
+
+const log = Logger.module('Storage');
 
 // --- Module State ---
 let syncTimeInterval = null;
@@ -91,7 +94,7 @@ export function saveStateLocal() {
         // Update spaces progress live
         if (renderSpacesCallback) renderSpacesCallback();
     } catch (e) {
-        console.error('Failed to save to localStorage:', e);
+        log.error('Failed to save to localStorage', e.message);
         // If quota exceeded, try saving without images
         if (e.name === 'QuotaExceededError') {
             try {
@@ -101,14 +104,14 @@ export function saveStateLocal() {
                     (space.archivedItems || []).forEach(item => { item.imageUrl = null; });
                 });
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(minimalState));
-                console.log('Saved without images due to quota');
+                log.info('Saved without images due to quota');
 
                 // Notify non-logged-in users about storage limits
                 if (!window.FirebaseBridge?.currentUser) {
                     showAlert('⚠️ Storage limit reached!\n\nYour browser storage is full. Images have been removed to save your data.\n\nSign in to get cloud storage and keep your images safe!', 'STORAGE WARNING');
                 }
             } catch (e2) {
-                console.error('Still failed to save:', e2);
+                log.error('Still failed to save', e2.message);
                 // Critical error - notify user
                 if (!window.FirebaseBridge?.currentUser) {
                     showAlert('❌ Storage full!\n\nUnable to save your data. Please sign in for cloud storage, or export your data and clear some quests.', 'STORAGE ERROR');
@@ -245,7 +248,7 @@ export function loadState() {
         });
 
     } catch (e) {
-        console.error('Failed to load from localStorage:', e);
+        log.error('Failed to load from localStorage', e.message);
         const defaultSpace = {
             id: 'space-' + Date.now(),
             name: 'MAIN',
@@ -334,7 +337,7 @@ export function importData(file, callbacks = {}) {
             if (callbacks.render) callbacks.render();
 
         } catch (err) {
-            console.error('Import failed:', err);
+            log.error('Import failed', err.message);
             showAlert('Failed to import data. Please ensure the file is valid JSON.', 'IMPORT ERROR');
         }
     };

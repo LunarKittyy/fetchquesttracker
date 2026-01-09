@@ -4738,3 +4738,71 @@ body.view-only .view-only-badge {
   text-align: center;
   padding: 1rem;
 }
+
+/* Active Invites Section */
+.active-invites-section {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: var(--border-subtle);
+}
+
+.active-invites-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.invite-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: var(--clr-bg-tertiary);
+  border-radius: var(--radius-sm);
+  border: var(--border-subtle);
+}
+
+.invite-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.invite-code {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--clr-accent-secondary);
+  background: var(--clr-bg-deep);
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
+}
+
+.invite-expiry {
+  font-size: 0.65rem;
+  color: var(--clr-text-muted);
+}
+
+.btn-revoke-invite {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: none;
+  border: none;
+  color: var(--clr-text-muted);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all 0.15s ease;
+}
+
+.btn-revoke-invite:hover {
+  color: var(--clr-accent-danger);
+  background: rgba(212, 84, 84, 0.1);
+}
+
+.btn-revoke-invite svg {
+  width: 14px;
+  height: 14px;
+}

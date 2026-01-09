@@ -315,3 +315,94 @@ exports.leaveSpace = functions
 
         return { success: true };
     });
+
+/**
+ * List active (unused, non-expired) invites for a space.
+ * Only the space owner can call this.
+ */
+exports.listInvites = functions
+    .region("us-east1")
+    .https.onCall(async (data, context) => {
+        if (!context.auth) {
+            throw new functions.https.HttpsError("unauthenticated", "Must be logged in");
+        }
+
+        const { spaceId } = data;
+        const userId = context.auth.uid;
+
+        if (!spaceId) {
+            throw new functions.https.HttpsError("invalid-argument", "Missing spaceId");
+        }
+
+        // Verify user owns this space
+        const spaceRef = getDb().doc(`users/${userId}/spaces/${spaceId}`);
+        const spaceSnap = await spaceRef.get();
+
+        if (!spaceSnap.exists) {
+            throw new functions.https.HttpsError("not-found", "Space not found");
+        }
+
+        // Query invites for this space owned by this user
+        const invitesSnapshot = await getDb()
+            .collection("invites")
+            .where("ownerId", "==", userId)
+            .where("spaceId", "==", spaceId)
+            .get();
+
+        const now = new Date();
+        const activeInvites = [];
+
+        invitesSnapshot.forEach((doc) => {
+            const invite = doc.data();
+            const expiresAt = invite.expiresAt.toDate();
+
+            // Only include non-expired, unused invites
+            if (!invite.usedBy && expiresAt > now) {
+                activeInvites.push({
+                    inviteCode: doc.id,
+                    role: invite.role,
+                    createdAt: invite.createdAt.toDate().toISOString(),
+                    expiresAt: expiresAt.toISOString(),
+                });
+            }
+        });
+
+        return { invites: activeInvites };
+    });
+
+/**
+ * Revoke (delete) an invite.
+ * Only the invite owner can call this.
+ */
+exports.revokeInvite = functions
+    .region("us-east1")
+    .https.onCall(async (data, context) => {
+        if (!context.auth) {
+            throw new functions.https.HttpsError("unauthenticated", "Must be logged in");
+        }
+
+        const { inviteCode } = data;
+        const userId = context.auth.uid;
+
+        if (!inviteCode) {
+            throw new functions.https.HttpsError("invalid-argument", "Missing inviteCode");
+        }
+
+        const inviteRef = getDb().doc(`invites/${inviteCode}`);
+        const inviteSnap = await inviteRef.get();
+
+        if (!inviteSnap.exists) {
+            throw new functions.https.HttpsError("not-found", "Invite not found");
+        }
+
+        const invite = inviteSnap.data();
+
+        // Verify caller is the owner
+        if (invite.ownerId !== userId) {
+            throw new functions.https.HttpsError("permission-denied", "Not authorized");
+        }
+
+        await inviteRef.delete();
+
+        return { success: true };
+    });

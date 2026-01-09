@@ -42,6 +42,9 @@ import {
     initializeAppCheck,
     ReCaptchaV3Provider
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app-check.js";
+import { Logger } from './logger.js';
+
+const log = Logger.module('Firebase');
 
 // Firebase Configuration - FetchQuest Project
 const firebaseConfig = {
@@ -104,9 +107,9 @@ if (isFirebaseConfigured()) {
             console.log('⚠️ App Check disabled for local development');
         }
 
-        console.log('🔥 Firebase initialized successfully');
+        log.info('Firebase initialized successfully');
     } catch (error) {
-        console.error('Firebase initialization failed:', error);
+        log.error('Firebase initialization failed', error.message);
     }
 } else {
     console.log('Firebase not configured - using localStorage only');
@@ -250,7 +253,7 @@ window.FirebaseBridge = {
             console.log('✅ Google sign-in successful:', result.user.email);
             return { success: true, user: result.user, isNewUser };
         } catch (error) {
-            console.error('Google sign-in error:', error);
+            log.error('Google sign-in error', error.code);
 
             // Provide more helpful error messages for common mobile issues
             if (error.code === 'auth/popup-blocked') {
@@ -319,7 +322,7 @@ window.FirebaseBridge = {
             }
             return { success: true, bytesUsed: this.storageUsedBytes };
         } catch (error) {
-            console.error('Error fetching storage usage:', error);
+            log.error('Error fetching storage usage', error.message);
             return { success: false, error: error.message };
         }
     },
@@ -364,7 +367,7 @@ window.FirebaseBridge = {
 
             return url;
         } catch (error) {
-            console.error('Image upload error:', error);
+            log.error('Image upload error', error.message);
             return null;
         }
     },
@@ -452,7 +455,7 @@ window.FirebaseBridge = {
             await batch.commit();
             return { success: true };
         } catch (error) {
-            console.error('Cloud save error:', error);
+            log.error('Cloud save error', error.message);
             return { success: false, error: error.message };
         }
     },
@@ -520,7 +523,7 @@ window.FirebaseBridge = {
                 }
             };
         } catch (error) {
-            console.error('Cloud load error:', error);
+            log.error('Cloud load error', error.message);
             return { success: false, error: error.message };
         }
     },
@@ -608,7 +611,7 @@ window.FirebaseBridge = {
 
             return { success: true };
         } catch (error) {
-            console.error('Delete account error:', error);
+            log.error('Delete account error', error.code);
             // If requires recent login
             if (error.code === 'auth/requires-recent-login') {
                 return { success: false, error: 'Please sign out and sign in again before deleting your account.' };
@@ -744,4 +747,4 @@ if (auth) {
     });
 }
 
-console.log('🔌 Firebase Bridge loaded');
+log.info('Firebase Bridge loaded');

@@ -3,6 +3,9 @@
  * ES Module-based architecture
  */
 
+// --- Logger (must be first for error boundary) ---
+import './js/logger.js';
+
 // --- Core Imports ---
 import {
     state, syncActiveSpace, DEFAULT_CATEGORIES, STORAGE_KEY,
@@ -62,7 +65,7 @@ import {
 
 import { parseItemInput } from './js/input-parser.js';
 import { initBulkEntry } from './js/bulk-entry.js';
-import { createShareLink, checkAndAcceptInvite, processPendingInvite, copyToClipboard } from './js/sharing.js';
+import { createShareLink, checkAndAcceptInvite, processPendingInvite, copyToClipboard, listActiveInvites, revokeInviteLink } from './js/sharing.js';
 
 // --- DOM Element References ---
 const elements = {
@@ -1189,7 +1192,7 @@ function handleSelectByTagClick(e) {
 }
 
 // --- Share Modal ---
-function openShareModal(spaceId) {
+async function openShareModal(spaceId) {
     if (!window.FirebaseBridge?.currentUser) {
         showAlert('Sign in to share spaces.', 'SIGN IN REQUIRED');
         return;
@@ -1209,6 +1212,55 @@ function openShareModal(spaceId) {
     const modal = elements.modalShare;
     const titleEl = modal?.querySelector('.modal-title');
     if (titleEl) titleEl.textContent = `SHARE: ${space.name}`;
+
+    // Show modal immediately while loading
+    modal?.classList.remove('hidden');
+
+    // Load and render active invites
+    const invitesSection = $('#active-invites-section');
+    const invitesList = $('#active-invites-list');
+
+    if (invitesSection && invitesList) {
+        invitesList.innerHTML = '<p class="settings-hint">Loading...</p>';
+        invitesSection.classList.remove('hidden');
+
+        const invites = await listActiveInvites(spaceId);
+
+        if (invites.length > 0) {
+            invitesList.innerHTML = invites.map(invite => {
+                const expiresDate = new Date(invite.expiresAt);
+                const daysLeft = Math.ceil((expiresDate - new Date()) / (1000 * 60 * 60 * 24));
+                return `
+                <div class="invite-item" data-invite-code="${invite.inviteCode}">
+                    <div class="invite-info">
+                        <code class="invite-code">${invite.inviteCode}</code>
+                        <span class="collaborator-role ${invite.role}">${invite.role}</span>
+                        <span class="invite-expiry">${daysLeft}d left</span>
+                    </div>
+                    <button type="button" class="btn-revoke-invite" data-invite-code="${invite.inviteCode}" title="Revoke">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                    </button>
+                </div>
+            `;
+            }).join('');
+
+            // Add click handlers for revoke buttons
+            invitesList.querySelectorAll('.btn-revoke-invite').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const inviteCode = btn.dataset.inviteCode;
+                    const result = await revokeInviteLink(inviteCode);
+                    if (result && result.success) {
+                        openShareModal(spaceId); // Refresh the modal
+                    }
+                });
+            });
+        } else {
+            invitesSection.classList.add('hidden');
+        }
+    }
 
     // Show collaborators section if there are any
     const collabSection = $('#collaborators-section');
@@ -1252,8 +1304,6 @@ function openShareModal(spaceId) {
             collabSection.classList.add('hidden');
         }
     }
-
-    modal?.classList.remove('hidden');
 }
 
 async function handleGenerateShareLink() {
@@ -1277,6 +1327,9 @@ async function handleGenerateShareLink() {
         const expiryDate = new Date(result.expiresAt);
         elements.shareLinkExpiry.textContent = `Expires: ${expiryDate.toLocaleDateString()}`;
         elements.shareLinkExpiry?.classList.remove('hidden');
+
+        // Refresh the active invites list
+        openShareModal(spaceId);
     } else {
         showAlert(result.error || 'Failed to generate link.', 'ERROR');
     }
