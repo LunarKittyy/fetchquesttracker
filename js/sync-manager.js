@@ -421,6 +421,14 @@ export class SyncManager {
             return;
         }
 
+        // Wait for auth token to be fully ready
+        try {
+            await this.user.getIdToken();
+        } catch (error) {
+            SyncLog.warn('Auth token not ready, delaying sync start');
+            return;
+        }
+
         // Stop existing listeners first
         this.stop();
 

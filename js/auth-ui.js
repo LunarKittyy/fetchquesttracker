@@ -507,11 +507,19 @@ function handleRealtimeUpdate(data) {
  * Shows policy update modal if outdated
  */
 async function checkPolicyVersion() {
-    if (!window.FirebaseBridge?.currentUser || !window.FirebaseBridge?.getDb) return;
+    const user = window.FirebaseBridge?.currentUser;
+    if (!user || !window.FirebaseBridge?.getDb) return;
+
+    // Wait for auth token to be ready
+    try {
+        await user.getIdToken();
+    } catch {
+        return; // Auth not ready
+    }
 
     const { doc, getDoc, setDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js');
     const db = window.FirebaseBridge.getDb();
-    const uid = window.FirebaseBridge.currentUser.uid;
+    const uid = user.uid;
 
     try {
         const userRef = doc(db, 'users', uid);
