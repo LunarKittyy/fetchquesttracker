@@ -140,7 +140,7 @@ function handleMouseDown(e) {
 
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
-                    el.style.transition = 'transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)';
+                    el.style.transition = 'transform 0.45s cubic-bezier(0.25, 1.25, 0.5, 1)';
                     el.style.transform = '';
                     // Clean up z-index after animation
                     setTimeout(() => {
@@ -275,7 +275,7 @@ function animateCards(container, doChange) {
 
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
-                    el.style.transition = 'transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)';
+                    el.style.transition = 'transform 0.45s cubic-bezier(0.25, 1.25, 0.5, 1)';
                     el.style.transform = '';
                     setTimeout(() => {
                         el.style.zIndex = '';
@@ -322,7 +322,7 @@ function handleMouseUp(e) {
         }
 
         if (targetId && targetId !== draggedItemId) {
-            reorderItemSilent(draggedItemId, targetId, position, targetCategory);
+            // reorderItemSilent call moved to after DOM swap
             didReorder = true;
         } else if (targetCategory !== dragSourceCategory) {
             updateItemField(draggedItemId, 'category', targetCategory);
@@ -359,6 +359,17 @@ function handleMouseUp(e) {
 
         // Atomically swap dragging -> drop-animating (opacity:0 takes over)
         theCard.classList.replace('dragging', 'drop-animating');
+
+        // NOW call reorder - DOM is correct (card is in new position)
+        if (didReorder && targetCategory) {
+            // We don't need targetId/position anymore since we read from DOM
+            reorderItemSilent(draggedItemId, null, null, targetCategory);
+        }
+    }
+
+    // Save state if reordered (don't re-render - card is already positioned in DOM)
+    if (didReorder) {
+        saveState();
     }
 
     // FLIP: animate cards pushing down IMMEDIATELY
@@ -376,7 +387,7 @@ function handleMouseUp(e) {
 
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
-                    el.style.transition = 'transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)';
+                    el.style.transition = 'transform 0.45s cubic-bezier(0.25, 1.25, 0.5, 1)';
                     el.style.transform = '';
 
                     // Clean up inline styles after animation
@@ -391,7 +402,7 @@ function handleMouseUp(e) {
 
     // Animate ghost to where placeholder was (card has display:none so can't get its rect)
     if (theGhost && targetRect && theCard) {
-        theGhost.style.transition = 'left 0.3s cubic-bezier(0.22, 1, 0.36, 1), top 0.3s cubic-bezier(0.22, 1, 0.36, 1), transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease';
+        theGhost.style.transition = 'left 0.35s cubic-bezier(0.25, 1.25, 0.5, 1), top 0.35s cubic-bezier(0.25, 1.25, 0.5, 1), transform 0.3s cubic-bezier(0.25, 1.25, 0.5, 1), box-shadow 0.3s ease';
         theGhost.style.left = `${targetRect.left}px`;
         theGhost.style.top = `${targetRect.top}px`;
         theGhost.style.transform = 'scale(1)';
@@ -429,7 +440,7 @@ function handleMouseUp(e) {
 
     // Save state if reordered (don't re-render - card is already positioned in DOM)
     if (didReorder) {
-        saveState(state);
+        saveState();
     }
 
     // Clear drag-over highlights
@@ -507,7 +518,7 @@ function handleCancel() {
 
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
-                    el.style.transition = 'transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)';
+                    el.style.transition = 'transform 0.45s cubic-bezier(0.25, 1.25, 0.5, 1)';
                     el.style.transform = '';
                     setTimeout(() => {
                         el.style.zIndex = '';
@@ -532,36 +543,52 @@ function handleCancel() {
 
 function reorderItemSilent(draggedId, targetId, position, targetCategory) {
     const draggedItem = state.items.find(i => i.id === draggedId);
-    const targetItem = state.items.find(i => i.id === targetId);
 
-    if (!draggedItem || !targetItem) return;
+    if (!draggedItem) return;
 
+    // Update dragged item's category if changed
     if (draggedItem.category !== targetCategory) {
         draggedItem.category = targetCategory;
     }
 
-    const categoryItems = state.items
-        .filter(i => (i.category || 'Misc') === targetCategory)
-        .sort((a, b) => {
-            const aHasSort = a.sortIndex !== undefined;
-            const bHasSort = b.sortIndex !== undefined;
-            if (aHasSort && bHasSort) return a.sortIndex - b.sortIndex;
-            if (aHasSort !== bHasSort) return aHasSort ? -1 : 1;
-            return (b.createdAt || 0) - (a.createdAt || 0);
-        });
+    // Recalculate sort indices for ALL items in the affected category based on DOM order
+    const categoryGroup = document.querySelector(`.category-group[data-category="${targetCategory}"]`);
+    console.log('[DragDrop] Updating sort for category:', targetCategory, 'Group found:', !!categoryGroup);
 
-    const draggedIndex = categoryItems.findIndex(i => i.id === draggedId);
-    if (draggedIndex !== -1) {
-        categoryItems.splice(draggedIndex, 1);
+    if (categoryGroup) {
+        const cardIds = Array.from(categoryGroup.querySelectorAll('.quest-card'))
+            .map(el => el.dataset.id);
+
+        console.log('[DragDrop] Card IDs in DOM order:', cardIds);
+
+        // Update sort index for each item in this category
+        cardIds.forEach((id, index) => {
+            const item = state.items.find(i => i.id === id);
+            if (item) {
+                // Use large gaps to allow inserting between without reindexing everything next time
+                const oldSort = item.sortIndex;
+                item.sortIndex = index * 1000;
+                console.log(`[DragDrop] Updated item ${id} sortIndex: ${oldSort} -> ${item.sortIndex}`);
+            } else {
+                console.warn('[DragDrop] Item not found in state:', id);
+            }
+        });
+    } else {
+        console.error('[DragDrop] Could not find category group for:', targetCategory);
     }
 
-    const targetIndex = categoryItems.findIndex(i => i.id === targetId);
-    const insertIndex = position === 'before' ? targetIndex : targetIndex + 1;
-    categoryItems.splice(insertIndex, 0, draggedItem);
+    // Also handle source category if different (reindex to fill gaps)
+    if (draggedItem.category !== targetCategory) {
+        // We can't easily get the source category DOM if we just dragged out of it
+        // But we can re-sort the data items that remain in that category
+        const sourceCategoryItems = state.items
+            .filter(i => (i.category || 'Misc') === dragSourceCategory && i.id !== draggedId)
+            .sort((a, b) => (a.sortIndex || 0) - (b.sortIndex || 0));
 
-    categoryItems.forEach((item, idx) => {
-        item.sortIndex = idx * 1000;
-    });
+        sourceCategoryItems.forEach((item, index) => {
+            item.sortIndex = index * 1000;
+        });
+    }
 }
 
 /**
