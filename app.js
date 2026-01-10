@@ -177,12 +177,16 @@ function createCategoryGroupHTML(category, categoryItems) {
     const progress = getCategoryProgress(categoryItems);
     const itemsHTML = categoryItems.map(item => createQuestCardHTML(item)).join('');
 
+    const isCollapsed = state.collapsedCategories.has(category);
+
     return `
-        <section class="category-group" data-category="${escapeHtml(category)}">
+        <section class="category-group ${isCollapsed ? 'collapsed' : ''}" data-category="${escapeHtml(category)}">
             <div class="category-header">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                </svg>
+                <button class="btn-collapse-category" data-action="collapse-category" title="${isCollapsed ? 'Expand' : 'Collapse'}">
+                    <svg viewBox="0 0 24 24" fill="none" class="icon-chevron" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </button>
                 <h2 class="category-name">${escapeHtml(category)}</h2>
                 <span class="category-count">${categoryItems.length}</span>
                 <div class="category-progress-wrapper">
@@ -192,7 +196,7 @@ function createCategoryGroupHTML(category, categoryItems) {
                     <span class="category-progress-text">${progress.current}/${progress.total}</span>
                 </div>
             </div>
-            <div class="category-items">${itemsHTML}</div>
+            <div class="category-items ${isCollapsed ? 'hidden' : ''}">${itemsHTML}</div>
         </section>
     `;
 }
@@ -850,6 +854,23 @@ async function init() {
         $('#btn-save-space')?.addEventListener('click', handleSaveSpace);
         $('#btn-delete-space')?.addEventListener('click', handleDeleteSpace);
     }
+
+    // Category Collapse delegation
+    elements.questContainer?.addEventListener('click', (e) => {
+        const btn = e.target.closest('.btn-collapse-category');
+        if (btn) {
+            const group = btn.closest('.category-group');
+            const category = group?.dataset.category;
+            if (category) {
+                if (state.collapsedCategories.has(category)) {
+                    state.collapsedCategories.delete(category);
+                } else {
+                    state.collapsedCategories.add(category);
+                }
+                render();
+            }
+        }
+    });
 
     // Quest container delegation
     elements.questContainer?.addEventListener('click', handleQuestAction);

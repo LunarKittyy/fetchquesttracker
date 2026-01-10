@@ -4,7 +4,11 @@
  */
 
 import { state, tempObjectives, setTempObjectives, tempImageData, setTempImageData, searchQuery } from './state.js';
-import { $, $$, generateId, escapeHtml, isItemComplete, getItemProgress, sortItems, getCategoryProgress, normalizeItem, groupItemsByCategory, findItemAcrossSpaces } from './utils.js';
+import {
+    $, $$, generateId, escapeHtml, isItemComplete,
+    getItemProgress,
+    formatBigNumber, sortItems, getCategoryProgress, normalizeItem, groupItemsByCategory, findItemAcrossSpaces
+} from './utils.js';
 import { saveState } from './storage.js';
 import { celebrate } from './particles.js';
 import { showConfirm } from './popup.js';
@@ -334,18 +338,18 @@ export function createQuestCardHTML(item) {
                             <polyline points="20 6 9 17 4 12"/>
                         </svg>
                     </div>
-                    ${obj.imageUrl ? `<img src="${escapeHtml(obj.imageUrl)}" alt="" class="objective-image" onerror="this.style.display='none'">` : ''}
                     <div class="objective-info">
+                        <div class="objective-item" data-objective-id="${obj.id}">
+                    <div class="objective-header">
                         <span class="objective-name">${escapeHtml(obj.name)}</span>
+                        ${obj.imageUrl ? `<button class="btn-image-preview" onclick="event.stopPropagation(); window.open('${obj.imageUrl}', '_blank')">📷</button>` : ''}
                     </div>
                     <div class="objective-controls">
-                        <button class="objective-btn decrement" data-action="obj-decrement" ${obj.current <= 0 ? 'disabled' : ''}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        </button>
-                        <span class="objective-count">${obj.current}/${obj.target}</span>
-                        <button class="objective-btn increment" data-action="obj-increment" ${objComplete ? 'disabled' : ''}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        </button>
+                        <button class="btn-control btn-obj-decrement" data-action="obj-decrement" ${obj.current <= 0 ? 'disabled' : ''}>-</button>
+                        <span class="objective-count">${formatBigNumber(obj.current)} / ${formatBigNumber(obj.target)}</span>
+                        <button class="btn-control btn-obj-increment" data-action="obj-increment" ${obj.current >= obj.target ? 'disabled' : ''}>+</button>
+                    </div>
+                </div>
                     </div>
                 </div>
             `;
@@ -399,9 +403,9 @@ export function createQuestCardHTML(item) {
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
                             </button>
                             <span class="quest-count">
-                                <span class="quest-count-current" data-action="edit-current" title="Click to edit">${progress.current}</span>
+                                <span class="quest-count-current" data-action="edit-current" title="Click to edit">${formatBigNumber(progress.current)}</span>
                                 <span class="quest-count-divider">/</span>
-                                <span class="quest-count-target" data-action="edit-goal" title="Click to edit goal">${progress.total}</span>
+                                <span class="quest-count-target" data-action="edit-goal" title="Click to edit goal">${formatBigNumber(progress.total)}</span>
                             </span>
                             <button class="btn-control btn-increment" data-action="increment" ${isComplete ? 'disabled' : ''}>
                                 ${isComplete ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>` : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`}

@@ -9,9 +9,11 @@ export const DEFAULT_CATEGORIES = ['Misc', 'Main Quest', 'Side Quest', 'Crafting
 
 // --- State ---
 export const state = {
-    spaces: [],
+    spaceOrder: [], // ID array for manual ordering
+    // UI state (not synced)
     activeSpaceId: null,
-    tags: [],  // Global tags (cross-space)
+    collapsedCategories: new Set(),
+    items: [], // Current view items (will filter from spaces)
 
     shiftAmount: 5,
     ctrlAmount: 10,

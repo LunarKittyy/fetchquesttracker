@@ -241,3 +241,23 @@ export function findItemAcrossSpaces(state, itemId) {
     }
     return { item: null, space: null };
 }
+/**
+ * Format large numbers for display (e.g., 1.5K, 2M, 1e45)
+ * @param {number} num - Number to format
+ * @returns {string} Formatted string
+ */
+export function formatBigNumber(num) {
+    if (num === null || num === undefined) return '0';
+    if (num < 10000) return num.toString();
+
+    // Use compact notation for K, M, B, T
+    if (num < 1e15) {
+        return new Intl.NumberFormat('en-US', {
+            notation: "compact",
+            maximumFractionDigits: 1
+        }).format(num);
+    }
+
+    // Use clean scientific notation for massive numbers
+    return num.toExponential(2).replace('+', '');
+}
