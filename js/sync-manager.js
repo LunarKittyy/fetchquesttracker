@@ -39,9 +39,6 @@ export const SyncLog = {
         } else {
             console.log(`${prefix} ${msg}`);
         }
-
-        // Update debug overlay if active
-        if (debugOverlay) updateDebugOverlay();
     },
 
     debug(msg, data) { this._log('DEBUG', '🔍', msg, data); },
@@ -54,133 +51,13 @@ export const SyncLog = {
     getHistory() { return [...logHistory]; }
 };
 
-// ============================================================================
-// DEBUG OVERLAY
-// ============================================================================
-
-let debugOverlay = null;
-
-function createDebugOverlay() {
-    if (debugOverlay) return debugOverlay;
-
-    const overlay = document.createElement('div');
-    overlay.id = 'sync-debug-overlay';
-    overlay.innerHTML = `
-        <style>
-            #sync-debug-overlay {
-                position: fixed;
-                bottom: 16px;
-                right: 16px;
-                width: 320px;
-                max-height: 300px;
-                background: rgba(0, 0, 0, 0.9);
-                color: #0f0;
-                font-family: 'Consolas', 'Monaco', monospace;
-                font-size: 11px;
-                border-radius: 8px;
-                padding: 12px;
-                z-index: 99999;
-                overflow: hidden;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-            }
-            #sync-debug-overlay .header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 8px;
-                padding-bottom: 8px;
-                border-bottom: 1px solid #333;
-            }
-            #sync-debug-overlay .status {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            }
-            #sync-debug-overlay .status-dot {
-                width: 8px;
-                height: 8px;
-                border-radius: 50%;
-                background: #666;
-            }
-            #sync-debug-overlay .status-dot.idle { background: #666; }
-            #sync-debug-overlay .status-dot.syncing { background: #ff0; animation: pulse 1s infinite; }
-            #sync-debug-overlay .status-dot.synced { background: #0f0; }
-            #sync-debug-overlay .status-dot.error { background: #f00; }
-            #sync-debug-overlay .status-dot.offline { background: #f80; }
-            @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-            #sync-debug-overlay .close-btn {
-                background: none;
-                border: none;
-                color: #666;
-                cursor: pointer;
-                font-size: 14px;
-            }
-            #sync-debug-overlay .close-btn:hover { color: #fff; }
-            #sync-debug-overlay .stats {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 4px;
-                margin-bottom: 8px;
-                font-size: 10px;
-                color: #888;
-            }
-            #sync-debug-overlay .logs {
-                max-height: 180px;
-                overflow-y: auto;
-                font-size: 10px;
-            }
-            #sync-debug-overlay .log-entry {
-                padding: 2px 0;
-                border-bottom: 1px solid #222;
-            }
-            #sync-debug-overlay .log-entry.WARN { color: #ff0; }
-            #sync-debug-overlay .log-entry.ERROR { color: #f00; }
-        </style>
-        <div class="header">
-            <div class="status">
-                <div class="status-dot" id="sync-status-dot"></div>
-                <span id="sync-status-text">Idle</span>
-            </div>
-            <button class="close-btn" onclick="this.closest('#sync-debug-overlay').remove()">×</button>
-        </div>
-        <div class="stats">
-            <div>Last sync: <span id="sync-last-time">Never</span></div>
-            <div>Pending: <span id="sync-pending">0</span></div>
-        </div>
-        <div class="logs" id="sync-logs"></div>
-    `;
-    document.body.appendChild(overlay);
-    debugOverlay = overlay;
-    return overlay;
-}
-
-function updateDebugOverlay() {
-    if (!debugOverlay) return;
-
-    const statusDot = debugOverlay.querySelector('#sync-status-dot');
-    const statusText = debugOverlay.querySelector('#sync-status-text');
-    const lastTime = debugOverlay.querySelector('#sync-last-time');
-    const pending = debugOverlay.querySelector('#sync-pending');
-    const logsEl = debugOverlay.querySelector('#sync-logs');
-
-    if (statusDot && syncManagerInstance) {
-        statusDot.className = `status-dot ${syncManagerInstance.status}`;
-        statusText.textContent = syncManagerInstance.status.charAt(0).toUpperCase() + syncManagerInstance.status.slice(1);
-        lastTime.textContent = syncManagerInstance.lastSyncTime
-            ? new Date(syncManagerInstance.lastSyncTime).toLocaleTimeString()
-            : 'Never';
-        pending.textContent = syncManagerInstance.pendingChanges ? 'Yes' : 'No';
-    }
-
-    if (logsEl) {
-        logsEl.innerHTML = logHistory.slice(-15).map(entry =>
-            `<div class="log-entry ${entry.level}">
-                <span style="color:#666">${entry.time}</span> ${entry.icon} ${entry.msg}
-            </div>`
-        ).join('');
-        logsEl.scrollTop = logsEl.scrollHeight;
-    }
-}
+// Sync debug state exposed for logger.js
+window.SyncDebug = {
+    getStatus: () => syncManagerInstance?.status || 'idle',
+    getLastSyncTime: () => syncManagerInstance?.lastSyncTime,
+    hasPendingChanges: () => syncManagerInstance?.pendingChanges || false,
+    getLogs: () => [...logHistory]
+};
 
 // ============================================================================
 // SYNC MANAGER
@@ -207,8 +84,8 @@ export class SyncManager {
         }
         syncManagerInstance = this;
 
-        // Check for debug mode
-        if (new URLSearchParams(window.location.search).has('sync-debug')) {
+        // Check for debug mode (unified with logger.js)
+        if (new URLSearchParams(window.location.search).has('debug')) {
             this.enableDebugOverlay();
         }
 

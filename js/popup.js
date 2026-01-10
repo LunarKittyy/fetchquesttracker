@@ -216,11 +216,11 @@ export function showToast(message, duration = 3000) {
     toast.style.transform = 'translateX(-50%) translateY(100px)';
     toast.style.opacity = '0';
 
-    // Set content (add spinner)
-    toast.innerHTML = `
-        <div class="spinner-small" style="width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: var(--clr-accent-primary, #4ecdb4); border-radius: 50%; animation: spin 1s linear infinite;"></div>
-        <span>${message}</span>
-    `;
+    // Set content (spinner only for loading messages that end with "...")
+    const isLoading = message.endsWith('...');
+    toast.innerHTML = isLoading
+        ? `<div class="spinner-small" style="width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: var(--clr-accent-primary, #4ecdb4); border-radius: 50%; animation: spin 1s linear infinite;"></div><span>${message}</span>`
+        : `<span>${message}</span>`;
 
     // Needed for animation restart
     void toast.offsetWidth;

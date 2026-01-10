@@ -113,6 +113,7 @@ export const Logger = {
 let debugPanel = null;
 let filterModule = 'ALL';
 let filterLevel = 'ALL';
+let activeTab = 'logs'; // 'logs' or 'sync'
 
 function createDebugPanel() {
     if (debugPanel) return debugPanel;
@@ -225,6 +226,51 @@ function createDebugPanel() {
                 font-size: 10px;
                 color: #555;
             }
+            #debug-panel .dp-tabs {
+                display: flex;
+                gap: 0;
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+            }
+            #debug-panel .dp-tab {
+                flex: 1;
+                padding: 8px 12px;
+                background: none;
+                border: none;
+                color: #666;
+                font-size: 10px;
+                cursor: pointer;
+                border-bottom: 2px solid transparent;
+            }
+            #debug-panel .dp-tab:hover { color: #aaa; }
+            #debug-panel .dp-tab.active { 
+                color: #4ecdb4;
+                border-bottom-color: #4ecdb4;
+            }
+            #debug-panel .dp-content.hidden { display: none; }
+            #debug-panel .dp-sync-status {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 10px 12px;
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+                color: #aaa;
+            }
+            #debug-panel .dp-sync-dot {
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                background: #666;
+            }
+            #debug-panel .dp-sync-dot.idle { background: #666; }
+            #debug-panel .dp-sync-dot.syncing { background: #e8b84a; animation: syncPulse 1s infinite; }
+            #debug-panel .dp-sync-dot.synced { background: #5cb572; }
+            #debug-panel .dp-sync-dot.error { background: #d45454; }
+            @keyframes syncPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+            #debug-panel .dp-sync-meta {
+                margin-left: auto;
+                color: #555;
+                font-size: 10px;
+            }
         </style>
         <div class="dp-header">
             <div class="dp-title">
@@ -233,12 +279,26 @@ function createDebugPanel() {
             </div>
             <button class="dp-close" id="dp-close">×</button>
         </div>
-        <div class="dp-filters">
-            <button class="dp-filter active" data-filter="ALL">All</button>
-            <button class="dp-filter" data-filter="ERROR">Errors</button>
-            <button class="dp-filter" data-filter="WARN">Warnings</button>
+        <div class="dp-tabs">
+            <button class="dp-tab active" data-tab="logs">Logs</button>
+            <button class="dp-tab" data-tab="sync">Sync</button>
         </div>
-        <div class="dp-logs" id="dp-logs"></div>
+        <div class="dp-content" id="dp-content-logs">
+            <div class="dp-filters">
+                <button class="dp-filter active" data-filter="ALL">All</button>
+                <button class="dp-filter" data-filter="ERROR">Errors</button>
+                <button class="dp-filter" data-filter="WARN">Warnings</button>
+            </div>
+            <div class="dp-logs" id="dp-logs"></div>
+        </div>
+        <div class="dp-content hidden" id="dp-content-sync">
+            <div class="dp-sync-status">
+                <div class="dp-sync-dot" id="dp-sync-dot"></div>
+                <span id="dp-sync-status-text">Idle</span>
+                <span class="dp-sync-meta">Last: <span id="dp-sync-last">Never</span></span>
+            </div>
+            <div class="dp-logs" id="dp-sync-logs"></div>
+        </div>
         <div class="dp-footer">
             <span>Ctrl+Shift+D to toggle</span>
             <span id="dp-log-count">0 logs</span>
@@ -250,6 +310,19 @@ function createDebugPanel() {
 
     // Event handlers
     panel.querySelector('#dp-close').onclick = () => hideDebugPanel();
+
+    // Tab switching
+    panel.querySelectorAll('.dp-tab').forEach(tab => {
+        tab.onclick = () => {
+            panel.querySelectorAll('.dp-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            activeTab = tab.dataset.tab;
+            panel.querySelector('#dp-content-logs').classList.toggle('hidden', activeTab !== 'logs');
+            panel.querySelector('#dp-content-sync').classList.toggle('hidden', activeTab !== 'sync');
+            updateDebugPanelIfOpen();
+        };
+    });
+
     panel.querySelectorAll('.dp-filter').forEach(btn => {
         btn.onclick = () => {
             panel.querySelectorAll('.dp-filter').forEach(b => b.classList.remove('active'));
@@ -305,6 +378,40 @@ function updateDebugPanelIfOpen() {
     }
 
     countEl.textContent = `${logHistory.length} logs`;
+
+    // Update sync tab
+    updateSyncTab();
+}
+
+function updateSyncTab() {
+    if (!debugPanel || !window.SyncDebug) return;
+
+    const syncDot = debugPanel.querySelector('#dp-sync-dot');
+    const syncStatus = debugPanel.querySelector('#dp-sync-status-text');
+    const syncLast = debugPanel.querySelector('#dp-sync-last');
+    const syncLogs = debugPanel.querySelector('#dp-sync-logs');
+
+    if (syncDot) {
+        const status = window.SyncDebug.getStatus();
+        syncDot.className = `dp-sync-dot ${status}`;
+        syncStatus.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+    }
+
+    if (syncLast) {
+        const lastTime = window.SyncDebug.getLastSyncTime();
+        syncLast.textContent = lastTime ? new Date(lastTime).toLocaleTimeString() : 'Never';
+    }
+
+    if (syncLogs) {
+        const logs = window.SyncDebug.getLogs?.() || [];
+        syncLogs.innerHTML = logs.slice(-20).map(entry => `
+            <div class="dp-log ${entry.level}">
+                <span class="time">${entry.time}</span>
+                <span class="msg">${entry.icon} ${escapeHtml(entry.msg)}</span>
+            </div>
+        `).join('');
+        syncLogs.scrollTop = syncLogs.scrollHeight;
+    }
 }
 
 function escapeHtml(str) {
