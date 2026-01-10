@@ -88,11 +88,17 @@ if (isFirebaseConfigured()) {
         auth = getAuth(app);
 
         // Initialize Firestore with persistent multi-tab cache
-        db = initializeFirestore(app, {
-            localCache: persistentLocalCache({
-                tabManager: persistentMultipleTabManager()
-            })
-        });
+        // Use try/catch because initializeFirestore can only be called once
+        try {
+            db = initializeFirestore(app, {
+                localCache: persistentLocalCache({
+                    tabManager: persistentMultipleTabManager()
+                })
+            });
+        } catch (firestoreError) {
+            // Already initialized, just get the existing instance
+            db = getFirestore(app);
+        }
 
         storage = getStorage(app);
         googleProvider = new GoogleAuthProvider();
