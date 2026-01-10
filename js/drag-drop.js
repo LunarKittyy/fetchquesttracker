@@ -553,28 +553,18 @@ function reorderItemSilent(draggedId, targetId, position, targetCategory) {
 
     // Recalculate sort indices for ALL items in the affected category based on DOM order
     const categoryGroup = document.querySelector(`.category-group[data-category="${targetCategory}"]`);
-    console.log('[DragDrop] Updating sort for category:', targetCategory, 'Group found:', !!categoryGroup);
-
     if (categoryGroup) {
         const cardIds = Array.from(categoryGroup.querySelectorAll('.quest-card'))
             .map(el => el.dataset.id);
-
-        console.log('[DragDrop] Card IDs in DOM order:', cardIds);
 
         // Update sort index for each item in this category
         cardIds.forEach((id, index) => {
             const item = state.items.find(i => i.id === id);
             if (item) {
                 // Use large gaps to allow inserting between without reindexing everything next time
-                const oldSort = item.sortIndex;
                 item.sortIndex = index * 1000;
-                console.log(`[DragDrop] Updated item ${id} sortIndex: ${oldSort} -> ${item.sortIndex}`);
-            } else {
-                console.warn('[DragDrop] Item not found in state:', id);
             }
         });
-    } else {
-        console.error('[DragDrop] Could not find category group for:', targetCategory);
     }
 
     // Also handle source category if different (reindex to fill gaps)

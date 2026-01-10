@@ -240,6 +240,7 @@ export function normalizeItem(item, idGenerator = generateId) {
         completedAt: item.completedAt || null,
         color: validateColor(item.color),
         priority: validatePriority(item.priority),
+        sortIndex: item.sortIndex, // Preserve manual sort order
         notes: item.notes || '',
         tags: Array.isArray(item.tags) ? item.tags.filter(t => typeof t === 'string') : []
     };
