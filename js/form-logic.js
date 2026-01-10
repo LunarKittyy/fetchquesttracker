@@ -14,6 +14,7 @@ import { generateId, escapeHtml } from './utils.js';
 import { parseItemInput } from './input-parser.js';
 import { addItem } from './quests.js';
 import { closeAllModals } from './modals.js';
+import { showAlert } from './popup.js';
 
 
 // We need to import these update functions from somewhere. 
@@ -34,6 +35,12 @@ export function handleFormSubmit(e) {
     const hasImage = tempImageData || elements.itemImage.value;
 
     if (!rawName && !hasImage) return;
+
+    // Validate Quest type: must have at least one objective
+    if (currentType === 'quest' && tempObjectives.length === 0) {
+        showAlert('Please add at least one sub-item (objective) for this quest.', 'MISSING CONTENT');
+        return;
+    }
 
     // Parse quantity from name (e.g., "Film Reels x5")
     const parsed = parseItemInput(rawName);
@@ -155,8 +162,24 @@ export function renderObjectives() {
             const row = e.target.closest('.objective-row');
             const id = row.dataset.id;
             const field = e.target.dataset.field;
-            const value = field === 'target' ? parseInt(e.target.value) : e.target.value;
-            setTempObjectives(tempObjectives.map(o => o.id === id ? { ...o, [field]: value } : o));
+            let value = field === 'target' ? parseInt(e.target.value) : e.target.value;
+
+            setTempObjectives(tempObjectives.map(o => {
+                if (o.id !== id) return o;
+
+                // Smart parsing for name input
+                if (field === 'name') {
+                    const parsed = parseItemInput(value);
+                    const updates = { name: parsed.name };
+                    // Only update target if quantity is explicitly found in input
+                    if (parsed.quantity) {
+                        updates.target = parsed.quantity;
+                    }
+                    return { ...o, ...updates };
+                }
+
+                return { ...o, [field]: value };
+            }));
         });
     });
 }
