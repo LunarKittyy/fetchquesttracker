@@ -2,7 +2,23 @@
 
 This file documents the major milestones and development phases of the FetchQuest Tracker.
 
-## [v5.0.x] - 2026-01-09 (Current)
+## [v5.1.0] - 2026-01-09
+### Changed
+- **Modular Architecture Refactor**: Completely reorganized the application logic. Split the monolithic `app.js` into functional modules:
+  - `js/elements.js`: Centralized DOM references.
+  - `js/form-logic.js`: Multi-step quest form & image handling.
+  - `js/tags.js`: Dedicated tag management & color systems.
+  - `js/quest-events.js`: Interaction events for quest cards.
+  - `js/modals.js`: Standardized modal controls.
+- **Audio Removal**: Completely purged all audio assets and sounds from the application for a faster, leaner experience.
+- **File Structure**: Relocated core CSS files to `/css` and organized scripts into categorized modules.
+
+### Added
+- **Smart Input Parser**: Extracted quest parsing logic into a dedicated module (`js/input-parser.js`) for better testing and accuracy.
+
+---
+
+## [v5.0.x] - 2026-01-09
 ### Added
 - **Collaborative Spaces**: Share spaces via invite links with Viewer/Editor roles.
 - **Real-time Sync**: Enhanced Firestore integration for live collaboration.

@@ -100,68 +100,70 @@ The frontend is a static site (HTML/JS/CSS).
 - **Manual**: Upload the root directory to any static host.
 
 ## Tech Stack
-
-- **Frontend**: Vanilla HTML/CSS/JavaScript (modular architecture)
-- **Backend**: Firebase (Auth, Firestore, Storage, App Check)
-- **Compute**: Firebase Cloud Functions (Node.js 20)
-- **No build step required** for the frontend
-
-## File Structure
-
-```
-├── index.html              # Main HTML structure
-├── style.css               # Desktop styles
-├── mobile.css              # Mobile-specific styles
-├── app.js                  # Main application logic & initialization
-├── storage.rules           # Firebase Storage security rules
-├── firestore.rules         # Firestore security rules
-├── functions/              # Cloud Functions (Backend logic)
-│   ├── index.js            # Storage trigger implementations
-│   └── package.json        # Function dependencies
-└── js/
-    ├── firebase-bridge.js  # Firebase SDK initialization & App Check
-    ├── firebase-config.js  # Firebase configuration (legacy)
-    ├── auth.js             # Authentication logic
-    ├── auth-ui.js          # Auth modal & user menu UI
-    ├── cloud-sync.js       # Firestore sync logic
-    ├── storage.js          # Firebase Storage for images
-    ├── file-manager.js     # Storage file manager UI
-    ├── state.js            # Application state management
-    ├── spaces.js           # Spaces functionality
-    ├── quests.js           # Quest CRUD operations
-    ├── archive.js          # Archive system
-    ├── bulk.js             # Bulk operations mode
-    ├── context-menu.js     # Custom right-click context menus
-    ├── popup.js            # Custom popup/alert system
-    ├── statistics.js       # Statistics dashboard
-    ├── particles.js        # Background particle effects
-    ├── mobile-nav.js       # Mobile navigation & touch interactions
-    └── utils.js            # Utility functions
-```
-
-## Current Status
-
-See [TASKS.md](TASKS.md) for detailed progress tracking.
-
-### Recently Completed
-
-- **Collaborative Spaces**: Share spaces via invite links, role-based permissions (Viewer/Editor), real-time collaboration (a bit flaky sometimes but it Works™)
-- **Mobile Interface**: Full mobile support with bottom navigation, touch gestures, and long-press context menus
-- **Cross-Space Search**: Search across all spaces at once, with space tags on results
-- **Custom Tagging System**: Create & assign colored tags to quests, search via `tag:` prefix, bulk select by tag
-- **Server-side Storage Enforcement**: Cloud Functions and Storage Rules enforce 10MB limit
-- **Security Hardening**: Mitigated CWE-602 vulnerability
-- **Real-time Sync Optimization**: No animation flicker, hover protection during sync
-- Custom right-click context menus
-- Statistics dashboard
-- Category manager
-- Custom popup system
-
-### Known Issues
-
-- Adblockers may block some Firebase requests
-- Multi-column layout is partially implemented
-- Login doesn't work on Firefox mobile (popup-based auth not supported)
-
-
-Notice: Contains AI generated content.
+ 
+ - **Frontend**: Vanilla HTML/CSS/JavaScript (modular ESM architecture)
+ - **Backend**: Firebase (Auth, Firestore, Storage, App Check)
+ - **Compute**: Firebase Cloud Functions (Node.js 20)
+ - **No build step required** for the frontend
+ 
+ ## File Structure
+ 
+ ```
+ ├── index.html              # Main HTML structure
+ ├── css/
+ │   ├── style.css           # Desktop styles
+ │   └── mobile.css          # Mobile-specific styles
+ ├── app.js                  # Main application coordinator
+ ├── firestore.rules         # Firestore security rules
+ ├── storage.rules           # Firebase Storage security rules
+ ├── functions/              # Cloud Functions (Backend logic)
+ └── js/
+     ├── elements.js         # Shared DOM element references
+     ├── state.js            # Application state management
+     ├── storage.js          # LocalStorage persistence & migration
+     ├── sync-manager.js     # Unified cloud sync & reconciliation
+     ├── firebase-bridge.js  # Firebase SDK initialization & wrappers
+     ├── form-logic.js       # Add quest form, validation, image handling
+     ├── tags.js             # Tag manager, color picker, tag picker
+     ├── quest-events.js     # Quest card interactions (progress, notes, del)
+     ├── quests.js           # Core quest CRUD & rendering
+     ├── input-parser.js     # Smart text parsing for quantity/name
+     ├── modals.js           # Modal open/close logic
+     ├── logger.js           # Integrated debug logging system
+     ├── auth.js             # Authentication logic
+     ├── auth-ui.js          # Auth modal & user menu UI
+     ├── sharing.js          # Collaborative space invitations
+     ├── archive.js          # Archive system
+     ├── spaces.js           # Spaces functionality
+     ├── context-menu.js     # Custom right-click context menus
+     ├── mobile-nav.js       # Mobile navigation & touch interactions
+     ├── popup.js            # Custom popup/alert system
+     ├── statistics.js       # Statistics dashboard
+     ├── particles.js        # Background particle effects
+     ├── loading-bar.js      # App startup progress UI
+     └── utils.js            # Shared utility functions
+ ```
+ 
+ ## Current Status
+ 
+ See [TASKS.md](TASKS.md) for detailed progress tracking.
+ 
+ ### Recently Completed
+ 
+ - **Major Refactor**: Decoupled the central `app.js` into targeted modules for better maintainability and performance.
+ - **Sound Features Removed**: Completely removed all audio dependencies and settings for a streamlined, silent experience.
+ - **Collaborative Spaces**: Share spaces via invite links, role-based permissions (Viewer/Editor), real-time collaboration.
+ - **Mobile Interface**: Full mobile support with bottom navigation, touch gestures, and long-press context menus.
+ - **Cross-Space Search**: Search across all spaces at once, with space tags on results.
+ - **Custom Tagging System**: Create & assign colored tags to quests, search via `tag:` prefix, bulk select by tag.
+ - **Server-side Storage Enforcement**: Cloud Functions and Storage Rules enforce 10MB limit.
+ - **Security Hardening**: Backend validation and encrypted sync markers.
+ 
+ ### Known Issues
+ 
+ - Adblockers may block some Firebase requests
+ - Multi-column layout is partially implemented
+ - Login doesn't work on Firefox mobile (popup-based auth not supported)
+ 
+ 
+ Notice: Contains AI generated content.
