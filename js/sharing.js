@@ -95,6 +95,7 @@ export async function checkAndAcceptInvite() {
 export async function acceptInvite(inviteCode) {
     try {
         showToast("Joining space...");
+        const result = await callFunction("acceptInvite", { inviteCode });
         completeToast("Joined!", 400);
 
         await showAlert(
