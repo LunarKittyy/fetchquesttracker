@@ -75,7 +75,7 @@ export class SyncManager {
         this.dataListeners = [];
         this.unsubscribers = [];
         this.saveTimeout = null;
-        this.saveDebounceMs = 500;
+        this.saveDebounceMs = 1000;
         this.isInitializing = false;
 
         // Singleton
