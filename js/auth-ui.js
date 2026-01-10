@@ -157,6 +157,14 @@ export async function updateAuthUI(user) {
         if (elements.userDisplayName) elements.userDisplayName.textContent = user.displayName || user.email?.split('@')[0] || 'User';
         closeAuthModal();
 
+        // Ensure auth token is fully propagated before Firestore calls
+        try {
+            await user.getIdToken(true); // Force token refresh
+            await new Promise(resolve => setTimeout(resolve, 500)); // Small delay for propagation
+        } catch (e) {
+            console.warn('Token refresh failed, continuing anyway:', e);
+        }
+
         // Load cloud data via SyncManager
         const result = await syncManager.load();
 
@@ -369,27 +377,64 @@ export async function handleExportData() {
  * Handle delete account
  */
 export async function handleDeleteAccount() {
-    const { showConfirm, showPrompt, showAlert } = await import('./popup.js');
+    const { showConfirm, showPrompt, showAlert, showToast } = await import('./popup.js');
 
     if (elements.userDropdown) elements.userDropdown.classList.add('hidden');
 
-    const confirmed1 = await showConfirm('Delete your account and ALL data permanently?', 'DELETE ACCOUNT', true);
-    if (!confirmed1) return;
+    const user = window.FirebaseBridge?.currentUser;
+    if (!user) return;
 
-    const confirmText = await showPrompt('Type DELETE to confirm:', 'CONFIRM DELETION');
-    if (confirmText !== 'DELETE') {
-        if (confirmText !== null) {
-            await showAlert('Account deletion cancelled.', 'CANCELLED');
+    const confirmed = await showConfirm(
+        'Delete your account and ALL data permanently? This cannot be undone.',
+        'DELETE ACCOUNT',
+        true
+    );
+    if (!confirmed) return;
+
+    // Check if user signed in with Google
+    const isGoogleUser = user.providerData?.some(p => p.providerId === 'google.com');
+
+    if (isGoogleUser) {
+        // For Google users, require re-authentication via popup
+        const reconfirm = await showConfirm(
+            'Sign in again to confirm account deletion.',
+            'RE-AUTHENTICATE'
+        );
+        if (!reconfirm) return;
+
+        const { GoogleAuthProvider, reauthenticateWithPopup } = await import(
+            'https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js'
+        );
+        try {
+            await reauthenticateWithPopup(user, new GoogleAuthProvider());
+        } catch (error) {
+            await showAlert('Re-authentication failed. Account not deleted.', 'CANCELLED');
+            return;
         }
-        return;
+    } else {
+        // For email users, prompt for password
+        const password = await showPrompt('Enter your password to confirm:', 'CONFIRM DELETION');
+        if (!password) return;
+
+        const { EmailAuthProvider, reauthenticateWithCredential } = await import(
+            'https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js'
+        );
+        try {
+            const credential = EmailAuthProvider.credential(user.email, password);
+            await reauthenticateWithCredential(user, credential);
+        } catch (error) {
+            await showAlert('Incorrect password. Account not deleted.', 'CANCELLED');
+            return;
+        }
     }
+
+    // Clean up shared spaces first
+    showToast('Deleting account...');
+    const { cleanupSharedSpaces } = await import('./sharing.js');
+    await cleanupSharedSpaces(state.spaces);
 
     const result = await window.FirebaseBridge.deleteAccount();
     if (result.success) {
-        // Clean up shared spaces before reload
-        const { cleanupSharedSpaces } = await import('./sharing.js');
-        await cleanupSharedSpaces(state.spaces);
-
         localStorage.removeItem(STORAGE_KEY);
         window.location.reload();
     } else {
