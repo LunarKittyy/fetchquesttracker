@@ -71,7 +71,11 @@
 
 ## Deferred
 
+- [x] Uncaught SyntaxError: 'playSound' export missing
+- [x] Uncaught ReferenceError: 'handleRemovePreviewImage'
+- [x] Fix: Removed sound-related calls from spaces.js
 - [x] File split refactor (separate the thousands of lines into smaller files for easier maintenance)
+- [x] Remove sound option and all audio assets
 
 ## Future Considerations
 

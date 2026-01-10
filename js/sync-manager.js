@@ -205,7 +205,7 @@ export class SyncManager {
                 email: this.user.email,
                 displayName: this.user.displayName || '',
                 settings: {
-                    soundEnabled: state.soundEnabled,
+
                     shiftAmount: state.shiftAmount,
                     ctrlAmount: state.ctrlAmount,
                     autoArchive: state.autoArchive
@@ -390,7 +390,7 @@ export class SyncManager {
                 sharedWithMe,
                 tags: userData.tags || [],
                 activeSpaceId: userData.activeSpaceId,
-                soundEnabled: userData.settings?.soundEnabled ?? false,
+
                 shiftAmount: userData.settings?.shiftAmount ?? 5,
                 ctrlAmount: userData.settings?.ctrlAmount ?? 10,
                 autoArchive: userData.settings?.autoArchive ?? true

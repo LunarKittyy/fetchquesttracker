@@ -177,7 +177,7 @@ export const elements = {
     // Context menu
     contextMenu: $('#context-menu'),
 
-    // Particles & sounds
+    // Particles
     particlesCanvas: $('#particles-canvas'),
     celebrationOverlay: $('#celebration-overlay')
 };

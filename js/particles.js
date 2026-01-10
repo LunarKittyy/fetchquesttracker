@@ -10,9 +10,7 @@ import { state } from './state.js';
 let elements = {
     particlesCanvas: null,
     celebrationOverlay: null,
-    soundTick: null,
-    soundComplete: null,
-    soundFanfare: null
+
 };
 
 // Particle system state
