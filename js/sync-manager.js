@@ -190,6 +190,21 @@ export class SyncManager {
             }
         }
 
+        // Check if a card is being dragged
+        const draggingCard = document.querySelector('.quest-card.dragging');
+        if (draggingCard) {
+            SyncLog.debug('Delaying save (card being dragged)');
+            const checkDragEnd = () => {
+                if (!document.querySelector('.quest-card.dragging')) {
+                    this.save(state);
+                } else {
+                    requestAnimationFrame(checkDragEnd);
+                }
+            };
+            requestAnimationFrame(checkDragEnd);
+            return { success: false, error: 'Delayed for drag' };
+        }
+
         const startTime = Date.now();
         const batch = writeBatch(this.db);
         let savedCount = 0;
