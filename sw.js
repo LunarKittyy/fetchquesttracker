@@ -3,7 +3,7 @@
  * Caches static assets for offline access
  */
 
-const CACHE_NAME = 'fetchquest-v4.3';
+const CACHE_NAME = 'fetchquest-v4.4';
 const STATIC_ASSETS = [
     '/',
     '/index.html',
@@ -26,12 +26,20 @@ const STATIC_ASSETS = [
     '/js/quests.js',
     '/js/auth-ui.js',
     '/js/auth.js',
-    '/js/cloud-sync.js',
     '/js/firebase-bridge.js',
-    '/js/firebase-config.js',
     '/js/input-parser.js',
     '/js/bulk-entry.js',
-    '/js/mobile-nav.js'
+    '/js/mobile-nav.js',
+    '/js/elements.js',
+    '/js/categories.js',
+    '/js/drag-drop.js',
+    '/js/form-logic.js',
+    '/js/modals.js',
+    '/js/quest-events.js',
+    '/js/sharing.js',
+    '/js/sync-manager.js',
+    '/js/tags.js',
+    '/js/sw-register.js'
 ];
 
 // Install: cache static assets

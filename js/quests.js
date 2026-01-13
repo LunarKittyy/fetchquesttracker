@@ -43,6 +43,7 @@ export function addItem(data) {
         createdAt: Date.now()
     });
 
+    if (!state.items) state.items = [];
     state.items.push(newItem);
     sortItems(state.items);
     saveState();
@@ -57,7 +58,7 @@ export function addItem(data) {
  */
 export function updateItemField(id, field, value, objectiveId = null) {
     // Try current space first, then search all spaces (for cross-space search results)
-    let item = state.items.find(i => i.id === id);
+    let item = (state.items || []).find(i => i.id === id);
     let spaceId = state.activeSpaceId;
 
     if (!item) {
@@ -70,7 +71,7 @@ export function updateItemField(id, field, value, objectiveId = null) {
     const wasComplete = isItemComplete(item);
 
     if (objectiveId) {
-        const objective = item.objectives.find(o => o.id === objectiveId);
+        const objective = item.objectives?.find(o => o.id === objectiveId);
         if (objective) {
             objective[field] = value;
             if (field === 'current') {
@@ -98,7 +99,7 @@ export function updateItemField(id, field, value, objectiveId = null) {
  */
 export function deleteItem(id) {
     // Try current space first, then search all spaces (for cross-space search results)
-    let item = state.items.find(i => i.id === id);
+    let item = (state.items || []).find(i => i.id === id);
     let targetSpace = null;
     if (!item) {
         const result = findItemAcrossSpaces(state, id);
@@ -136,7 +137,7 @@ export function deleteItem(id) {
     if (targetSpace) {
         targetSpace.items = targetSpace.items.filter(i => i.id !== id);
     } else {
-        state.items = state.items.filter(i => i.id !== id);
+        state.items = (state.items || []).filter(i => i.id !== id);
     }
     saveState(spaceId);
 
@@ -156,7 +157,7 @@ export function deleteItem(id) {
             cleanupEmptyCategory(category);
             if (updateStatusBarCallback) updateStatusBarCallback();
             updateCategoryDropdown();
-            if (state.items.length === 0) {
+            if ((state.items || []).length === 0) {
                 $('#empty-state')?.classList.remove('hidden');
             }
         }, 300);
@@ -164,7 +165,7 @@ export function deleteItem(id) {
         cleanupEmptyCategory(category);
         if (updateStatusBarCallback) updateStatusBarCallback();
         updateCategoryDropdown();
-        if (state.items.length === 0) {
+        if ((state.items || []).length === 0) {
             $('#empty-state')?.classList.remove('hidden');
         }
     }
@@ -182,7 +183,7 @@ export function insertItemIntoDOM(item) {
     if (emptyState) emptyState.classList.add('hidden');
 
     if (!categoryGroup) {
-        const categoryItems = state.items.filter(i => i.category === category);
+        const categoryItems = (state.items || []).filter(i => i.category === category);
         const progress = getCategoryProgress(categoryItems);
 
         const groupHTML = `
@@ -226,7 +227,7 @@ export function insertItemIntoDOM(item) {
 
     for (const existingCard of cards) {
         const existingId = existingCard.dataset.id;
-        const existingItem = state.items.find(i => i.id === existingId);
+        const existingItem = (state.items || []).find(i => i.id === existingId);
         if (existingItem) {
             const existingComplete = isItemComplete(existingItem);
             if (!isComplete && existingComplete) {
@@ -321,7 +322,7 @@ function renderCustomTags(item) {
 export function createQuestCardHTML(item) {
     const isComplete = isItemComplete(item);
     const progress = getItemProgress(item);
-    const percent = Math.min(100, (progress.current / progress.total) * 100);
+    const percent = progress.total > 0 ? Math.min(100, (progress.current / progress.total) * 100) : 0;
 
     const segmentCount = Math.min(progress.total, 20);
     let segmentsHTML = '';
@@ -330,7 +331,7 @@ export function createQuestCardHTML(item) {
     }
 
     let objectivesHTML = '';
-    if (item.type === 'quest' && item.objectives.length > 0) {
+    if (item.type === 'quest' && item.objectives?.length > 0) {
         const objItems = item.objectives.map(obj => {
             const objComplete = obj.current >= obj.target;
             return `
@@ -447,7 +448,7 @@ export function createQuestCardHTML(item) {
  * Cleanup empty category groups
  */
 export function cleanupEmptyCategory(category) {
-    const categoryItems = state.items.filter(i => i.category === category);
+    const categoryItems = (state.items || []).filter(i => i.category === category);
     if (categoryItems.length === 0) {
         const groupEl = $(`.category-group[data-category="${escapeHtml(category)}"]`);
         if (groupEl) {
@@ -468,7 +469,7 @@ export function updateCategoryCount(category) {
     const groupEl = $(`.category-group[data-category="${escapeHtml(category)}"]`);
     if (!groupEl) return;
 
-    const categoryItems = state.items.filter(i => i.category === category);
+    const categoryItems = (state.items || []).filter(i => i.category === category);
     const countEl = groupEl.querySelector('.category-count');
     if (countEl) countEl.textContent = categoryItems.length;
 }
@@ -480,7 +481,7 @@ export function updateCategoryProgress(category) {
     const groupEl = $(`.category-group[data-category="${escapeHtml(category)}"]`);
     if (!groupEl) return;
 
-    const categoryItems = state.items.filter(i => i.category === category);
+    const categoryItems = (state.items || []).filter(i => i.category === category);
     const progress = getCategoryProgress(categoryItems);
 
     const fillEl = groupEl.querySelector('.category-progress-fill');
@@ -497,8 +498,9 @@ export function updateCategoryDropdown() {
     const itemCategory = $('#item-category');
     if (!itemCategory) return;
 
-    const fromItems = state.items.map(i => i.category || 'Misc');
-    const all = [...new Set([...state.categories, ...fromItems])].sort();
+    const fromItems = (state.items || []).map(i => i.category || 'Misc');
+    const categories = state.categories || [];
+    const all = [...new Set([...categories, ...fromItems])].sort();
     const currentValue = itemCategory.value;
 
     itemCategory.innerHTML = all.map(cat =>
@@ -515,7 +517,7 @@ export function updateCategoryDropdown() {
  */
 export function updateCardProgress(id, archiveItemCallback) {
     // Try current space first, then search all spaces (for cross-space search results)
-    let item = state.items.find(i => i.id === id);
+    let item = (state.items || []).find(i => i.id === id);
     if (!item) {
         const result = findItemAcrossSpaces(state, id);
         item = result.item;
@@ -571,7 +573,7 @@ export function updateCardProgress(id, archiveItemCallback) {
 
             // Set new timer
             const timerId = setTimeout(() => {
-                const stillItem = state.items.find(i => i.id === item.id);
+                const stillItem = (state.items || []).find(i => i.id === item.id);
                 // Verify it's still complete and meant to be archived
                 if (stillItem && isItemComplete(stillItem)) {
                     archiveItemCallback(item.id);
@@ -600,14 +602,14 @@ export function updateCardProgress(id, archiveItemCallback) {
  */
 export function updateObjectiveDisplay(itemId, objectiveId, archiveItemCallback) {
     // Try current space first, then search all spaces (for cross-space search results)
-    let item = state.items.find(i => i.id === itemId);
+    let item = (state.items || []).find(i => i.id === itemId);
     if (!item) {
         const result = findItemAcrossSpaces(state, itemId);
         item = result.item;
     }
     if (!item) return;
 
-    const objective = item.objectives.find(o => o.id === objectiveId);
+    const objective = item.objectives?.find(o => o.id === objectiveId);
     if (!objective) return;
 
     const objEl = $(`.objective-item[data-objective-id="${objectiveId}"]`);

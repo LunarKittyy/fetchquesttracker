@@ -94,10 +94,11 @@ export function bulkArchiveItems() {
     const itemsToArchive = [...selectedItems];
 
     itemsToArchive.forEach(itemId => {
-        const itemIndex = state.items.findIndex(i => i.id === itemId);
+        const itemIndex = (state.items || []).findIndex(i => i.id === itemId);
         if (itemIndex !== -1) {
             const [archivedItem] = state.items.splice(itemIndex, 1);
             archivedItem.archivedAt = Date.now();
+            if (!state.archivedItems) state.archivedItems = [];
             state.archivedItems.push(archivedItem);
         }
     });
@@ -118,7 +119,7 @@ export function bulkDeleteItems() {
     const itemsWithStorageImages = [];
 
     itemsToDelete.forEach(itemId => {
-        const itemIndex = state.items.findIndex(i => i.id === itemId);
+        const itemIndex = (state.items || []).findIndex(i => i.id === itemId);
         if (itemIndex !== -1) {
             const item = state.items[itemIndex];
 

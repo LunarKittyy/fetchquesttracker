@@ -26,6 +26,36 @@ function sanitizeForFirestore(obj) {
     return clean;
 }
 
+/**
+ * Merge local and server item arrays for collaborative sync
+ * - Items in local but not server: keep (local additions)
+ * - Items in server but not local: keep (other user's additions) 
+ * - Items in both: prefer local (user's recent changes win)
+ */
+function mergeItemArrays(localItems, serverItems) {
+    if (!serverItems || !Array.isArray(serverItems)) return localItems || [];
+    if (!localItems || !Array.isArray(localItems)) return serverItems;
+
+    const merged = new Map();
+
+    // First add all server items
+    for (const item of serverItems) {
+        if (item && item.id) {
+            merged.set(item.id, item);
+        }
+    }
+
+    // Then overlay local items (local changes win for matching IDs)
+    for (const item of localItems) {
+        if (item && item.id) {
+            merged.set(item.id, item);
+        }
+    }
+
+    return Array.from(merged.values());
+}
+
+
 // ============================================================================
 // SYNC LOGGING
 // ============================================================================
@@ -288,11 +318,30 @@ export class SyncManager {
 
             const spaceRef = doc(this.db, 'users', targetOwnerId, 'spaces', space.id);
 
+            // For shared spaces, fetch current server state and merge to prevent overwrites
+            let finalItems = processedItems;
+            let finalArchived = processedArchived;
+
+            if (space.isOwned === false && space.myRole === 'editor') {
+                try {
+                    const serverSnap = await getDoc(spaceRef);
+                    if (serverSnap.exists()) {
+                        const serverData = serverSnap.data();
+                        finalItems = mergeItemArrays(processedItems, serverData.items);
+                        finalArchived = mergeItemArrays(processedArchived, serverData.archivedItems);
+                        SyncLog.debug(`Merged items for shared space ${space.id}: ${finalItems.length} items`);
+                    }
+                } catch (e) {
+                    SyncLog.warn('Could not fetch server state for merge', e.message);
+                    // Fall back to local items if fetch fails
+                }
+            }
+
             batch.set(spaceRef, sanitizeForFirestore({
                 name: space.name || 'Unnamed Space',
                 color: space.color || '#e8b84a',
-                items: processedItems,
-                archivedItems: processedArchived,
+                items: finalItems,
+                archivedItems: finalArchived,
                 categories: space.categories || [],
                 lastModified: serverTimestamp()
             }), { merge: true });
@@ -300,6 +349,7 @@ export class SyncManager {
             space._syncingTimestamp = localMod || Date.now();
             savedCount++;
         }
+
 
         if (savedCount === 0 && !globalSaved) {
             SyncLog.debug('No changes to save');
@@ -347,7 +397,7 @@ export class SyncManager {
             this.pendingChanges = false;
             // Clean up temporary markers
             delete this._syncingGlobalTimestamp;
-            state.spaces.forEach(s => delete s._syncingTimestamp);
+            (state.spaces || []).forEach(s => delete s._syncingTimestamp);
             return { success: false, error: error.message };
         }
     }

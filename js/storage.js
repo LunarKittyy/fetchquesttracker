@@ -47,7 +47,7 @@ export function saveState(modifiedSpaceId = null) {
 
     // Set local modification timestamp for sync comparison
     const targetId = modifiedSpaceId || state.activeSpaceId;
-    const space = state.spaces.find(s => s.id === targetId);
+    const space = (state.spaces || []).find(s => s.id === targetId);
 
     if (space && (space.isOwned !== false || space.myRole === 'editor')) {
         space._localModified = Date.now();
@@ -227,7 +227,7 @@ export function loadState() {
             // Migration: collect tags from all spaces into global tags array
             const seenTagIds = new Set();
             state.tags = [];
-            state.spaces.forEach(space => {
+            (state.spaces || []).forEach(space => {
                 if (Array.isArray(space.tags)) {
                     space.tags.forEach(tag => {
                         if (!seenTagIds.has(tag.id)) {
@@ -242,7 +242,7 @@ export function loadState() {
         }
 
         // Normalize items across all spaces
-        state.spaces.forEach(space => {
+        (state.spaces || []).forEach(space => {
             space.items = (space.items || []).map(item => normalizeItem(item));
             space.archivedItems = (space.archivedItems || []).map(item => normalizeItem(item));
         });
@@ -273,7 +273,7 @@ export function loadState() {
  * Export data as JSON file download
  */
 export function exportData() {
-    if (state.items.length === 0) return;
+    if ((state.items || []).length === 0) return;
 
     const exportObj = {
         version: 2,
@@ -322,12 +322,14 @@ export function importData(file, callbacks = {}) {
                     id: undefined, // Will be generated
                     createdAt: Date.now()
                 });
+                if (!state.items) state.items = [];
                 state.items.push(normalized);
             });
 
             // Merge categories
             importedCategories.forEach(cat => {
-                if (!state.categories.includes(cat)) {
+                if (!(state.categories || []).includes(cat)) {
+                    if (!state.categories) state.categories = [];
                     state.categories.push(cat);
                 }
             });

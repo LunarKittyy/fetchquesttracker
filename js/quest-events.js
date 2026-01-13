@@ -40,7 +40,7 @@ export function handleQuestAction(e) {
         const result = findItemAcrossSpaces(state, itemId);
         item = result.item;
     } else {
-        item = state.items.find(i => i.id === itemId);
+        item = (state.items || []).find(i => i.id === itemId);
     }
 
     switch (action) {
@@ -360,7 +360,7 @@ export function startCategoryEdit(itemId) {
     const categoryTag = card.querySelector('.quest-category-tag');
     if (!categoryTag) return;
 
-    const item = state.items.find(i => i.id === itemId);
+    const item = (state.items || []).find(i => i.id === itemId);
     if (!item) return;
 
     const currentCategory = item.category;
@@ -370,7 +370,7 @@ export function startCategoryEdit(itemId) {
     select.className = 'category-edit-select';
 
     // Populate with categories
-    state.categories.forEach(cat => {
+    (state.categories || []).forEach(cat => {
         const option = document.createElement('option');
         option.value = cat;
         option.textContent = cat;
@@ -421,7 +421,7 @@ export function startCategoryEdit(itemId) {
             // 3. Re-insert into new location
             // The item object in state has already been updated by updateItemField
             // We need to fetch the updated item to ensure we have the latest data
-            const updatedItem = state.items.find(i => i.id === itemId);
+            const updatedItem = (state.items || []).find(i => i.id === itemId);
             if (updatedItem) {
                 insertItemIntoDOM(updatedItem);
             }

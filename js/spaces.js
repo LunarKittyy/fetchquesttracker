@@ -30,7 +30,7 @@ export function renderSpaces() {
     const list = $('#spaces-list');
     if (!list) return;
 
-    list.innerHTML = state.spaces.map(space => {
+    list.innerHTML = (state.spaces || []).map(space => {
         const isActive = space.id === state.activeSpaceId;
         const progress = calculateSpaceProgress(space);
         const isShared = space.isOwned === false;
@@ -159,7 +159,7 @@ export function openSpaceEditModal(spaceId) {
         modal.classList.add('hidden');
     });
 
-    const space = state.spaces.find(s => s.id === spaceId);
+    const space = (state.spaces || []).find(s => s.id === spaceId);
     if (!space) return;
 
     const modal = $('#modal-space');
@@ -202,7 +202,7 @@ export function openSpaceEditModal(spaceId) {
         deleteBtn.classList.add('btn-danger');
         deleteBtn.classList.remove('btn-warning');
         // Show delete button only if not the last space
-        deleteBtn.style.display = state.spaces.length > 1 ? 'block' : 'none';
+        deleteBtn.style.display = (state.spaces || []).length > 1 ? 'block' : 'none';
     }
 
     // Highlight selected color
@@ -251,7 +251,7 @@ export function handleSaveSpace() {
 
     if (spaceId) {
         // Editing existing space
-        const space = state.spaces.find(s => s.id === spaceId);
+        const space = (state.spaces || []).find(s => s.id === spaceId);
         if (space) {
             space.name = name;
             space.color = color;
@@ -266,6 +266,7 @@ export function handleSaveSpace() {
             archivedItems: [],
             categories: [...DEFAULT_CATEGORIES]
         };
+        if (!state.spaces) state.spaces = [];
         state.spaces.push(newSpace);
         state.activeSpaceId = newSpace.id;
         syncActiveSpace();
@@ -289,7 +290,7 @@ export async function handleDeleteSpace() {
     const spaceId = $('#edit-space-id').value;
     if (!spaceId) return;
 
-    const space = state.spaces.find(s => s.id === spaceId);
+    const space = (state.spaces || []).find(s => s.id === spaceId);
     if (!space) return;
 
     // If it's a shared space we're a guest on, handle as "leave" instead of "delete"
@@ -299,7 +300,7 @@ export async function handleDeleteSpace() {
 
         if (result && result.success) {
             // Remove from local state
-            state.spaces = state.spaces.filter(s => s.id !== spaceId);
+            state.spaces = (state.spaces || []).filter(s => s.id !== spaceId);
             if (state.activeSpaceId === spaceId) {
                 state.activeSpaceId = state.spaces[0]?.id;
             }
@@ -316,7 +317,7 @@ export async function handleDeleteSpace() {
     }
 
     // Regular delete flow for owned spaces
-    if (state.spaces.length <= 1) {
+    if ((state.spaces || []).length <= 1) {
         await showAlert('Cannot delete the last remaining space.', 'ERROR');
         return;
     }
@@ -359,7 +360,7 @@ export async function handleDeleteSpace() {
         await window.FirebaseBridge.deleteSpace(spaceId);
     }
 
-    state.spaces = state.spaces.filter(s => s.id !== spaceId);
+    state.spaces = (state.spaces || []).filter(s => s.id !== spaceId);
     state.activeSpaceId = state.spaces[0].id;
     syncActiveSpace();
 

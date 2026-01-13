@@ -1309,11 +1309,7 @@
 
   <script type="module" src="js/mobile-nav.js?v=4.2"></script>
   <script type="module" src="app.js?v=4.2"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => { });
-    }
-  </script>
+  <script src="js/sw-register.js"></script>
 </body>
 
 </html>

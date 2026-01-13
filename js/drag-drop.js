@@ -105,7 +105,7 @@ function handleMouseDown(e) {
     offsetX = e.clientX - rect.left;
     offsetY = e.clientY - rect.top;
 
-    const item = state.items.find(i => i.id === draggedItemId);
+    const item = (state.items || []).find(i => i.id === draggedItemId);
     if (item) {
         dragSourceCategory = item.category;
     }
@@ -329,7 +329,7 @@ function handleMouseUp(e) {
             didReorder = true;
         } else if (targetCategory !== dragSourceCategory) {
             updateItemField(draggedItemId, 'category', targetCategory);
-            const item = state.items.find(i => i.id === draggedItemId);
+            const item = (state.items || []).find(i => i.id === draggedItemId);
             if (item) delete item.sortIndex;
             didReorder = true;
         }
@@ -545,7 +545,7 @@ function handleCancel() {
 }
 
 function reorderItemSilent(draggedId, targetId, position, targetCategory) {
-    const draggedItem = state.items.find(i => i.id === draggedId);
+    const draggedItem = (state.items || []).find(i => i.id === draggedId);
 
     if (!draggedItem) return;
 
@@ -562,7 +562,7 @@ function reorderItemSilent(draggedId, targetId, position, targetCategory) {
 
         // Update sort index for each item in this category
         cardIds.forEach((id, index) => {
-            const item = state.items.find(i => i.id === id);
+            const item = (state.items || []).find(i => i.id === id);
             if (item) {
                 // Use large gaps to allow inserting between without reindexing everything next time
                 item.sortIndex = index * 1000;

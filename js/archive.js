@@ -47,13 +47,13 @@ export function handleArchiveToggle() {
  */
 export function archiveItem(itemId) {
     // Try current space first, then search all spaces (for cross-space search results)
-    let itemIndex = state.items.findIndex(i => i.id === itemId);
+    let itemIndex = (state.items || []).findIndex(i => i.id === itemId);
     let targetSpace = null;
 
     if (itemIndex === -1) {
         // Search all spaces
-        for (const space of state.spaces) {
-            const idx = space.items.findIndex(i => i.id === itemId);
+        for (const space of (state.spaces || [])) {
+            const idx = (space.items || []).findIndex(i => i.id === itemId);
             if (idx !== -1) {
                 itemIndex = idx;
                 targetSpace = space;
@@ -94,7 +94,7 @@ export function archiveItem(itemId) {
  * @param {string} itemId - ID of item to restore
  */
 export function restoreItem(itemId) {
-    const itemIndex = state.archivedItems.findIndex(i => i.id === itemId);
+    const itemIndex = (state.archivedItems || []).findIndex(i => i.id === itemId);
     if (itemIndex === -1) return;
 
     const item = state.archivedItems[itemIndex];
@@ -102,7 +102,7 @@ export function restoreItem(itemId) {
     // Reset progress to allow re-tracking
     if (item.type === 'item') {
         item.current = 0;
-    } else {
+    } else if (item.objectives) {
         item.objectives.forEach(obj => {
             obj.current = 0;
             obj.complete = false;
@@ -110,8 +110,9 @@ export function restoreItem(itemId) {
     }
     item.completedAt = null;
 
+    if (!state.items) state.items = [];
     state.items.push(item);
-    state.archivedItems.splice(itemIndex, 1);
+    if (state.archivedItems) state.archivedItems.splice(itemIndex, 1);
     saveState(); // active space
 
     if (insertItemIntoDOMCallback) insertItemIntoDOMCallback(item);
@@ -124,7 +125,7 @@ export function restoreItem(itemId) {
  * @param {string} itemId - ID of item to delete
  */
 export function deleteArchivedItem(itemId) {
-    const itemIndex = state.archivedItems.findIndex(i => i.id === itemId);
+    const itemIndex = (state.archivedItems || []).findIndex(i => i.id === itemId);
     if (itemIndex === -1) return;
 
     const item = state.archivedItems[itemIndex];
@@ -158,7 +159,7 @@ export function deleteArchivedItem(itemId) {
  * Delete all archived items
  */
 export async function deleteAllArchived() {
-    if (state.archivedItems.length === 0) return;
+    if ((state.archivedItems || []).length === 0) return;
 
     const confirmed = await showConfirm(`Delete all ${state.archivedItems.length} archived items? This cannot be undone.`, 'CLEAR ARCHIVE', true);
     if (!confirmed) return;
@@ -166,7 +167,7 @@ export async function deleteAllArchived() {
     // Delete images from Firebase Storage for all archived items with storage images
     // Note: Images stay in 'items' folder even when archived, so use 'items' prefix
     if (window.FirebaseBridge?.currentUser) {
-        const itemsWithStorageImages = state.archivedItems.filter(
+        const itemsWithStorageImages = (state.archivedItems || []).filter(
             item => item.imageUrl && window.FirebaseBridge.isStorageUrl(item.imageUrl)
         );
 
@@ -203,9 +204,10 @@ export function renderArchive() {
     const container = elements.archiveContainer;
     if (!container || !elements.archiveCount) return;
 
-    elements.archiveCount.textContent = state.archivedItems.length;
+    const archivedItems = state.archivedItems || [];
+    elements.archiveCount.textContent = archivedItems.length;
 
-    if (state.archivedItems.length === 0) {
+    if (archivedItems.length === 0) {
         container.innerHTML = `
             <div class="archive-empty">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -233,7 +235,7 @@ export function renderArchive() {
         `;
     }
 
-    html += state.archivedItems.map(item => {
+    html += archivedItems.map(item => {
         const timeAgo = getTimeAgo(item.archivedAt || item.completedAt);
         const imageHTML = item.imageUrl
             ? `<img src="${escapeHtml(item.imageUrl)}" class="archive-card-image" alt="">`

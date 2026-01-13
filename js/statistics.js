@@ -55,7 +55,7 @@ export function calculateStatistics() {
     };
 
     // Calculate across all spaces
-    state.spaces.forEach(space => {
+    (state.spaces || []).forEach(space => {
         const items = space.items || [];
         const archived = space.archivedItems || [];
         const allItems = [...items, ...archived];

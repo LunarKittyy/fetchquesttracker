@@ -461,11 +461,11 @@ function handleRealtimeUpdate(data) {
 
     if (data.type === 'spaces' && data.spaces) {
         // Preserve shared spaces (those we don't own)
-        const sharedSpaces = state.spaces.filter(s => s.isOwned === false);
+        const sharedSpaces = (state.spaces || []).filter(s => s.isOwned === false);
 
         // For owned spaces, compare timestamps and only update if incoming is newer
         const mergedOwnedSpaces = data.spaces.map(incomingSpace => {
-            const localSpace = state.spaces.find(s => s.id === incomingSpace.id && s.isOwned !== false);
+            const localSpace = (state.spaces || []).find(s => s.id === incomingSpace.id && s.isOwned !== false);
 
             if (localSpace) {
                 // Always accept collaborators from server (since client doesn't write them)
@@ -495,7 +495,7 @@ function handleRealtimeUpdate(data) {
         state.spaces = [...mergedOwnedSpaces, ...sharedSpaces];
 
         // Only update activeSpaceId if the current one no longer exists
-        const currentSpaceExists = state.spaces.some(s => s.id === state.activeSpaceId);
+        const currentSpaceExists = (state.spaces || []).some(s => s.id === state.activeSpaceId);
         if (!currentSpaceExists) {
             state.activeSpaceId = state.spaces[0]?.id;
         }
@@ -505,7 +505,7 @@ function handleRealtimeUpdate(data) {
     // Handle shared space updates from owner
     if (data.type === 'sharedSpaceUpdate' && data.space) {
         const incomingSpace = data.space;
-        const existingIndex = state.spaces.findIndex(s => s.id === incomingSpace.id && s.isOwned === false);
+        const existingIndex = (state.spaces || []).findIndex(s => s.id === incomingSpace.id && s.isOwned === false);
 
         if (existingIndex >= 0) {
             const existingSpace = state.spaces[existingIndex];
@@ -529,6 +529,7 @@ function handleRealtimeUpdate(data) {
             }
         } else {
             // New shared space
+            if (!state.spaces) state.spaces = [];
             state.spaces.push(incomingSpace);
         }
 

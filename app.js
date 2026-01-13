@@ -105,7 +105,7 @@ function render() {
     const existingGroups = elements.questContainer?.querySelectorAll('.category-group') || [];
     existingGroups.forEach(g => g.remove());
 
-    let itemsToRender = state.items;
+    let itemsToRender = state.items || [];
 
     if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -124,8 +124,8 @@ function render() {
                 if (item.category && item.category.toLowerCase() === tagFilter) return true;
                 if (item.type && item.type.toLowerCase() === tagFilter) return true;
                 // Check custom tags (using global state.tags)
-                if (item.tags && state.tags.length > 0) {
-                    const matchingTag = state.tags.find(t =>
+                if (item.tags && (state.tags || []).length > 0) {
+                    const matchingTag = (state.tags || []).find(t =>
                         item.tags.includes(t.id) && t.name.toLowerCase() === tagFilter
                     );
                     if (matchingTag) return true;
@@ -139,8 +139,8 @@ function render() {
 
         if (searchAllSpacesChecked) {
             itemsToRender = [];
-            state.spaces.forEach(space => {
-                const matches = space.items.filter(item => matchesSearch(item, space));
+            (state.spaces || []).forEach(space => {
+                const matches = (space.items || []).filter(item => matchesSearch(item, space));
                 // Add space name for display (will be cleaned up when search is cleared)
                 matches.forEach(item => {
                     item._searchSpaceName = space.name;
@@ -148,12 +148,12 @@ function render() {
                 itemsToRender.push(...matches);
             });
         } else {
-            const currentSpace = state.spaces.find(s => s.id === state.activeSpaceId);
-            itemsToRender = state.items.filter(item => matchesSearch(item, currentSpace));
+            const currentSpace = (state.spaces || []).find(s => s.id === state.activeSpaceId);
+            itemsToRender = (state.items || []).filter(item => matchesSearch(item, currentSpace));
         }
     } else {
         // Clean up _searchSpaceName from all items when not searching
-        state.spaces.forEach(space => {
+        (state.spaces || []).forEach(space => {
             (space.items || []).forEach(item => {
                 delete item._searchSpaceName;
             });
@@ -204,8 +204,9 @@ function createCategoryGroupHTML(category, categoryItems) {
 }
 
 function updateStatusBar() {
-    const total = state.items.length;
-    const complete = state.items.filter(i => isItemComplete(i)).length;
+    const items = state.items || [];
+    const total = items.length;
+    const complete = items.filter(i => isItemComplete(i)).length;
 
     if (elements.statusTotal) elements.statusTotal.textContent = total;
     if (elements.statusComplete) elements.statusComplete.textContent = complete;

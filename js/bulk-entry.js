@@ -277,7 +277,8 @@ function handleImport() {
         // Item mode: add each as separate item
         parsedItems.forEach(item => {
             const category = item.category || 'Misc';
-            if (category && !state.categories.includes(category)) {
+            if (category && !(state.categories || []).includes(category)) {
+                if (!state.categories) state.categories = [];
                 state.categories.push(category);
             }
 

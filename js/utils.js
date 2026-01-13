@@ -85,7 +85,7 @@ export function getTimeAgo(timestamp) {
  * @returns {boolean} True if item is complete
  */
 export function isItemComplete(item) {
-    if (item.type === 'quest' && item.objectives.length > 0) {
+    if (item.type === 'quest' && item.objectives?.length > 0) {
         return item.objectives.every(obj => obj.current >= obj.target);
     }
     return item.current >= item.target;
@@ -97,12 +97,12 @@ export function isItemComplete(item) {
  * @returns {{current: number, total: number}} Progress object
  */
 export function getItemProgress(item) {
-    if (item.type === 'quest' && item.objectives.length > 0) {
+    if (item.type === 'quest' && item.objectives?.length > 0) {
         const total = item.objectives.reduce((sum, obj) => sum + obj.target, 0);
         const current = item.objectives.reduce((sum, obj) => sum + Math.min(obj.current, obj.target), 0);
         return { current, total };
     }
-    return { current: item.current, total: item.target };
+    return { current: item.current || 0, total: item.target || 1 };
 }
 
 /**
@@ -111,6 +111,7 @@ export function getItemProgress(item) {
  * @returns {Array} Sorted items array (mutates original)
  */
 export function sortItems(items) {
+    if (!items) return items;
     // Priority order: high=0, medium=1, none=2, low=3
     const priorityOrder = { high: 0, medium: 1, low: 2, '': 3, null: 3 };
 
@@ -153,8 +154,9 @@ export function sortItems(items) {
 import { state } from './state.js';
 
 export function getUniqueCategories(state) {
-    const fromItems = state.items.map(i => i.category || 'Misc');
-    const all = [...new Set([...state.categories, ...fromItems])];
+    const fromItems = (state.items || []).map(i => i.category || 'Misc');
+    const categories = state.categories || [];
+    const all = [...new Set([...categories, ...fromItems])];
     return all.sort();
 }
 
@@ -173,9 +175,10 @@ export function groupItemsByCategory(items) {
 
     // Create a priority map
     const orderMap = new Map();
-    state.categories.forEach((cat, index) => orderMap.set(cat, index));
+    const stateCategories = state.categories || [];
+    stateCategories.forEach((cat, index) => orderMap.set(cat, index));
 
-    const allCategories = Array.from(new Set([...state.categories, ...implicitCategories]));
+    const allCategories = Array.from(new Set([...stateCategories, ...implicitCategories]));
 
     allCategories.sort((a, b) => {
         const orderA = orderMap.has(a) ? orderMap.get(a) : 9999;
@@ -271,8 +274,8 @@ export function debounce(func, wait) {
  * @returns {{item: Object|null, space: Object|null}} Item and its containing space, or nulls if not found
  */
 export function findItemAcrossSpaces(state, itemId) {
-    for (const space of state.spaces) {
-        const item = space.items.find(i => i.id === itemId);
+    for (const space of (state.spaces || [])) {
+        const item = (space.items || []).find(i => i.id === itemId);
         if (item) {
             return { item, space };
         }

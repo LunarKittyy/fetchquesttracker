@@ -33,7 +33,7 @@ export function renderTagList() {
 
     // Count how many items use each tag (across ALL spaces)
     const usageCount = {};
-    state.spaces.forEach(space => {
+    (state.spaces || []).forEach(space => {
         (space.items || []).forEach(item => {
             (item.tags || []).forEach(tagId => {
                 usageCount[tagId] = (usageCount[tagId] || 0) + 1;
@@ -67,7 +67,7 @@ export function handleAddTag() {
         return;
     }
 
-    const space = state.spaces.find(s => s.id === state.activeSpaceId);
+    const space = (state.spaces || []).find(s => s.id === state.activeSpaceId);
     if (!space) return;
 
     if (!state.tags) state.tags = [];
@@ -82,7 +82,7 @@ export function handleAddTag() {
     }
 
     // Check for duplicate name with existing custom tags
-    if (state.tags.some(t => t.name.toLowerCase() === nameLower)) {
+    if ((state.tags || []).some(t => t.name.toLowerCase() === nameLower)) {
         showAlert('A tag with this name already exists.', 'ERROR');
         return;
     }
@@ -93,6 +93,7 @@ export function handleAddTag() {
         color: currentTagColor
     };
 
+    if (!state.tags) state.tags = [];
     state.tags.push(newTag);
     saveState();
 
@@ -111,7 +112,7 @@ export function handleTagListClick(e) {
 
     if (!state.tags) return;
 
-    state.tags = state.tags.filter(t => t.id !== tagId);
+    state.tags = (state.tags || []).filter(t => t.id !== tagId);
     saveState();
     renderTagList();
     updateTagPickerDropdown();
@@ -172,7 +173,7 @@ export function handleTagPickerClick(e) {
 // --- Edit Tags Modal (Context Menu Action) ---
 
 export function openEditTagsModal(itemId) {
-    const item = state.items.find(i => i.id === itemId);
+    const item = (state.items || []).find(i => i.id === itemId);
     if (!item) return;
 
     elements.editTagsItemId.value = itemId;
@@ -225,7 +226,7 @@ export function saveItemTags() {
     const itemId = elements.editTagsItemId?.value;
     if (!itemId) return;
 
-    const item = state.items.find(i => i.id === itemId);
+    const item = (state.items || []).find(i => i.id === itemId);
     if (!item) return;
 
     item.tags = [...editTagsSelectedTags];
@@ -277,7 +278,7 @@ export function populateSelectByTagDropdown() {
     const optionsContainer = elements.selectByTagDropdown.querySelector('.tag-picker-options');
     if (!optionsContainer) return;
 
-    const space = state.spaces.find(s => s.id === state.activeSpaceId);
+    const space = (state.spaces || []).find(s => s.id === state.activeSpaceId);
     const items = state.items;
 
     // Collect all unique categories from items
@@ -341,7 +342,7 @@ export function handleSelectByTagClick(e) {
     const cards = $$('.quest-card');
     cards.forEach(card => {
         const itemId = card.dataset.id;
-        const questItem = state.items.find(i => i.id === itemId);
+        const questItem = (state.items || []).find(i => i.id === itemId);
         if (!questItem) return;
 
         let matches = false;

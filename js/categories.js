@@ -32,7 +32,7 @@ export function renderCategoryList() {
 
     // Count usage just for info
     const usageCount = {};
-    state.items.forEach(item => {
+    (state.items || []).forEach(item => {
         const cat = item.category || 'Misc';
         usageCount[cat] = (usageCount[cat] || 0) + 1;
     });
@@ -78,11 +78,12 @@ export function handleAddCategory() {
     }
 
     // Check duplicates
-    if (state.categories.includes(name)) {
+    if ((state.categories || []).includes(name)) {
         showAlert('Category already exists.', 'ERROR');
         return;
     }
 
+    if (!state.categories) state.categories = [];
     state.categories.push(name);
     saveState();
 
@@ -116,11 +117,11 @@ export function handleCategoryListClick(e) {
  */
 function deleteCategory(category) {
     // Remove from state.categories
-    state.categories = state.categories.filter(c => c !== category);
+    state.categories = (state.categories || []).filter(c => c !== category);
 
     // Update items to 'Misc'
     let itemsUpdated = false;
-    state.items.forEach(item => {
+    (state.items || []).forEach(item => {
         if (item.category === category) {
             item.category = 'Misc';
             itemsUpdated = true;

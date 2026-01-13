@@ -45,6 +45,9 @@ export function setActiveSpace(space) {
  * Sets up property descriptors for backward compatibility
  */
 export function syncActiveSpace() {
+    // Ensure spaces array exists
+    if (!state.spaces) state.spaces = [];
+
     // Find the active space, or fallback to the first space
     activeSpace = state.spaces.find(s => s.id === state.activeSpaceId) || state.spaces[0];
 
@@ -62,6 +65,11 @@ export function syncActiveSpace() {
         activeSpace = defaultSpace;
     }
 
+    // Ensure activeSpace has categories array
+    if (!activeSpace.categories) {
+        activeSpace.categories = [...DEFAULT_CATEGORIES];
+    }
+
     state.activeSpaceId = activeSpace.id;
 
     // Expose items/archivedItems/categories at top level of state for existing code compatibility
@@ -77,7 +85,7 @@ export function syncActiveSpace() {
         configurable: true
     });
     Object.defineProperty(state, 'categories', {
-        get: () => activeSpace ? activeSpace.categories : [...DEFAULT_CATEGORIES],
+        get: () => activeSpace?.categories || [...DEFAULT_CATEGORIES],
         set: (val) => { if (activeSpace) activeSpace.categories = val; },
         configurable: true
     });

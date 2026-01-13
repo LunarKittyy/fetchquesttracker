@@ -92,7 +92,7 @@ export function handleSpaceContextMenu(e) {
     if (!spaceTab) return;
 
     const spaceId = spaceTab.dataset.id;
-    const space = state.spaces.find(s => s.id === spaceId);
+    const space = (state.spaces || []).find(s => s.id === spaceId);
     if (!space) return;
 
     contextMenuTarget = { type: 'space', id: spaceId, data: space };
@@ -138,7 +138,7 @@ export function handleQuestContextMenu(e) {
     if (!card) return;
 
     const itemId = card.dataset.id;
-    const item = state.items.find(i => i.id === itemId);
+    const item = (state.items || []).find(i => i.id === itemId);
     if (!item) return;
 
     contextMenuTarget = { type: 'quest', id: itemId, data: item };

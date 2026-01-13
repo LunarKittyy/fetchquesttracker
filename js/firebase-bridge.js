@@ -10,6 +10,8 @@ import {
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
     signInWithPopup,
+    signInWithRedirect,
+    getRedirectResult,
     GoogleAuthProvider,
     signOut as firebaseSignOut,
     sendPasswordResetEmail,
@@ -81,6 +83,12 @@ let googleProvider = null;
 function isMobileDevice() {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
         (navigator.maxTouchPoints && navigator.maxTouchPoints > 2);
+}
+
+// Firefox Mobile detection - popup auth doesn't work reliably
+function isFirefoxMobile() {
+    const ua = navigator.userAgent.toLowerCase();
+    return /firefox/.test(ua) && (/android|mobile|tablet/.test(ua) || /fennec/.test(ua));
 }
 
 if (isFirebaseConfigured()) {
@@ -251,12 +259,25 @@ window.FirebaseBridge = {
         }
     },
 
-    // Sign in with Google (uses popup on all platforms)
-    // Note: signInWithRedirect doesn't work on modern browsers (Chrome M115+, Firefox 109+, Safari 16.1+)
-    // due to third-party cookie blocking. Popup is more reliable.
+    // Sign in with Google
+    // Uses redirect on Firefox Mobile (popups don't work) and as fallback for blocked popups
     async signInWithGoogle() {
         if (!auth || !googleProvider) return { success: false, error: 'Firebase not configured' };
 
+        // Firefox Mobile doesn't support popup auth - use redirect
+        if (isFirefoxMobile()) {
+            console.log('🔐 Firefox Mobile detected, using redirect sign-in...');
+            try {
+                await signInWithRedirect(auth, googleProvider);
+                // User will be redirected, result handled by getRedirectResult on page load
+                return { success: true, redirecting: true };
+            } catch (error) {
+                log.error('Redirect sign-in error', error.code);
+                return { success: false, error: getAuthErrorMessage(error.code) };
+            }
+        }
+
+        // Standard popup flow for other browsers
         try {
             console.log('🔐 Starting Google sign-in with popup...');
             const result = await signInWithPopup(auth, googleProvider);
@@ -266,12 +287,15 @@ window.FirebaseBridge = {
         } catch (error) {
             log.error('Google sign-in error', error.code);
 
-            // Provide more helpful error messages for common mobile issues
+            // Fallback to redirect if popup was blocked
             if (error.code === 'auth/popup-blocked') {
-                return {
-                    success: false,
-                    error: 'Popup was blocked. Please allow popups for this site and try again.'
-                };
+                console.log('⚠️ Popup blocked, falling back to redirect...');
+                try {
+                    await signInWithRedirect(auth, googleProvider);
+                    return { success: true, redirecting: true };
+                } catch (redirectError) {
+                    return { success: false, error: getAuthErrorMessage(redirectError.code) };
+                }
             }
             if (error.code === 'auth/popup-closed-by-user') {
                 return {
@@ -784,6 +808,21 @@ if (auth) {
         console.log('Auth state changed:', user ? user.email : 'signed out');
         window.FirebaseBridge.authStateListeners.forEach(cb => cb(user));
     });
+
+    // Handle redirect result (for Firefox Mobile or blocked popup fallback)
+    getRedirectResult(auth)
+        .then((result) => {
+            if (result && result.user) {
+                console.log('✅ Redirect sign-in successful:', result.user.email);
+                // Auth state listener will handle the rest
+            }
+        })
+        .catch((error) => {
+            if (error.code && error.code !== 'auth/credential-already-in-use') {
+                log.error('Redirect result error', error.code);
+            }
+        });
 }
 
 log.info('Firebase Bridge loaded');
+
