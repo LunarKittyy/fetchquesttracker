@@ -223,7 +223,7 @@ function keepFormOpen() {
         // Only remove if not pinned
         if (elements.btnPinForm?.classList.contains('active')) return;
         elements.form?.classList.remove('keep-open');
-    }, 1500);
+    }, 2500);
 }
 
 // --- Form Handlers logic moved to js/form-logic.js ---

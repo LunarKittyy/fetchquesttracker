@@ -1,6 +1,20 @@
-# Changelog & Version History
+## [v5.5.0] - 2026-01-14
+### Added
+- **Robust Sync Engine**: Implemented a read-before-write merge strategy for shared spaces in `js/sync-manager.js`. It now merges local and server state to prevent data loss from concurrent edits.
+- **Firefox Mobile Fallback**: Added `signInWithRedirect` support for browsers that block authentication popups (like Firefox on Android).
+- **Form Grace Period**: Added a 2.5-second grace period after dropdown selections in the quest form to prevent accidental collapse.
+- **Form Tag Modal**: Replaced the inline tag picker with a proper modal, matching the quest editing experience for better stability.
 
-This file documents the major milestones and development phases of the FetchQuest Tracker.
+### Changed
+- **Massive Robustness Pass**: Systematic audit and fix of 50+ potential crash points. Added null/undefined guards across 14 modules to ensure the app handles empty or corrupted state gracefully.
+- **Standardized Elements**: Centralized more DOM references in `js/elements.js` for better maintainability.
+
+### Fixed
+- **Tag Creation Bug**: Fixed issue where tags were not being saved during initial quest creation in `addItem`.
+- **CSP Compliance**: Moved inline service worker registration to an external file (`js/sw-register.js`).
+- **Service Worker**: Updated cache list to remove legacy/missing files and force a clean refresh.
+
+---
 
 ## [v5.1.0] - 2026-01-09
 ### Changed
