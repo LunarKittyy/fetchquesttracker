@@ -536,6 +536,31 @@
       </div>
     </div>
 
+    <!-- Form Tags Modal (for new quests) -->
+    <div id="modal-form-tags" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title">SELECT TAGS</h3>
+          <button type="button" class="modal-close" aria-label="Close modal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p class="settings-hint">Select tags to assign to this quest.</p>
+          <div id="form-tags-list" class="tags-list"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="btn-save-form-tags" class="btn btn-primary">
+            DONE
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Settings Modal -->
     <div id="modal-settings" class="modal hidden">
       <div class="modal-backdrop"></div>

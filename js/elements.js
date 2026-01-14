@@ -9,6 +9,7 @@ export const elements = {
     // Form elements
     form: $('#add-quest-form'),
     addQuestForm: $('.add-quest-wrapper'),
+    btnPinForm: $('#btn-pin-form'),
     itemName: $('#item-name'),
     itemImage: $('#item-image'),
     itemCategory: $('#item-category'),
@@ -159,6 +160,11 @@ export const elements = {
     editTagsItemId: $('#edit-tags-item-id'),
     editTagsList: $('#edit-tags-list'),
     btnSaveTags: $('#btn-save-tags'),
+
+    // Form Tags modal (for new quests)
+    modalFormTags: $('#modal-form-tags'),
+    formTagsList: $('#form-tags-list'),
+    btnSaveFormTags: $('#btn-save-form-tags'),
 
     // File manager
     modalFiles: $('#modal-files'),

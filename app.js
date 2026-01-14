@@ -80,7 +80,8 @@ import {
 import {
     openTagManager, handleAddTag, handleTagListClick, updateTagPickerDropdown, updateTagIndicator,
     handleTagPickerClick, openEditTagsModal, handleEditTagsClick, saveItemTags, initTagColorPicker,
-    populateSelectByTagDropdown, handleSelectByTagClick
+    populateSelectByTagDropdown, handleSelectByTagClick,
+    openFormTagsModal, handleFormTagsClick, closeFormTagsModal
 } from './js/tags.js';
 import { openCategoryManager, handleAddCategory, handleCategoryListClick } from './js/categories.js';
 
@@ -210,6 +211,19 @@ function updateStatusBar() {
 
     if (elements.statusTotal) elements.statusTotal.textContent = total;
     if (elements.statusComplete) elements.statusComplete.textContent = complete;
+}
+
+/**
+ * Keep the add form open for a grace period after dropdown selection
+ * Prevents form from collapsing when cursor moves outside during selection
+ */
+function keepFormOpen() {
+    elements.form?.classList.add('keep-open');
+    setTimeout(() => {
+        // Only remove if not pinned
+        if (elements.btnPinForm?.classList.contains('active')) return;
+        elements.form?.classList.remove('keep-open');
+    }, 1500);
 }
 
 // --- Form Handlers logic moved to js/form-logic.js ---
@@ -628,6 +642,8 @@ async function init() {
     document.addEventListener('form-reset', () => {
         updateTagIndicator();
         updateTagPickerDropdown();
+        // Close tag dropdown when form resets
+        elements.tagDropdown?.classList.add('hidden');
     });
 
     // Global render event (for DnD and Category updates)
@@ -678,13 +694,12 @@ async function init() {
     }, true);
 
     // Pin button - keep form open when adding multiple items
-    const btnPinForm = $('#btn-pin-form');
-    btnPinForm?.addEventListener('click', (e) => {
+    elements.btnPinForm?.addEventListener('click', (e) => {
         e.stopPropagation();
         const form = elements.form;
         if (form) {
             form.classList.toggle('keep-open');
-            btnPinForm.classList.toggle('active', form.classList.contains('keep-open'));
+            elements.btnPinForm.classList.toggle('active', form.classList.contains('keep-open'));
         }
     });
 
@@ -726,6 +741,7 @@ async function init() {
             }
 
             elements.colorDropdown.classList.add('hidden');
+            keepFormOpen();
         });
     }
 
@@ -764,6 +780,7 @@ async function init() {
             elements.priorityIndicator.className = 'priority-indicator' + (priority ? ` priority-${priority}` : '');
 
             elements.priorityDropdown.classList.add('hidden');
+            keepFormOpen();
         });
     }
 
@@ -942,32 +959,19 @@ async function init() {
     // Tag color picker
     initTagColorPicker();
 
-    // Tag picker dropdown (in form)
+    // Tag picker - now opens a modal instead of dropdown
     if (elements.btnTagPicker) {
         elements.btnTagPicker.addEventListener('click', (e) => {
             e.stopPropagation();
-            const isHidden = elements.tagDropdown?.classList.contains('hidden');
-            elements.colorDropdown?.classList.add('hidden');
-            elements.priorityDropdown?.classList.add('hidden');
-
-            if (isHidden) {
-                updateTagPickerDropdown();
-                const rect = elements.btnTagPicker.getBoundingClientRect();
-                if (elements.tagDropdown) {
-                    elements.tagDropdown.style.top = (rect.bottom + 8) + 'px';
-                    elements.tagDropdown.style.left = rect.left + 'px';
-                    elements.tagDropdown.classList.remove('hidden');
-                }
-            } else {
-                elements.tagDropdown?.classList.add('hidden');
-            }
-        });
-
-        elements.tagDropdown?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            handleTagPickerClick(e);
+            openFormTagsModal();
+            keepFormOpen();
         });
     }
+
+    // Form Tags Modal event listeners
+    elements.modalFormTags?.addEventListener('click', handleCloseModal);
+    elements.formTagsList?.addEventListener('click', handleFormTagsClick);
+    elements.btnSaveFormTags?.addEventListener('click', closeFormTagsModal);
 
     // File manager
     elements.storageUsage?.addEventListener('click', openFileManager);

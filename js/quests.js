@@ -37,6 +37,7 @@ export function addItem(data) {
         category: data.category || 'Misc',
         color: data.color || null,
         priority: data.priority || null,
+        tags: data.tags || [],
         current: 0,
         target: data.target || 1,
         objectives: data.objectives || [],

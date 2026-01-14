@@ -170,7 +170,57 @@ export function handleTagPickerClick(e) {
     updateTagIndicator();
 }
 
-// --- Edit Tags Modal (Context Menu Action) ---
+// --- Form Tags Modal (for new quests) ---
+
+export function openFormTagsModal() {
+    renderFormTagsList();
+    elements.modalFormTags?.classList.remove('hidden');
+}
+
+export function renderFormTagsList() {
+    if (!elements.formTagsList) return;
+    const tags = state.tags || [];
+
+    if (tags.length === 0) {
+        elements.formTagsList.innerHTML = '<p class="settings-hint">No tags defined. Create tags in settings first.</p>';
+        return;
+    }
+
+    elements.formTagsList.innerHTML = tags.map(tag => {
+        const isSelected = selectedTags.includes(tag.id);
+        return `
+            <div class="tag-picker-item ${isSelected ? 'selected' : ''}" data-tag-id="${tag.id}">
+                <span class="tag-color-dot" style="background: ${tag.color}"></span>
+                <span class="tag-name">${escapeHtml(tag.name)}</span>
+                <svg class="tag-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+            </div>
+        `;
+    }).join('');
+}
+
+export function handleFormTagsClick(e) {
+    const item = e.target.closest('.tag-picker-item');
+    if (!item) return;
+
+    const tagId = item.dataset.tagId;
+    if (!tagId) return;
+
+    // Toggle selection
+    if (selectedTags.includes(tagId)) {
+        setSelectedTags(selectedTags.filter(id => id !== tagId));
+    } else {
+        setSelectedTags([...selectedTags, tagId]);
+    }
+
+    item.classList.toggle('selected');
+}
+
+export function closeFormTagsModal() {
+    elements.modalFormTags?.classList.add('hidden');
+    updateTagIndicator();
+}
 
 export function openEditTagsModal(itemId) {
     const item = (state.items || []).find(i => i.id === itemId);
