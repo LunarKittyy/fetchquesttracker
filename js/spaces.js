@@ -209,7 +209,7 @@ export function openSpaceEditModal(spaceId) {
     updateColorSwatchSelection(space.color);
 
     modal.classList.remove('hidden');
-    if (!isShared) nameInput.focus();
+    if (!isGuest) nameInput.focus();
 }
 
 /**

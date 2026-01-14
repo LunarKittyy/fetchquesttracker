@@ -9,6 +9,23 @@ import {
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 import { CURRENT_POLICY_VERSION } from './firebase-bridge.js';
 
+/**
+ * Recursively remove undefined values from an object (Firestore rejects them)
+ */
+function sanitizeForFirestore(obj) {
+    if (obj === null || obj === undefined) return null;
+    if (Array.isArray(obj)) return obj.map(sanitizeForFirestore);
+    if (typeof obj !== 'object') return obj;
+
+    const clean = {};
+    for (const [key, value] of Object.entries(obj)) {
+        if (value !== undefined) {
+            clean[key] = sanitizeForFirestore(value);
+        }
+    }
+    return clean;
+}
+
 // ============================================================================
 // SYNC LOGGING
 // ============================================================================
@@ -271,15 +288,14 @@ export class SyncManager {
 
             const spaceRef = doc(this.db, 'users', targetOwnerId, 'spaces', space.id);
 
-            batch.set(spaceRef, {
-                name: space.name,
-                color: space.color,
+            batch.set(spaceRef, sanitizeForFirestore({
+                name: space.name || 'Unnamed Space',
+                color: space.color || '#e8b84a',
                 items: processedItems,
                 archivedItems: processedArchived,
                 categories: space.categories || [],
-                // collaborators: explicitly excluded to prevent overwrite
                 lastModified: serverTimestamp()
-            }, { merge: true });
+            }), { merge: true });
 
             space._syncingTimestamp = localMod || Date.now();
             savedCount++;
