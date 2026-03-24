@@ -2,7 +2,7 @@
 
 A stylish quest/item tracker web application with Firebase cloud sync support.
 
-### [Try it here!](https://lumikitten.github.io/fetchquesttracker/)
+### [Try it here!](https://lunarkittyy.github.io/fetchquesttracker/)
 
 ## Features
 
@@ -64,7 +64,7 @@ Instead of relying on client-side checks (which can be bypassed), we enforce sto
 
 1.  **Clone the repository**
     ```bash
-    git clone https://github.com/lumikitten/fetchquesttracker.git
+    git clone https://github.com/LunarKittyy/fetchquesttracker.git
     cd fetchquesttracker
     ```
 2.  **Initialize Firebase**
