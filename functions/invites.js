@@ -3,7 +3,7 @@
  * All invite/join logic is handled server-side for security.
  */
 
-const functions = require("firebase-functions");
+const functions = require("firebase-functions/v1");
 const admin = require("firebase-admin");
 
 // Lazy getter for Firestore (admin is initialized in index.js)
