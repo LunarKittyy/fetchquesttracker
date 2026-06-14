@@ -4,7 +4,7 @@
  */
 
 import { elements } from './elements.js';
-import { state } from './state.js';
+import { state, isViewOnly } from './state.js';
 import { saveState } from './storage.js';
 import { escapeHtml, $$ } from './utils.js';
 import { showAlert, showConfirm } from './popup.js';
@@ -68,6 +68,7 @@ export function renderCategoryList() {
  * Add a new category
  */
 export function handleAddCategory() {
+    if (isViewOnly()) return;
     const nameInput = elements.newCategoryName;
     if (!nameInput) return;
 
@@ -98,6 +99,7 @@ export function handleAddCategory() {
  * Handle clicks on category list (Delete)
  */
 export function handleCategoryListClick(e) {
+    if (isViewOnly()) return;
     if (e.target.closest('.category-delete')) {
         const item = e.target.closest('.category-manager-item');
         const category = item.dataset.category;
@@ -172,6 +174,7 @@ function handleDragOver(e) {
 
 function handleDrop(e) {
     e.stopPropagation();
+    if (isViewOnly()) return;
     saveNewOrder();
     // Dispatch render app to update main view order immediately
     document.dispatchEvent(new CustomEvent('render-app'));

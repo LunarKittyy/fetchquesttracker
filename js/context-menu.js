@@ -201,7 +201,6 @@ export function handleContextMenuAction(e) {
                 const card = $(`.quest-card[data-id="${target.id}"]`);
                 const nameEl = card?.querySelector('.quest-name-text');
                 if (nameEl) nameEl.click();
-                if (nameEl) nameEl.click();
             }
             break;
         case 'edit-category':

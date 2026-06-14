@@ -102,87 +102,77 @@ exports.acceptInvite = functions
             throw new functions.https.HttpsError("invalid-argument", "Invalid invite code");
         }
 
-        // 2. Get invite
+        // 2–7. Atomically verify and consume the invite inside a transaction so
+        //      two concurrent acceptors can't both pass the usedBy===null check.
         const inviteRef = getDb().doc(`invites/${inviteCode}`);
-        const inviteSnap = await inviteRef.get();
+        let inviteResult = {};
 
-        if (!inviteSnap.exists) {
-            throw new functions.https.HttpsError("not-found", "Invite not found or expired");
-        }
+        await getDb().runTransaction(async (transaction) => {
+            const inviteSnap = await transaction.get(inviteRef);
 
-        const invite = inviteSnap.data();
+            if (!inviteSnap.exists) {
+                throw new functions.https.HttpsError("not-found", "Invite not found or expired");
+            }
 
-        // 3. Check expiry
-        if (invite.expiresAt.toDate() < new Date()) {
-            throw new functions.https.HttpsError("failed-precondition", "Invite has expired");
-        }
+            const invite = inviteSnap.data();
 
-        // 4. Check not already used
-        if (invite.usedBy) {
-            // If used by THIS user, return success (idempotent)
-            if (invite.usedBy === userId) {
-                return {
-                    success: true,
+            // 3. Check expiry
+            if (invite.expiresAt.toDate() < new Date()) {
+                throw new functions.https.HttpsError("failed-precondition", "Invite has expired");
+            }
+
+            // 4. Check not already used
+            if (invite.usedBy) {
+                if (invite.usedBy === userId) {
+                    inviteResult = { success: true, spaceName: invite.spaceName, role: invite.role, alreadyJoined: true };
+                    return; // idempotent — exit transaction without writing
+                }
+                throw new functions.https.HttpsError("already-exists", "This invite was already used by someone else");
+            }
+
+            // 5. Can't join your own space
+            if (invite.ownerId === userId) {
+                throw new functions.https.HttpsError("invalid-argument", "Cannot join your own space");
+            }
+
+            // 6. Check if already a collaborator
+            const spaceRef = getDb().doc(`users/${invite.ownerId}/spaces/${invite.spaceId}`);
+            const spaceSnap = await transaction.get(spaceRef);
+
+            if (!spaceSnap.exists) {
+                throw new functions.https.HttpsError("not-found", "Space no longer exists");
+            }
+
+            const spaceData = spaceSnap.data();
+            if (spaceData.collaborators && spaceData.collaborators[userId]) {
+                throw new functions.https.HttpsError("already-exists", "Already a collaborator");
+            }
+
+            const userRef = getDb().doc(`users/${userId}`);
+
+            // 7. Atomically mark invite used and add collaborator in one transaction
+            transaction.update(inviteRef, { usedBy: userId });
+            transaction.update(spaceRef, {
+                isShared: true,
+                [`collaborators.${userId}`]: {
+                    role: invite.role,
+                    displayName: userDisplayName,
+                    addedAt: admin.firestore.FieldValue.serverTimestamp(),
+                },
+            });
+            transaction.set(userRef, {
+                sharedWithMe: admin.firestore.FieldValue.arrayUnion({
+                    ownerId: invite.ownerId,
+                    spaceId: invite.spaceId,
                     spaceName: invite.spaceName,
                     role: invite.role,
-                    alreadyJoined: true,
-                };
-            }
-            throw new functions.https.HttpsError("already-exists", "This invite was already used by someone else");
-        }
+                }),
+            }, { merge: true });
 
-        // 5. Can't join your own space
-        if (invite.ownerId === userId) {
-            throw new functions.https.HttpsError("invalid-argument", "Cannot join your own space");
-        }
-
-        // 6. Check if already a collaborator
-        const spaceRef = getDb().doc(`users/${invite.ownerId}/spaces/${invite.spaceId}`);
-        const spaceSnap = await spaceRef.get();
-
-        if (!spaceSnap.exists) {
-            throw new functions.https.HttpsError("not-found", "Space no longer exists");
-        }
-
-        const spaceData = spaceSnap.data();
-        if (spaceData.collaborators && spaceData.collaborators[userId]) {
-            throw new functions.https.HttpsError("already-exists", "Already a collaborator");
-        }
-
-        // 7. Perform all updates in a batch
-        const batch = getDb().batch();
-
-        // Add user to space's collaborators
-        batch.update(spaceRef, {
-            isShared: true,
-            [`collaborators.${userId}`]: {
-                role: invite.role,
-                displayName: userDisplayName,
-                addedAt: admin.firestore.FieldValue.serverTimestamp(),
-            },
+            inviteResult = { success: true, spaceName: invite.spaceName, role: invite.role };
         });
 
-        // Add to user's sharedWithMe array
-        const userRef = getDb().doc(`users/${userId}`);
-        batch.set(userRef, {
-            sharedWithMe: admin.firestore.FieldValue.arrayUnion({
-                ownerId: invite.ownerId,
-                spaceId: invite.spaceId,
-                spaceName: invite.spaceName,
-                role: invite.role,
-            }),
-        }, { merge: true });
-
-        // Mark invite as used
-        batch.update(inviteRef, { usedBy: userId });
-
-        await batch.commit();
-
-        return {
-            success: true,
-            spaceName: invite.spaceName,
-            role: invite.role,
-        };
+        return inviteResult;
     });
 
 /**

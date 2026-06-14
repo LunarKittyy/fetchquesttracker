@@ -1,5 +1,5 @@
 import { elements } from './elements.js';
-import { state, selectedTags, setSelectedTags, addSelectedItem } from './state.js';
+import { state, selectedTags, setSelectedTags, addSelectedItem, isViewOnly } from './state.js';
 import { saveState } from './storage.js';
 import { showAlert } from './popup.js';
 import { escapeHtml, $$ } from './utils.js';
@@ -61,6 +61,7 @@ export function renderTagList() {
 }
 
 export function handleAddTag() {
+    if (isViewOnly()) return;
     const name = elements.newTagName?.value.trim();
     if (!name) {
         elements.newTagName?.focus();
@@ -103,6 +104,7 @@ export function handleAddTag() {
 }
 
 export function handleTagListClick(e) {
+    if (isViewOnly()) return;
     const deleteBtn = e.target.closest('.tag-item-delete');
     if (!deleteBtn) return;
 
@@ -273,6 +275,7 @@ export function handleEditTagsClick(e) {
 }
 
 export function saveItemTags() {
+    if (isViewOnly()) return;
     const itemId = elements.editTagsItemId?.value;
     if (!itemId) return;
 

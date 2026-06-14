@@ -4,7 +4,7 @@
  * No native HTML5 drag API - full control over ghost and animations
  */
 
-import { state } from './state.js';
+import { state, isViewOnly } from './state.js';
 import { updateItemField } from './quests.js';
 import { saveState } from './storage.js';
 
@@ -291,6 +291,7 @@ function animateCards(container, doChange) {
 
 function handleMouseUp(e) {
     if (!isDragging) return;
+    if (isViewOnly()) { handleCancel(); return; }
 
     isDragging = false;
 

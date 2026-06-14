@@ -88,8 +88,11 @@ self.addEventListener('fetch', (event) => {
                     }
                     return networkResponse;
                 }).catch(() => {
-                    // Network failed, return cached if available
-                    return cachedResponse;
+                    // Network failed — return cached if available, otherwise a real offline response
+                    return cachedResponse || new Response('Offline — no cached version available', {
+                        status: 503,
+                        statusText: 'Service Unavailable',
+                    });
                 });
 
                 // Return cached immediately, update in background

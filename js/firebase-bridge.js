@@ -508,7 +508,7 @@ window.FirebaseBridge = {
             const userData = userSnap.data();
 
             // Restore storage usage tracking
-            if (userData.storageUsedBytes) {
+            if (userData.storageUsedBytes != null) {
                 this.storageUsedBytes = userData.storageUsedBytes;
             }
 

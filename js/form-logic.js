@@ -8,7 +8,7 @@ import {
     state, currentType, setCurrentType,
     tempObjectives, setTempObjectives,
     tempImageData, setTempImageData,
-    selectedTags, clearSelectedTags
+    selectedTags, clearSelectedTags, isViewOnly
 } from './state.js';
 import { generateId, escapeHtml } from './utils.js';
 import { parseItemInput } from './input-parser.js';
@@ -30,6 +30,7 @@ import { showAlert } from './popup.js';
  */
 export function handleFormSubmit(e) {
     e.preventDefault();
+    if (isViewOnly()) return;
 
     const rawName = elements.itemName.value.trim();
     const hasImage = tempImageData || elements.itemImage.value;
@@ -234,7 +235,8 @@ export function handleImageFileSelect(e) {
 }
 
 export function handleSaveImage() {
-    if (elements.imageModalPreviewImg && elements.imageModalPreviewImg.src) {
+    const rawSrc = elements.imageModalPreviewImg?.getAttribute('src');
+    if (elements.imageModalPreviewImg && rawSrc) {
         const src = elements.imageModalPreviewImg.src;
         setTempImageData(src);
 

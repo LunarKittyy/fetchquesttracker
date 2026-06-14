@@ -4,7 +4,7 @@
  */
 
 import { elements } from './elements.js';
-import { state, searchQuery, bulkMode } from './state.js';
+import { state, searchQuery, bulkMode, isViewOnly } from './state.js';
 import { findItemAcrossSpaces } from './utils.js';
 import { updateItemField, updateCardProgress, updateObjectiveDisplay, deleteItem, insertItemIntoDOM, cleanupEmptyCategory } from './quests.js';
 import { archiveItem } from './archive.js';
@@ -18,6 +18,7 @@ import { openEditTagsModal } from './tags.js';
  * @param {Event} e 
  */
 export function handleQuestAction(e) {
+    if (isViewOnly()) return;
     const btn = e.target.closest('[data-action]');
     const card = e.target.closest('.quest-card');
 
@@ -60,9 +61,10 @@ export function handleQuestAction(e) {
         }
         case 'obj-increment':
         case 'obj-decrement': {
+            if (!item) return;
             const objEl = btn.closest('.objective-item');
             const objId = objEl?.dataset.objectiveId;
-            const objective = item?.objectives.find(o => o.id === objId);
+            const objective = item.objectives?.find(o => o.id === objId);
             if (!objective) return;
             let delta = action === 'obj-increment' ? 1 : -1;
             if (e.shiftKey) delta *= state.shiftAmount;

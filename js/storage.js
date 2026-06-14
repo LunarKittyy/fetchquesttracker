@@ -180,8 +180,8 @@ export function loadState() {
         if (parsed) {
             // Ensure global settings are loaded
 
-            state.shiftAmount = parsed.shiftAmount || 5;
-            state.ctrlAmount = parsed.ctrlAmount || 10;
+            state.shiftAmount = parsed.shiftAmount ?? 5;
+            state.ctrlAmount = parsed.ctrlAmount ?? 10;
             state.autoArchive = parsed.autoArchive !== false;
 
             if (parsed.spaces && Array.isArray(parsed.spaces) && parsed.spaces.length > 0) {

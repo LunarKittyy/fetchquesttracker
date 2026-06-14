@@ -15,6 +15,10 @@ let renderCallback = null;
 let renderArchiveCallback = null;
 let renderSpacesCallback = null;
 
+// Sync listener unsubscribers — cleared before re-registering on each login
+let unsubDataChange = null;
+let unsubStatusChange = null;
+
 // DOM elements cache
 let elements = {};
 
@@ -188,12 +192,14 @@ export async function updateAuthUI(user) {
             if (renderSpacesCallback) renderSpacesCallback();
         }
 
-        // Start real-time sync and register data change handler
+        // Start real-time sync and register data change handler (clear old ones first)
         syncManager.start();
-        syncManager.onDataChange((data) => {
+        if (unsubDataChange) unsubDataChange();
+        if (unsubStatusChange) unsubStatusChange();
+        unsubDataChange = syncManager.onDataChange((data) => {
             handleRealtimeUpdate(data);
         });
-        syncManager.onStatusChange(updateSyncStatusUI);
+        unsubStatusChange = syncManager.onStatusChange(updateSyncStatusUI);
 
         startSyncTimeInterval();
 

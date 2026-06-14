@@ -143,22 +143,12 @@ function render() {
             (state.spaces || []).forEach(space => {
                 const matches = (space.items || []).filter(item => matchesSearch(item, space));
                 // Add space name for display (will be cleaned up when search is cleared)
-                matches.forEach(item => {
-                    item._searchSpaceName = space.name;
-                });
-                itemsToRender.push(...matches);
+                itemsToRender.push(...matches.map(item => ({ ...item, _searchSpaceName: space.name })));
             });
         } else {
             const currentSpace = (state.spaces || []).find(s => s.id === state.activeSpaceId);
             itemsToRender = (state.items || []).filter(item => matchesSearch(item, currentSpace));
         }
-    } else {
-        // Clean up _searchSpaceName from all items when not searching
-        (state.spaces || []).forEach(space => {
-            (space.items || []).forEach(item => {
-                delete item._searchSpaceName;
-            });
-        });
     }
 
     if (itemsToRender.length === 0) {
@@ -854,9 +844,7 @@ async function init() {
         }
     });
 
-    // Quest container delegation
-    elements.questContainer?.addEventListener('click', handleQuestAction);
-    elements.questContainer?.addEventListener('focusout', handleNotesBlur);
+    // (handleQuestAction and handleNotesBlur already registered above)
 
     // Search
     let searchTimeout;
